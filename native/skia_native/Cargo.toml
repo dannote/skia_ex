@@ -1,0 +1,13 @@
+[package]
+name = "skia_native"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+name = "skia_native"
+crate-type = ["cdylib"]
+
+[dependencies]
+rustler = "0.38.0"
+skia-safe = "0.97.2"
