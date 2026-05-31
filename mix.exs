@@ -47,7 +47,7 @@ defmodule Skia.MixProject do
     [
       ci: [
         "compile --warnings-as-errors",
-        "skia.codegen --check",
+        "rustq.gen --check",
         "format --check-formatted",
         "test",
         "credo --strict",
