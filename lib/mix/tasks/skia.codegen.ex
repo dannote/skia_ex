@@ -69,33 +69,23 @@ defmodule Mix.Tasks.Skia.Codegen do
   def run(args) do
     check? = "--check" in args
 
-    files =
-      %{
-        "native/skia_native/src/generated_atoms.rs" => generated_atoms(),
-        "native/skia_native/src/generated_enums.rs" => generated_enums(),
-        "native/skia_native/src/generated_opts.rs" => generated_opts(),
-        "docs/commands.md" => generated_docs()
-      }
-      |> Map.new(fn {path, content} -> {path, IO.iodata_to_binary(content)} end)
-
-    stale = Enum.filter(files, fn {path, content} -> File.read(path) != {:ok, content} end)
-
-    cond do
-      check? and stale != [] ->
-        paths = Enum.map_join(stale, ", ", &elem(&1, 0))
-        Mix.raise("generated files are stale: #{paths}; run mix skia.codegen")
-
-      check? ->
-        Mix.shell().info("Generated Skia files are up to date")
-
-      true ->
-        Enum.each(files, fn {path, content} ->
-          File.mkdir_p!(Path.dirname(path))
-          File.write!(path, content)
-        end)
-
-        Mix.shell().info("Generated #{map_size(files)} Skia files")
-    end
+    [
+      generated_atoms: [
+        path: "native/skia_native/src/generated_atoms.rs",
+        build: &generated_atoms/0
+      ],
+      generated_enums: [
+        path: "native/skia_native/src/generated_enums.rs",
+        build: &generated_enums/0
+      ],
+      generated_opts: [path: "native/skia_native/src/generated_opts.rs", build: &generated_opts/0],
+      command_docs: [path: "docs/commands.md", build: &generated_docs/0]
+    ]
+    |> RustQ.Generated.sync_all!(
+      check: check?,
+      command: "mix skia.codegen",
+      shell: Mix.shell()
+    )
   end
 
   defp render_template(name, assigns) do
