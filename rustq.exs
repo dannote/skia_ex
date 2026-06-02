@@ -3,6 +3,10 @@ use RustQ.Config
 require_file("lib/skia/command_spec.ex")
 require_file("lib/skia/codegen.ex")
 
+generate :native, "lib/skia/native.ex" do
+  build(&Skia.Codegen.generated_native/0)
+end
+
 generate :generated_atoms, "native/skia_native/src/generated_atoms.rs" do
   build(&Skia.Codegen.generated_atoms/0)
 end
