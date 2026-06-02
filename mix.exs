@@ -35,7 +35,7 @@ defmodule Skia.MixProject do
       {:dialyxir, "~> 1.0", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.0", only: [:dev, :test], runtime: false},
       {:rustler, "~> 0.38.0", runtime: false},
-      {:rustq, path: "../rustq", only: [:dev, :test], runtime: false},
+      {:rustq, "~> 0.1", only: [:dev, :test], runtime: false},
       {:vibe_kit, "~> 0.1"},
       {:igniter, "~> 0.6", only: [:dev, :test]}
       # {:dep_from_hexpm, "~> 0.3.0"},
