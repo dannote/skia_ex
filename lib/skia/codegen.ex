@@ -236,13 +236,29 @@ defmodule Skia.Codegen do
     resources =
       [
         RustQ.Rustler.resource(:EncodedImage, fields: [bytes: "Vec<u8>"]),
-        RustQ.Rustler.resource(:EncodedFont, fields: [bytes: "Vec<u8>"])
+        RustQ.Rustler.resource(:EncodedFont, fields: [bytes: "Vec<u8>"]),
+        resource_ref_decoder(:EncodedImage),
+        resource_ref_decoder(:EncodedFont)
       ]
       |> List.flatten()
 
     "generated_resources.rs"
     |> template_path()
     |> RustQ.render_file!(preamble: generated_rust_preamble(), splice: [items: resources])
+  end
+
+  defp resource_ref_decoder(name) do
+    RustQ.render!(
+      """
+      fn __rq_fn_name<'a>(term: Term<'a>) -> NifResult<ResourceArc<__rq_resource!()>> {
+          term.map_get(Atom::from_bytes(term.get_env(), b"ref")?)?
+              .decode::<ResourceArc<__rq_resource!()>>()
+      }
+      """,
+      "resource_ref_decoder.rs",
+      bind: [fn_name: "decode_#{Macro.underscore(to_string(name))}_ref", resource: {:type, name}]
+    )
+    |> Rust.item()
   end
 
   @spec generated_opts() :: String.t()

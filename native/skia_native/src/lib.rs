@@ -188,9 +188,7 @@ fn measure_text<'a>(
 }
 
 fn image_from_term(image_term: Term) -> NifResult<Image> {
-    let image_ref = image_term
-        .map_get(Atom::from_bytes(image_term.get_env(), b"ref")?)?
-        .decode::<ResourceArc<EncodedImage>>()?;
+    let image_ref = decode_encoded_image_ref(image_term)?;
     Image::from_encoded(Data::new_copy(&image_ref.bytes)).ok_or(rustler::Error::BadArg)
 }
 
@@ -732,9 +730,7 @@ fn font_from_term(term: Term, size: f32) -> NifResult<Font> {
         return Ok(Font::new(typeface, size));
     }
 
-    let font_ref = term
-        .map_get(Atom::from_bytes(term.get_env(), b"ref")?)?
-        .decode::<ResourceArc<EncodedFont>>()?;
+    let font_ref = decode_encoded_font_ref(term)?;
     let typeface = FontMgr::new()
         .new_from_data(&font_ref.bytes, None)
         .ok_or(rustler::Error::BadArg)?;
