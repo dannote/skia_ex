@@ -87,6 +87,24 @@ defmodule Skia.Codegen do
     measure_text: [:text, :font, :size]
   ]
 
+  @draw_handlers %{
+    clear: :draw_clear,
+    rect: :draw_rect,
+    circle: :draw_circle,
+    line: :draw_line,
+    text: :draw_text,
+    image: :draw_image,
+    path: :draw_path,
+    clip_rect: :clip_rect,
+    clip_circle: :clip_circle,
+    clip_path: :clip_path,
+    save: :draw_save,
+    save_layer: :draw_save_layer,
+    restore: :draw_restore,
+    translate: :draw_translate,
+    rotate: :draw_rotate
+  }
+
   @native_refs %{
     rect: ["skia_safe::Canvas::draw_rect", "skia_safe::Canvas::draw_rrect"],
     circle: ["skia_safe::Canvas::draw_circle"],
@@ -229,6 +247,46 @@ defmodule Skia.Codegen do
       splice: [arms: arms]
     )
     |> Rust.item()
+  end
+
+  @spec generated_dispatch() :: String.t()
+  def generated_dispatch do
+    handled_ops =
+      Skia.CommandSpec.all()
+      |> Enum.map(fn {name, spec} -> Keyword.get(spec, :op, name) end)
+      |> Enum.uniq()
+      |> Enum.filter(&Map.has_key?(@draw_handlers, &1))
+      |> Enum.sort()
+
+    arms =
+      handled_ops
+      |> Enum.map(fn op ->
+        Rust.arm(
+          "value if value == atoms::#{op}()",
+          "#{Map.fetch!(@draw_handlers, op)}(surface, command)"
+        )
+      end)
+      |> Kernel.++([Rust.arm("_", "Ok(())")])
+
+    item =
+      RustQ.render!(
+        """
+        fn draw_command(surface: &mut skia_safe::Surface, command: Term) -> NifResult<()> {
+            let op = command.map_get(atoms::op())?.decode::<Atom>()?;
+
+            match op {
+                __rq_arms => unreachable!(),
+            }
+        }
+        """,
+        "command_dispatch.rs",
+        splice: [arms: arms]
+      )
+      |> Rust.item()
+
+    "generated_dispatch.rs"
+    |> template_path()
+    |> RustQ.render_file!(preamble: generated_rust_preamble(), splice: [items: [item]])
   end
 
   @spec generated_resources() :: String.t()

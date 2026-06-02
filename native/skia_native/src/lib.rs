@@ -257,57 +257,41 @@ fn render_surface(batch: Term) -> NifResult<Result<skia_safe::Surface, Atom>> {
     Ok(Ok(surface))
 }
 
-fn draw_command(surface: &mut skia_safe::Surface, command: Term) -> NifResult<()> {
-    let op = command.map_get(atoms::op())?.decode::<Atom>()?;
+include!("generated_dispatch.rs");
 
-    if op == atoms::clear() {
-        draw_clear(surface, command)
-    } else if op == atoms::rect() {
-        draw_rect(surface, command)
-    } else if op == atoms::circle() {
-        draw_circle(surface, command)
-    } else if op == atoms::line() {
-        draw_line(surface, command)
-    } else if op == atoms::text() {
-        draw_text(surface, command)
-    } else if op == atoms::image() {
-        draw_image(surface, command)
-    } else if op == atoms::path() {
-        draw_path(surface, command)
-    } else if op == atoms::clip_rect() {
-        clip_rect(surface, command)
-    } else if op == atoms::clip_circle() {
-        clip_circle(surface, command)
-    } else if op == atoms::clip_path() {
-        clip_path(surface, command)
-    } else if op == atoms::save() {
-        surface.canvas().save();
-        Ok(())
-    } else if op == atoms::save_layer() {
-        let opts = decode_opts(command)?;
-        let layer_opts = generated_opts::decode_save_layer_opts(&opts)?;
-        surface
-            .canvas()
-            .save_layer_alpha_f(None, layer_opts.opacity.unwrap_or(1.0).clamp(0.0, 1.0));
-        Ok(())
-    } else if op == atoms::restore() {
-        surface.canvas().restore();
-        Ok(())
-    } else if op == atoms::translate() {
-        let opts = decode_opts(command)?;
-        let translate_opts = generated_opts::decode_translate_opts(&opts)?;
-        surface
-            .canvas()
-            .translate((translate_opts.x, translate_opts.y));
-        Ok(())
-    } else if op == atoms::rotate() {
-        let opts = decode_opts(command)?;
-        let rotate_opts = generated_opts::decode_rotate_opts(&opts)?;
-        surface.canvas().rotate(rotate_opts.degrees, None);
-        Ok(())
-    } else {
-        Ok(())
-    }
+fn draw_save(surface: &mut skia_safe::Surface, _command: Term) -> NifResult<()> {
+    surface.canvas().save();
+    Ok(())
+}
+
+fn draw_save_layer(surface: &mut skia_safe::Surface, command: Term) -> NifResult<()> {
+    let opts = decode_opts(command)?;
+    let layer_opts = generated_opts::decode_save_layer_opts(&opts)?;
+    surface
+        .canvas()
+        .save_layer_alpha_f(None, layer_opts.opacity.unwrap_or(1.0).clamp(0.0, 1.0));
+    Ok(())
+}
+
+fn draw_restore(surface: &mut skia_safe::Surface, _command: Term) -> NifResult<()> {
+    surface.canvas().restore();
+    Ok(())
+}
+
+fn draw_translate(surface: &mut skia_safe::Surface, command: Term) -> NifResult<()> {
+    let opts = decode_opts(command)?;
+    let translate_opts = generated_opts::decode_translate_opts(&opts)?;
+    surface
+        .canvas()
+        .translate((translate_opts.x, translate_opts.y));
+    Ok(())
+}
+
+fn draw_rotate(surface: &mut skia_safe::Surface, command: Term) -> NifResult<()> {
+    let opts = decode_opts(command)?;
+    let rotate_opts = generated_opts::decode_rotate_opts(&opts)?;
+    surface.canvas().rotate(rotate_opts.degrees, None);
+    Ok(())
 }
 
 fn draw_clear(surface: &mut skia_safe::Surface, command: Term) -> NifResult<()> {

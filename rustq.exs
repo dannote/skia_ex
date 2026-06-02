@@ -23,6 +23,10 @@ generate :generated_resources, "native/skia_native/src/generated_resources.rs" d
   build(&Skia.Codegen.generated_resources/0)
 end
 
+generate :generated_dispatch, "native/skia_native/src/generated_dispatch.rs" do
+  build(&Skia.Codegen.generated_dispatch/0)
+end
+
 generate :command_docs, "docs/commands.md" do
   build(&Skia.Codegen.generated_docs/0)
 end
