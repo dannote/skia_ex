@@ -9,10 +9,10 @@ defmodule Skia.Native do
   def render_rgba(_batch), do: :erlang.nif_error(:nif_not_loaded)
   def render_jpeg(_batch, _quality), do: :erlang.nif_error(:nif_not_loaded)
   def render_webp(_batch, _quality), do: :erlang.nif_error(:nif_not_loaded)
-  def decode_image(_binary), do: :erlang.nif_error(:nif_not_loaded)
+  def decode_image(_bytes), do: :erlang.nif_error(:nif_not_loaded)
   def encode_image(_image, _format, _quality), do: :erlang.nif_error(:nif_not_loaded)
   def resize_image(_image, _width, _height), do: :erlang.nif_error(:nif_not_loaded)
   def crop_image(_image, _source), do: :erlang.nif_error(:nif_not_loaded)
-  def load_font(_binary), do: :erlang.nif_error(:nif_not_loaded)
+  def load_font(_bytes), do: :erlang.nif_error(:nif_not_loaded)
   def measure_text(_text, _font, _size), do: :erlang.nif_error(:nif_not_loaded)
 end

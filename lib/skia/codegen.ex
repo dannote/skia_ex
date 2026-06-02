@@ -75,16 +75,56 @@ defmodule Skia.Codegen do
   ]
 
   @native_nifs [
-    render_png: [:batch],
-    render_rgba: [:batch],
-    render_jpeg: [:batch, :quality],
-    render_webp: [:batch, :quality],
-    decode_image: [:binary],
-    encode_image: [:image, :format, :quality],
-    resize_image: [:image, :width, :height],
-    crop_image: [:image, :source],
-    load_font: [:binary],
-    measure_text: [:text, :font, :size]
+    render_png: [
+      args: [env: "Env<'a>", batch: "Term<'a>"],
+      returns: "NifResult<Term<'a>>",
+      lifetime: :a
+    ],
+    render_rgba: [
+      args: [env: "Env<'a>", batch: "Term<'a>"],
+      returns: "NifResult<Term<'a>>",
+      lifetime: :a
+    ],
+    render_jpeg: [
+      args: [env: "Env<'a>", batch: "Term<'a>", quality: :u32],
+      returns: "NifResult<Term<'a>>",
+      lifetime: :a
+    ],
+    render_webp: [
+      args: [env: "Env<'a>", batch: "Term<'a>", quality: :u32],
+      returns: "NifResult<Term<'a>>",
+      lifetime: :a
+    ],
+    decode_image: [
+      args: [env: "Env<'a>", bytes: "Binary<'a>"],
+      returns: "NifResult<Term<'a>>",
+      lifetime: :a
+    ],
+    encode_image: [
+      args: [env: "Env<'a>", image_term: "Term<'a>", format: :Atom, quality: :u32],
+      returns: "NifResult<Term<'a>>",
+      lifetime: :a
+    ],
+    resize_image: [
+      args: [env: "Env<'a>", image_term: "Term<'a>", width: :i32, height: :i32],
+      returns: "NifResult<Term<'a>>",
+      lifetime: :a
+    ],
+    crop_image: [
+      args: [env: "Env<'a>", image_term: "Term<'a>", source: "(f64, f64, f64, f64)"],
+      returns: "NifResult<Term<'a>>",
+      lifetime: :a
+    ],
+    load_font: [
+      args: [env: "Env<'a>", bytes: "Binary<'a>"],
+      returns: "NifResult<Term<'a>>",
+      lifetime: :a
+    ],
+    measure_text: [
+      args: [env: "Env<'a>", text: :String, font_term: "Term<'a>", size: :f64],
+      returns: "NifResult<Term<'a>>",
+      lifetime: :a
+    ]
   ]
 
   @draw_handlers %{
@@ -142,8 +182,14 @@ defmodule Skia.Codegen do
   def generated_native do
     functions =
       @native_nifs
-      |> Enum.map_join("\n", fn {name, args} ->
-        args = Enum.map_join(args, ", ", &"_#{&1}")
+      |> Enum.map_join("\n", fn {name, spec} ->
+        args =
+          spec
+          |> Keyword.fetch!(:args)
+          |> Keyword.keys()
+          |> Enum.reject(&(&1 == :env))
+          |> elixir_nif_args()
+
         "  def #{name}(#{args}), do: :erlang.nif_error(:nif_not_loaded)"
       end)
 
@@ -158,6 +204,36 @@ defmodule Skia.Codegen do
     #{functions}
     end
     """
+  end
+
+  defp elixir_nif_args(args), do: Enum.map_join(args, ", ", &"_#{elixir_arg_name(&1)}")
+
+  defp elixir_arg_name(:env), do: :env
+  defp elixir_arg_name(:image_term), do: :image
+  defp elixir_arg_name(:font_term), do: :font
+  defp elixir_arg_name(name), do: name
+
+  @spec generated_native_nifs() :: String.t()
+  def generated_native_nifs do
+    wrappers = Enum.map(@native_nifs, fn {name, spec} -> native_nif_wrapper(name, spec) end)
+
+    "generated_nifs.rs"
+    |> template_path()
+    |> RustQ.render_file!(preamble: generated_rust_preamble(), splice: [items: wrappers])
+  end
+
+  defp native_nif_wrapper(name, spec) do
+    args = Keyword.fetch!(spec, :args)
+    call_args = args |> Keyword.keys() |> Enum.map_join(", ", &to_string/1)
+
+    name
+    |> Rust.fn(
+      args: args,
+      returns: Keyword.fetch!(spec, :returns),
+      lifetime: Keyword.fetch!(spec, :lifetime),
+      body: "#{name}_impl(#{call_args})"
+    )
+    |> Rust.attr(~s|rustler::nif(schedule = "DirtyCpu")|)
   end
 
   @spec generated_atoms() :: String.t()

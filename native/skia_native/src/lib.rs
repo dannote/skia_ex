@@ -16,23 +16,21 @@ mod atoms {
 mod generated_enums;
 mod generated_opts;
 
-#[rustler::nif(schedule = "DirtyCpu")]
-fn render_png<'a>(env: Env<'a>, batch: Term<'a>) -> NifResult<Term<'a>> {
+include!("generated_nifs.rs");
+
+fn render_png_impl<'a>(env: Env<'a>, batch: Term<'a>) -> NifResult<Term<'a>> {
     encode_rendered(env, batch, EncodedImageFormat::PNG, 100)
 }
 
-#[rustler::nif(schedule = "DirtyCpu")]
-fn render_jpeg<'a>(env: Env<'a>, batch: Term<'a>, quality: u32) -> NifResult<Term<'a>> {
+fn render_jpeg_impl<'a>(env: Env<'a>, batch: Term<'a>, quality: u32) -> NifResult<Term<'a>> {
     encode_rendered(env, batch, EncodedImageFormat::JPEG, quality)
 }
 
-#[rustler::nif(schedule = "DirtyCpu")]
-fn render_webp<'a>(env: Env<'a>, batch: Term<'a>, quality: u32) -> NifResult<Term<'a>> {
+fn render_webp_impl<'a>(env: Env<'a>, batch: Term<'a>, quality: u32) -> NifResult<Term<'a>> {
     encode_rendered(env, batch, EncodedImageFormat::WEBP, quality)
 }
 
-#[rustler::nif(schedule = "DirtyCpu")]
-fn render_rgba<'a>(env: Env<'a>, batch: Term<'a>) -> NifResult<Term<'a>> {
+fn render_rgba_impl<'a>(env: Env<'a>, batch: Term<'a>) -> NifResult<Term<'a>> {
     let width = batch.map_get(atoms::width())?.decode::<i32>()?;
     let height = batch.map_get(atoms::height())?.decode::<i32>()?;
     let mut surface = match render_surface(batch)? {
@@ -60,8 +58,7 @@ fn render_rgba<'a>(env: Env<'a>, batch: Term<'a>) -> NifResult<Term<'a>> {
         .encode(env))
 }
 
-#[rustler::nif(schedule = "DirtyCpu")]
-fn decode_image<'a>(env: Env<'a>, bytes: Binary<'a>) -> NifResult<Term<'a>> {
+fn decode_image_impl<'a>(env: Env<'a>, bytes: Binary<'a>) -> NifResult<Term<'a>> {
     let data = Data::new_copy(bytes.as_slice());
     let image = match Image::from_encoded(data) {
         Some(image) => image,
@@ -75,8 +72,7 @@ fn decode_image<'a>(env: Env<'a>, bytes: Binary<'a>) -> NifResult<Term<'a>> {
     Ok((atoms::ok(), resource, image.width(), image.height()).encode(env))
 }
 
-#[rustler::nif(schedule = "DirtyCpu")]
-fn encode_image<'a>(
+fn encode_image_impl<'a>(
     env: Env<'a>,
     image_term: Term<'a>,
     format: Atom,
@@ -99,8 +95,7 @@ fn encode_image<'a>(
     }
 }
 
-#[rustler::nif(schedule = "DirtyCpu")]
-fn resize_image<'a>(
+fn resize_image_impl<'a>(
     env: Env<'a>,
     image_term: Term<'a>,
     width: i32,
@@ -122,8 +117,7 @@ fn resize_image<'a>(
         .encode(env))
 }
 
-#[rustler::nif(schedule = "DirtyCpu")]
-fn crop_image<'a>(
+fn crop_image_impl<'a>(
     env: Env<'a>,
     image_term: Term<'a>,
     source: (f64, f64, f64, f64),
@@ -147,8 +141,7 @@ fn crop_image<'a>(
         .encode(env))
 }
 
-#[rustler::nif(schedule = "DirtyCpu")]
-fn load_font<'a>(env: Env<'a>, bytes: Binary<'a>) -> NifResult<Term<'a>> {
+fn load_font_impl<'a>(env: Env<'a>, bytes: Binary<'a>) -> NifResult<Term<'a>> {
     if FontMgr::new()
         .new_from_data(bytes.as_slice(), None)
         .is_none()
@@ -165,8 +158,7 @@ fn load_font<'a>(env: Env<'a>, bytes: Binary<'a>) -> NifResult<Term<'a>> {
         .encode(env))
 }
 
-#[rustler::nif(schedule = "DirtyCpu")]
-fn measure_text<'a>(
+fn measure_text_impl<'a>(
     env: Env<'a>,
     text: String,
     font_term: Term<'a>,

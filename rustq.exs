@@ -7,6 +7,10 @@ generate :native, "lib/skia/native.ex" do
   build(&Skia.Codegen.generated_native/0)
 end
 
+generate :generated_nifs, "native/skia_native/src/generated_nifs.rs" do
+  build(&Skia.Codegen.generated_native_nifs/0)
+end
+
 generate :generated_atoms, "native/skia_native/src/generated_atoms.rs" do
   build(&Skia.Codegen.generated_atoms/0)
 end
