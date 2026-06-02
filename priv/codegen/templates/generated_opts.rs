@@ -4,4 +4,4 @@ use rustler::{Atom, NifResult, Term};
 
 use super::{atoms, opt_atom_option, opt_bool_option, opt_f32, opt_f32_option, opt_term};
 
-__splice_commands!();
+__rq_commands!();

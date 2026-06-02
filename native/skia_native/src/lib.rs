@@ -2,9 +2,9 @@
 
 use rustler::{Atom, Binary, Encoder, Env, NifResult, OwnedBinary, Resource, ResourceArc, Term};
 use skia_safe::{
-    paint, surfaces, AlphaType, BlendMode, Color, ColorType, Data, EncodedImageFormat, FilterMode,
-    Font, FontMgr, FontStyle, IPoint, Image, ImageInfo, Paint, PaintStyle, PathBuilder,
-    PathFillType, Point, RRect, Rect, SamplingOptions, Shader, TileMode,
+    surfaces, AlphaType, Color, ColorType, Data, EncodedImageFormat, FilterMode, Font, FontMgr,
+    FontStyle, IPoint, Image, ImageInfo, Paint, PaintStyle, PathBuilder, Point, RRect, Rect,
+    SamplingOptions, Shader, TileMode,
 };
 
 struct EncodedImage {
@@ -619,29 +619,11 @@ fn stroke_paint(color: Color, width: f32, opts: &[(Atom, Term)]) -> NifResult<Pa
 
 fn apply_stroke_options(paint: &mut Paint, opts: &[(Atom, Term)]) -> NifResult<()> {
     if let Some(term) = opt_term(opts, atoms::stroke_cap()) {
-        let cap = term.decode::<Atom>()?;
-        if cap == atoms::butt() {
-            paint.set_stroke_cap(paint::Cap::Butt);
-        } else if cap == atoms::round() {
-            paint.set_stroke_cap(paint::Cap::Round);
-        } else if cap == atoms::square() {
-            paint.set_stroke_cap(paint::Cap::Square);
-        } else {
-            return Err(rustler::Error::BadArg);
-        }
+        paint.set_stroke_cap(generated_enums::decode_stroke_cap(term.decode::<Atom>()?)?);
     }
 
     if let Some(term) = opt_term(opts, atoms::stroke_join()) {
-        let join = term.decode::<Atom>()?;
-        if join == atoms::miter() {
-            paint.set_stroke_join(paint::Join::Miter);
-        } else if join == atoms::round() {
-            paint.set_stroke_join(paint::Join::Round);
-        } else if join == atoms::bevel() {
-            paint.set_stroke_join(paint::Join::Bevel);
-        } else {
-            return Err(rustler::Error::BadArg);
-        }
+        paint.set_stroke_join(generated_enums::decode_stroke_join(term.decode::<Atom>()?)?);
     }
 
     if let Some(miter) = opt_f32_option(opts, atoms::stroke_miter())? {
@@ -653,41 +635,14 @@ fn apply_stroke_options(paint: &mut Paint, opts: &[(Atom, Term)]) -> NifResult<(
 
 fn apply_blend_mode(paint: &mut Paint, opts: &[(Atom, Term)]) -> NifResult<()> {
     if let Some(term) = opt_term(opts, atoms::blend_mode()) {
-        paint.set_blend_mode(decode_blend_mode(term.decode::<Atom>()?)?);
+        paint.set_blend_mode(generated_enums::decode_blend_mode(term.decode::<Atom>()?)?);
     }
     Ok(())
 }
 
-fn decode_blend_mode(mode: Atom) -> NifResult<BlendMode> {
-    if mode == atoms::src_over() {
-        Ok(BlendMode::SrcOver)
-    } else if mode == atoms::multiply() {
-        Ok(BlendMode::Multiply)
-    } else if mode == atoms::screen() {
-        Ok(BlendMode::Screen)
-    } else if mode == atoms::overlay() {
-        Ok(BlendMode::Overlay)
-    } else if mode == atoms::darken() {
-        Ok(BlendMode::Darken)
-    } else if mode == atoms::lighten() {
-        Ok(BlendMode::Lighten)
-    } else if mode == atoms::clear_mode() {
-        Ok(BlendMode::Clear)
-    } else {
-        Err(rustler::Error::BadArg)
-    }
-}
-
 fn apply_fill_rule(path: &mut skia_safe::Path, opts: &[(Atom, Term)]) -> NifResult<()> {
     if let Some(term) = opt_term(opts, atoms::fill_rule()) {
-        let rule = term.decode::<Atom>()?;
-        if rule == atoms::winding() {
-            path.set_fill_type(PathFillType::Winding);
-        } else if rule == atoms::even_odd() {
-            path.set_fill_type(PathFillType::EvenOdd);
-        } else {
-            return Err(rustler::Error::BadArg);
-        }
+        path.set_fill_type(generated_enums::decode_fill_rule(term.decode::<Atom>()?)?);
     }
     Ok(())
 }
@@ -760,16 +715,9 @@ fn rect_from_term(term: Term) -> NifResult<Rect> {
 
 fn opt_sampling<'a>(opts: &[(Atom, Term<'a>)], key: Atom) -> NifResult<SamplingOptions> {
     match opt_term(opts, key) {
-        Some(term) => {
-            let sampling = term.decode::<Atom>()?;
-            if sampling == atoms::linear() {
-                Ok(SamplingOptions::from(FilterMode::Linear))
-            } else if sampling == atoms::nearest() {
-                Ok(SamplingOptions::from(FilterMode::Nearest))
-            } else {
-                Err(rustler::Error::BadArg)
-            }
-        }
+        Some(term) => Ok(SamplingOptions::from(generated_enums::decode_sampling(
+            term.decode::<Atom>()?,
+        )?)),
         None => Ok(SamplingOptions::default()),
     }
 }

@@ -27,6 +27,25 @@ defmodule Skia.Codegen do
     blend_mode: [:src_over, :multiply, :screen, :overlay, :darken, :lighten, :clear_mode]
   }
 
+  @enum_decoders %{
+    sampling: [type: :FilterMode, variants: [nearest: :Nearest, linear: :Linear]],
+    stroke_cap: [type: "paint::Cap", variants: [butt: :Butt, round: :Round, square: :Square]],
+    stroke_join: [type: "paint::Join", variants: [miter: :Miter, round: :Round, bevel: :Bevel]],
+    fill_rule: [type: :PathFillType, variants: [winding: :Winding, even_odd: :EvenOdd]],
+    blend_mode: [
+      type: :BlendMode,
+      variants: [
+        src_over: :SrcOver,
+        multiply: :Multiply,
+        screen: :Screen,
+        overlay: :Overlay,
+        darken: :Darken,
+        lighten: :Lighten,
+        clear_mode: :Clear
+      ]
+    ]
+  }
+
   @native_atoms [
     :ok,
     :error,
@@ -119,9 +138,17 @@ defmodule Skia.Codegen do
         )
       end)
 
+    decoders =
+      @enum_decoders
+      |> Enum.sort_by(&elem(&1, 0))
+      |> Enum.map(fn {name, spec} -> enum_decoder(name, spec) end)
+
     "generated_enums.rs"
     |> template_path()
-    |> RustQ.render_file!(preamble: generated_rust_preamble(), splice: [entries: entries])
+    |> RustQ.render_file!(
+      preamble: generated_rust_preamble(),
+      splice: [entries: entries, decoders: decoders]
+    )
   end
 
   defp generated_rust_preamble do
@@ -136,6 +163,33 @@ defmodule Skia.Codegen do
   defp enum_values(values) do
     values = Enum.map_join(values, ", ", &inspect(to_string(&1)))
     "&[#{values}]"
+  end
+
+  defp enum_decoder(name, spec) do
+    arms =
+      spec
+      |> Keyword.fetch!(:variants)
+      |> Enum.map(fn {atom, variant} ->
+        Rust.arm(
+          "value if value == atoms::#{atom}()",
+          "Ok(#{Rust.type(Keyword.fetch!(spec, :type))}::#{variant})"
+        )
+      end)
+      |> Kernel.++([Rust.arm("_", "Err(rustler::Error::BadArg)")])
+
+    RustQ.render!(
+      """
+      pub fn __rq_fn_name(value: Atom) -> NifResult<__rq_type!()> {
+          match value {
+              __rq_arms => unreachable!(),
+          }
+      }
+      """,
+      "enum_decoder.rs",
+      bind: [fn_name: "decode_#{name}", type: {:type, Keyword.fetch!(spec, :type)}],
+      splice: [arms: arms]
+    )
+    |> Rust.item()
   end
 
   @spec generated_opts() :: String.t()
