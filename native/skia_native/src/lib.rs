@@ -250,44 +250,50 @@ fn render_surface(batch: Term) -> NifResult<Result<skia_safe::Surface, Atom>> {
 }
 
 include!("generated_dispatch.rs");
+include!("generated_handlers.rs");
 
-fn draw_save(surface: &mut skia_safe::Surface, _command: Term) -> NifResult<()> {
+fn draw_save_impl(surface: &mut skia_safe::Surface) -> NifResult<()> {
     surface.canvas().save();
     Ok(())
 }
 
-fn draw_save_layer(surface: &mut skia_safe::Surface, command: Term) -> NifResult<()> {
-    let opts = decode_opts(command)?;
-    let layer_opts = generated_opts::decode_save_layer_opts(&opts)?;
+fn draw_save_layer_impl<'a>(
+    surface: &mut skia_safe::Surface,
+    layer_opts: generated_opts::SaveLayerOpts<'a>,
+    _opts: &[(Atom, Term<'a>)],
+) -> NifResult<()> {
     surface
         .canvas()
         .save_layer_alpha_f(None, layer_opts.opacity.unwrap_or(1.0).clamp(0.0, 1.0));
     Ok(())
 }
 
-fn draw_restore(surface: &mut skia_safe::Surface, _command: Term) -> NifResult<()> {
+fn draw_restore_impl(surface: &mut skia_safe::Surface) -> NifResult<()> {
     surface.canvas().restore();
     Ok(())
 }
 
-fn draw_translate(surface: &mut skia_safe::Surface, command: Term) -> NifResult<()> {
-    let opts = decode_opts(command)?;
-    let translate_opts = generated_opts::decode_translate_opts(&opts)?;
+fn draw_translate_impl<'a>(
+    surface: &mut skia_safe::Surface,
+    translate_opts: generated_opts::TranslateOpts<'a>,
+    _opts: &[(Atom, Term<'a>)],
+) -> NifResult<()> {
     surface
         .canvas()
         .translate((translate_opts.x, translate_opts.y));
     Ok(())
 }
 
-fn draw_rotate(surface: &mut skia_safe::Surface, command: Term) -> NifResult<()> {
-    let opts = decode_opts(command)?;
-    let rotate_opts = generated_opts::decode_rotate_opts(&opts)?;
+fn draw_rotate_impl<'a>(
+    surface: &mut skia_safe::Surface,
+    rotate_opts: generated_opts::RotateOpts<'a>,
+    _opts: &[(Atom, Term<'a>)],
+) -> NifResult<()> {
     surface.canvas().rotate(rotate_opts.degrees, None);
     Ok(())
 }
 
-fn draw_clear(surface: &mut skia_safe::Surface, command: Term) -> NifResult<()> {
-    let args = command.map_get(atoms::args())?.decode::<Vec<Term>>()?;
+fn draw_clear_impl<'a>(surface: &mut skia_safe::Surface, args: Vec<Term<'a>>) -> NifResult<()> {
 
     if let Some(color) = args.first().and_then(|term| decode_color(*term).ok()) {
         surface.canvas().clear(color);
@@ -296,16 +302,20 @@ fn draw_clear(surface: &mut skia_safe::Surface, command: Term) -> NifResult<()> 
     Ok(())
 }
 
-fn draw_rect(surface: &mut skia_safe::Surface, command: Term) -> NifResult<()> {
-    let opts = decode_opts(command)?;
-    let rect_opts = generated_opts::decode_rect_opts(&opts)?;
+fn draw_rect_impl<'a>(
+    surface: &mut skia_safe::Surface,
+    rect_opts: generated_opts::RectOpts<'a>,
+    opts: &[(Atom, Term<'a>)],
+) -> NifResult<()> {
     let rect = Rect::from_xywh(rect_opts.x, rect_opts.y, rect_opts.width, rect_opts.height);
     draw_rect_shape(surface, rect, rect_opts.radius.unwrap_or(0.0), &opts)
 }
 
-fn draw_circle(surface: &mut skia_safe::Surface, command: Term) -> NifResult<()> {
-    let opts = decode_opts(command)?;
-    let circle_opts = generated_opts::decode_circle_opts(&opts)?;
+fn draw_circle_impl<'a>(
+    surface: &mut skia_safe::Surface,
+    circle_opts: generated_opts::CircleOpts<'a>,
+    opts: &[(Atom, Term<'a>)],
+) -> NifResult<()> {
     let center = Point::new(circle_opts.x, circle_opts.y);
 
     if let Some(paint) = opt_fill_paint(&opts, atoms::fill())? {
@@ -324,9 +334,11 @@ fn draw_circle(surface: &mut skia_safe::Surface, command: Term) -> NifResult<()>
     Ok(())
 }
 
-fn draw_line(surface: &mut skia_safe::Surface, command: Term) -> NifResult<()> {
-    let opts = decode_opts(command)?;
-    let line_opts = generated_opts::decode_line_opts(&opts)?;
+fn draw_line_impl<'a>(
+    surface: &mut skia_safe::Surface,
+    line_opts: generated_opts::LineOpts<'a>,
+    opts: &[(Atom, Term<'a>)],
+) -> NifResult<()> {
     let color = decode_color(line_opts.stroke)?;
     let paint = stroke_paint(color, line_opts.stroke_width.unwrap_or(1.0), &opts)?;
 
@@ -338,14 +350,16 @@ fn draw_line(surface: &mut skia_safe::Surface, command: Term) -> NifResult<()> {
     Ok(())
 }
 
-fn draw_text(surface: &mut skia_safe::Surface, command: Term) -> NifResult<()> {
-    let args = command.map_get(atoms::args())?.decode::<Vec<Term>>()?;
+fn draw_text_impl<'a>(
+    surface: &mut skia_safe::Surface,
+    args: Vec<Term<'a>>,
+    text_opts: generated_opts::TextOpts<'a>,
+    _opts: &[(Atom, Term<'a>)],
+) -> NifResult<()> {
     let text = args
         .first()
         .ok_or(rustler::Error::BadArg)?
         .decode::<String>()?;
-    let opts = decode_opts(command)?;
-    let text_opts = generated_opts::decode_text_opts(&opts)?;
     let size = text_opts.size.unwrap_or(16.0);
     let mut font = match text_opts.font {
         Some(term) => font_from_term(term, size)?,
@@ -363,11 +377,13 @@ fn draw_text(surface: &mut skia_safe::Surface, command: Term) -> NifResult<()> {
     Ok(())
 }
 
-fn draw_image(surface: &mut skia_safe::Surface, command: Term) -> NifResult<()> {
-    let args = command.map_get(atoms::args())?.decode::<Vec<Term>>()?;
+fn draw_image_impl<'a>(
+    surface: &mut skia_safe::Surface,
+    args: Vec<Term<'a>>,
+    image_opts: generated_opts::ImageOpts<'a>,
+    opts: &[(Atom, Term<'a>)],
+) -> NifResult<()> {
     let image = image_from_term(*args.first().ok_or(rustler::Error::BadArg)?)?;
-    let opts = decode_opts(command)?;
-    let image_opts = generated_opts::decode_image_opts(&opts)?;
     let mut paint = Paint::default();
     paint.set_anti_alias(true);
 
@@ -417,11 +433,13 @@ fn draw_image(surface: &mut skia_safe::Surface, command: Term) -> NifResult<()> 
     Ok(())
 }
 
-fn draw_path(surface: &mut skia_safe::Surface, command: Term) -> NifResult<()> {
-    let args = command.map_get(atoms::args())?.decode::<Vec<Term>>()?;
+fn draw_path_impl<'a>(
+    surface: &mut skia_safe::Surface,
+    args: Vec<Term<'a>>,
+    path_opts: generated_opts::PathOpts<'a>,
+    opts: &[(Atom, Term<'a>)],
+) -> NifResult<()> {
     let mut path = build_path(*args.first().ok_or(rustler::Error::BadArg)?)?;
-    let opts = decode_opts(command)?;
-    let path_opts = generated_opts::decode_path_opts(&opts)?;
     apply_fill_rule(&mut path, &opts)?;
 
     if let Some(fill) = path_opts.fill {
@@ -444,9 +462,11 @@ fn draw_path(surface: &mut skia_safe::Surface, command: Term) -> NifResult<()> {
     Ok(())
 }
 
-fn clip_rect(surface: &mut skia_safe::Surface, command: Term) -> NifResult<()> {
-    let opts = decode_opts(command)?;
-    let clip_opts = generated_opts::decode_clip_rect_opts(&opts)?;
+fn clip_rect_impl<'a>(
+    surface: &mut skia_safe::Surface,
+    clip_opts: generated_opts::ClipRectOpts<'a>,
+    _opts: &[(Atom, Term<'a>)],
+) -> NifResult<()> {
     let rect = Rect::from_xywh(clip_opts.x, clip_opts.y, clip_opts.width, clip_opts.height);
     let radius = clip_opts.radius.unwrap_or(0.0);
     let antialias = clip_opts.antialias.unwrap_or(true);
@@ -462,9 +482,11 @@ fn clip_rect(surface: &mut skia_safe::Surface, command: Term) -> NifResult<()> {
     Ok(())
 }
 
-fn clip_circle(surface: &mut skia_safe::Surface, command: Term) -> NifResult<()> {
-    let opts = decode_opts(command)?;
-    let clip_opts = generated_opts::decode_clip_circle_opts(&opts)?;
+fn clip_circle_impl<'a>(
+    surface: &mut skia_safe::Surface,
+    clip_opts: generated_opts::ClipCircleOpts<'a>,
+    _opts: &[(Atom, Term<'a>)],
+) -> NifResult<()> {
     let mut builder = PathBuilder::new();
     builder.add_circle(Point::new(clip_opts.x, clip_opts.y), clip_opts.radius, None);
     surface
@@ -473,11 +495,13 @@ fn clip_circle(surface: &mut skia_safe::Surface, command: Term) -> NifResult<()>
     Ok(())
 }
 
-fn clip_path(surface: &mut skia_safe::Surface, command: Term) -> NifResult<()> {
-    let args = command.map_get(atoms::args())?.decode::<Vec<Term>>()?;
+fn clip_path_impl<'a>(
+    surface: &mut skia_safe::Surface,
+    args: Vec<Term<'a>>,
+    clip_opts: generated_opts::ClipPathOpts<'a>,
+    opts: &[(Atom, Term<'a>)],
+) -> NifResult<()> {
     let mut path = build_path(*args.first().ok_or(rustler::Error::BadArg)?)?;
-    let opts = decode_opts(command)?;
-    let clip_opts = generated_opts::decode_clip_path_opts(&opts)?;
     apply_fill_rule(&mut path, &opts)?;
     surface
         .canvas()

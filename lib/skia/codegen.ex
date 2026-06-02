@@ -145,6 +145,24 @@ defmodule Skia.Codegen do
     rotate: :draw_rotate
   }
 
+  @draw_handler_specs %{
+    draw_clear: [args: true],
+    draw_rect: [opts: :rect],
+    draw_circle: [opts: :circle],
+    draw_line: [opts: :line],
+    draw_text: [args: true, opts: :text],
+    draw_image: [args: true, opts: :image],
+    draw_path: [args: true, opts: :path],
+    clip_rect: [opts: :clip_rect],
+    clip_circle: [opts: :clip_circle],
+    clip_path: [args: true, opts: :clip_path],
+    draw_save: [],
+    draw_save_layer: [opts: :save_layer],
+    draw_restore: [],
+    draw_translate: [opts: :translate],
+    draw_rotate: [opts: :rotate]
+  }
+
   @native_refs %{
     rect: ["skia_safe::Canvas::draw_rect", "skia_safe::Canvas::draw_rrect"],
     circle: ["skia_safe::Canvas::draw_circle"],
@@ -364,6 +382,73 @@ defmodule Skia.Codegen do
     |> template_path()
     |> RustQ.render_file!(preamble: generated_rust_preamble(), splice: [items: [item]])
   end
+
+  @spec generated_handlers() :: String.t()
+  def generated_handlers do
+    handlers =
+      @draw_handlers
+      |> Map.values()
+      |> Enum.uniq()
+      |> Enum.sort()
+      |> Enum.map(fn name -> draw_handler(name, Map.fetch!(@draw_handler_specs, name)) end)
+
+    "generated_handlers.rs"
+    |> template_path()
+    |> RustQ.render_file!(preamble: generated_rust_preamble(), splice: [items: handlers])
+  end
+
+  defp draw_handler(name, spec) do
+    args_decode =
+      if Keyword.get(spec, :args),
+        do: "let args = command.map_get(atoms::args())?.decode::<Vec<Term>>()?;",
+        else: ""
+
+    opts = Keyword.get(spec, :opts)
+
+    opts_decode =
+      if opts,
+        do:
+          "let opts = decode_opts(command)?;\nlet decoded_opts = generated_opts::decode_#{opts}_opts(&opts)?;",
+        else: ""
+
+    call_args =
+      ["surface"]
+      |> append_if(Keyword.get(spec, :args), "args")
+      |> append_if(opts, "decoded_opts")
+      |> append_if(opts, "&opts")
+      |> Enum.join(", ")
+
+    RustQ.render!(
+      """
+      #[allow(unused_variables)]
+      fn __rq_fn_name<'a>(surface: &mut skia_safe::Surface, command: Term<'a>) -> NifResult<()> {
+          __rq_body!();
+      }
+      """,
+      "draw_handler.rs",
+      bind: [fn_name: to_string(name)],
+      splice: [
+        body: draw_handler_stmts(args_decode, opts_decode, "return #{name}_impl(#{call_args})")
+      ]
+    )
+    |> Rust.item()
+  end
+
+  defp draw_handler_stmts(args_decode, opts_decode, call) do
+    [args_decode, opts_decode, call]
+    |> Enum.reject(&(&1 == ""))
+    |> Enum.flat_map(fn code -> code |> String.split("\n") |> Enum.map(&stmt/1) end)
+  end
+
+  defp stmt(code) do
+    code = String.trim(code)
+    code = if String.ends_with?(code, ";"), do: code, else: code <> ";"
+    Rust.stmt(code)
+  end
+
+  defp append_if(values, nil, _value), do: values
+  defp append_if(values, false, _value), do: values
+  defp append_if(values, _condition, value), do: values ++ [value]
 
   @spec generated_resources() :: String.t()
   def generated_resources do
