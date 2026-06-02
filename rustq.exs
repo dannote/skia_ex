@@ -15,6 +15,10 @@ generate :generated_opts, "native/skia_native/src/generated_opts.rs" do
   build(&Skia.Codegen.generated_opts/0)
 end
 
+generate :generated_resources, "native/skia_native/src/generated_resources.rs" do
+  build(&Skia.Codegen.generated_resources/0)
+end
+
 generate :command_docs, "docs/commands.md" do
   build(&Skia.Codegen.generated_docs/0)
 end

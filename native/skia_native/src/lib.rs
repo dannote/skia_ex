@@ -1,25 +1,13 @@
 #![allow(deprecated)]
 
-use rustler::{Atom, Binary, Encoder, Env, NifResult, OwnedBinary, Resource, ResourceArc, Term};
+use rustler::{Atom, Binary, Encoder, Env, NifResult, OwnedBinary, ResourceArc, Term};
 use skia_safe::{
     surfaces, AlphaType, Color, ColorType, Data, EncodedImageFormat, FilterMode, Font, FontMgr,
     FontStyle, IPoint, Image, ImageInfo, Paint, PaintStyle, PathBuilder, Point, RRect, Rect,
     SamplingOptions, Shader, TileMode,
 };
 
-struct EncodedImage {
-    bytes: Vec<u8>,
-}
-
-#[rustler::resource_impl]
-impl Resource for EncodedImage {}
-
-struct EncodedFont {
-    bytes: Vec<u8>,
-}
-
-#[rustler::resource_impl]
-impl Resource for EncodedFont {}
+include!("generated_resources.rs");
 
 mod atoms {
     include!("generated_atoms.rs");

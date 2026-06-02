@@ -15,6 +15,10 @@ defmodule Skia.Codegen do
         build: &generated_enums/0
       ],
       generated_opts: [path: "native/skia_native/src/generated_opts.rs", build: &generated_opts/0],
+      generated_resources: [
+        path: "native/skia_native/src/generated_resources.rs",
+        build: &generated_resources/0
+      ],
       command_docs: [path: "docs/commands.md", build: &generated_docs/0]
     ]
   end
@@ -190,6 +194,20 @@ defmodule Skia.Codegen do
       splice: [arms: arms]
     )
     |> Rust.item()
+  end
+
+  @spec generated_resources() :: String.t()
+  def generated_resources do
+    resources =
+      [
+        RustQ.Rustler.resource(:EncodedImage, fields: [bytes: "Vec<u8>"]),
+        RustQ.Rustler.resource(:EncodedFont, fields: [bytes: "Vec<u8>"])
+      ]
+      |> List.flatten()
+
+    "generated_resources.rs"
+    |> template_path()
+    |> RustQ.render_file!(preamble: generated_rust_preamble(), splice: [items: resources])
   end
 
   @spec generated_opts() :: String.t()
