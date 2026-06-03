@@ -251,6 +251,7 @@ fn render_surface(batch: Term) -> NifResult<Result<skia_safe::Surface, Atom>> {
 
 include!("generated_dispatch.rs");
 include!("generated_handlers.rs");
+include!("generated_style_helpers.rs");
 
 fn draw_save_impl(surface: &mut skia_safe::Surface) -> NifResult<()> {
     surface.canvas().save();
@@ -601,36 +602,6 @@ fn stroke_paint(color: Color, width: f32, opts: &[(Atom, Term)]) -> NifResult<Pa
     apply_stroke_options(&mut paint, opts)?;
     apply_blend_mode(&mut paint, opts)?;
     Ok(paint)
-}
-
-fn apply_stroke_options(paint: &mut Paint, opts: &[(Atom, Term)]) -> NifResult<()> {
-    if let Some(term) = opt_term(opts, atoms::stroke_cap()) {
-        paint.set_stroke_cap(generated_enums::decode_stroke_cap(term.decode::<Atom>()?)?);
-    }
-
-    if let Some(term) = opt_term(opts, atoms::stroke_join()) {
-        paint.set_stroke_join(generated_enums::decode_stroke_join(term.decode::<Atom>()?)?);
-    }
-
-    if let Some(miter) = opt_f32_option(opts, atoms::stroke_miter())? {
-        paint.set_stroke_miter(miter);
-    }
-
-    Ok(())
-}
-
-fn apply_blend_mode(paint: &mut Paint, opts: &[(Atom, Term)]) -> NifResult<()> {
-    if let Some(term) = opt_term(opts, atoms::blend_mode()) {
-        paint.set_blend_mode(generated_enums::decode_blend_mode(term.decode::<Atom>()?)?);
-    }
-    Ok(())
-}
-
-fn apply_fill_rule(path: &mut skia_safe::Path, opts: &[(Atom, Term)]) -> NifResult<()> {
-    if let Some(term) = opt_term(opts, atoms::fill_rule()) {
-        path.set_fill_type(generated_enums::decode_fill_rule(term.decode::<Atom>()?)?);
-    }
-    Ok(())
 }
 
 fn binary<'a>(env: Env<'a>, bytes: &[u8]) -> NifResult<Binary<'a>> {

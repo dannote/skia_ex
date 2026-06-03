@@ -163,6 +163,19 @@ defmodule Skia.Codegen do
     draw_rotate: [opts: :rotate]
   }
 
+  @paint_enum_options [
+    [name: :blend_mode, setter: :set_blend_mode, decoder: :decode_blend_mode]
+  ]
+
+  @stroke_enum_options [
+    [name: :stroke_cap, setter: :set_stroke_cap, decoder: :decode_stroke_cap],
+    [name: :stroke_join, setter: :set_stroke_join, decoder: :decode_stroke_join]
+  ]
+
+  @path_enum_options [
+    [name: :fill_rule, setter: :set_fill_type, decoder: :decode_fill_rule]
+  ]
+
   @native_refs %{
     rect: ["skia_safe::Canvas::draw_rect", "skia_safe::Canvas::draw_rrect"],
     circle: ["skia_safe::Canvas::draw_circle"],
@@ -381,6 +394,63 @@ defmodule Skia.Codegen do
     "generated_dispatch.rs"
     |> template_path()
     |> RustQ.render_file!(preamble: generated_rust_preamble(), splice: [items: [item]])
+  end
+
+  @spec generated_style_helpers() :: String.t()
+  def generated_style_helpers do
+    helpers = [
+      enum_option_applicator(:apply_blend_mode, :paint, "&mut Paint", @paint_enum_options),
+      stroke_options_applicator(),
+      enum_option_applicator(:apply_fill_rule, :path, "&mut skia_safe::Path", @path_enum_options)
+    ]
+
+    "generated_style_helpers.rs"
+    |> template_path()
+    |> RustQ.render_file!(preamble: generated_rust_preamble(), splice: [items: helpers])
+  end
+
+  defp enum_option_applicator(name, target_name, target_type, options) do
+    Rust.fn(name,
+      args: [{target_name, target_type}, {:opts, "&[(Atom, Term<'a>)]"}],
+      returns: "NifResult<()>",
+      lifetime: :a,
+      body: option_applicator_body(target_name, options)
+    )
+  end
+
+  defp stroke_options_applicator do
+    body =
+      :paint
+      |> enum_option_lines(@stroke_enum_options)
+      |> Kernel.++([
+        "if let Some(miter) = opt_f32_option(opts, atoms::stroke_miter())? { paint.set_stroke_miter(miter); }",
+        "Ok(())"
+      ])
+      |> Enum.join("\n")
+
+    Rust.fn(:apply_stroke_options,
+      args: [paint: "&mut Paint", opts: "&[(Atom, Term<'a>)]"],
+      returns: "NifResult<()>",
+      lifetime: :a,
+      body: body
+    )
+  end
+
+  defp option_applicator_body(target_name, options) do
+    target_name
+    |> enum_option_lines(options)
+    |> Kernel.++(["Ok(())"])
+    |> Enum.join("\n")
+  end
+
+  defp enum_option_lines(target_name, options) do
+    Enum.map(options, fn option ->
+      name = Keyword.fetch!(option, :name)
+      setter = Keyword.fetch!(option, :setter)
+      decoder = Keyword.fetch!(option, :decoder)
+
+      "if let Some(term) = opt_term(opts, atoms::#{name}()) { #{target_name}.#{setter}(generated_enums::#{decoder}(term.decode::<Atom>()?)?); }"
+    end)
   end
 
   @spec generated_handlers() :: String.t()
