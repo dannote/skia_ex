@@ -418,32 +418,29 @@ defmodule Skia.Codegen do
       |> append_if(opts, "&opts")
       |> Enum.join(", ")
 
-    RustQ.render!(
-      """
-      #[allow(unused_variables)]
-      fn __rq_fn_name<'a>(surface: &mut skia_safe::Surface, command: Term<'a>) -> NifResult<()> {
-          __rq_body!();
-      }
-      """,
-      "draw_handler.rs",
-      bind: [fn_name: to_string(name)],
-      splice: [
-        body: draw_handler_stmts(args_decode, opts_decode, "return #{name}_impl(#{call_args})")
-      ]
+    Rust.fn(name,
+      args: [
+        {:surface, "&mut skia_safe::Surface"},
+        {command_arg(spec), "Term<'a>"}
+      ],
+      returns: "NifResult<()>",
+      lifetime: :a,
+      body: draw_handler_body(args_decode, opts_decode, "#{name}_impl(#{call_args})")
     )
-    |> Rust.item()
   end
 
-  defp draw_handler_stmts(args_decode, opts_decode, call) do
-    [args_decode, opts_decode, call]
+  defp command_arg(spec) do
+    if Keyword.get(spec, :args) || Keyword.get(spec, :opts), do: :command, else: :_command
+  end
+
+  defp draw_handler_body(args_decode, opts_decode, call) do
+    [args_decode, opts_decode]
     |> Enum.reject(&(&1 == ""))
-    |> Enum.flat_map(fn code -> code |> String.split("\n") |> Enum.map(&stmt/1) end)
-  end
-
-  defp stmt(code) do
-    code = String.trim(code)
-    code = if String.ends_with?(code, ";"), do: code, else: code <> ";"
-    Rust.stmt(code)
+    |> Enum.map_join("\n", &String.trim/1)
+    |> case do
+      "" -> call
+      prefix -> prefix <> "\n" <> call
+    end
   end
 
   defp append_if(values, nil, _value), do: values
