@@ -5,15 +5,15 @@ struct EncodedImage {
 }
 #[rustler::resource_impl]
 impl rustler::Resource for EncodedImage {}
+fn decode_encoded_image_ref<'a>(term: Term<'a>) -> NifResult<ResourceArc<EncodedImage>> {
+    term.map_get(Atom::from_bytes(term.get_env(), b"ref")?)?
+        .decode::<ResourceArc<EncodedImage>>()
+}
 struct EncodedFont {
     pub bytes: Vec<u8>,
 }
 #[rustler::resource_impl]
 impl rustler::Resource for EncodedFont {}
-fn decode_encoded_image_ref<'a>(term: Term<'a>) -> NifResult<ResourceArc<EncodedImage>> {
-    term.map_get(Atom::from_bytes(term.get_env(), b"ref")?)?
-        .decode::<ResourceArc<EncodedImage>>()
-}
 fn decode_encoded_font_ref<'a>(term: Term<'a>) -> NifResult<ResourceArc<EncodedFont>> {
     term.map_get(Atom::from_bytes(term.get_env(), b"ref")?)?
         .decode::<ResourceArc<EncodedFont>>()
