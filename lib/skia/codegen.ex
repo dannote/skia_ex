@@ -246,25 +246,14 @@ defmodule Skia.Codegen do
 
   @spec generated_native_nifs() :: String.t()
   def generated_native_nifs do
-    wrappers = Enum.map(@native_nifs, fn {name, spec} -> native_nif_wrapper(name, spec) end)
+    wrappers =
+      @native_nifs
+      |> Enum.map(fn {name, spec} -> {name, Keyword.put(spec, :schedule, :dirty_cpu)} end)
+      |> RustQ.Rustler.nif_exports()
 
     "generated_nifs.rs"
     |> template_path()
     |> RustQ.render_file!(preamble: generated_rust_preamble(), splice: [items: wrappers])
-  end
-
-  defp native_nif_wrapper(name, spec) do
-    args = Keyword.fetch!(spec, :args)
-    call_args = args |> Keyword.keys() |> Enum.map_join(", ", &to_string/1)
-
-    name
-    |> Rust.fn(
-      args: args,
-      returns: Keyword.fetch!(spec, :returns),
-      lifetime: Keyword.fetch!(spec, :lifetime),
-      body: "#{name}_impl(#{call_args})"
-    )
-    |> Rust.attr(~s|rustler::nif(schedule = "DirtyCpu")|)
   end
 
   @spec generated_atoms() :: String.t()
