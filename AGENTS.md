@@ -10,4 +10,5 @@ mix ci
 ## Conventions
 
 - Use the project Mix aliases; prefer `mix ci` for the full validation suite.
+- GitHub CI uses the shared `elixir-vibe/actions/.github/workflows/elixir-rustler-ci.yml` workflow for Rustler setup and Cargo caching.
 - Keep changes small, tested, and formatted.
