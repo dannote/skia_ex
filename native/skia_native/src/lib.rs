@@ -79,14 +79,9 @@ fn encode_image_impl<'a>(
     quality: u32,
 ) -> NifResult<Term<'a>> {
     let image = image_from_term(image_term)?;
-    let format = if format == Atom::from_bytes(env, b"png")? {
-        EncodedImageFormat::PNG
-    } else if format == Atom::from_bytes(env, b"jpeg")? {
-        EncodedImageFormat::JPEG
-    } else if format == Atom::from_bytes(env, b"webp")? {
-        EncodedImageFormat::WEBP
-    } else {
-        return Ok((atoms::error(), atoms::unsupported_format()).encode(env));
+    let format = match generated_enums::decode_encoded_image_format(format) {
+        Ok(format) => format,
+        Err(_) => return Ok((atoms::error(), atoms::unsupported_format()).encode(env)),
     };
 
     match image.encode(None, format, quality.clamp(0, 100)) {
@@ -611,49 +606,7 @@ fn binary<'a>(env: Env<'a>, bytes: &[u8]) -> NifResult<Binary<'a>> {
     Ok(Binary::from_owned(owned, env))
 }
 
-fn decode_opts<'a>(command: Term<'a>) -> NifResult<Vec<(Atom, Term<'a>)>> {
-    command
-        .map_get(atoms::opts())?
-        .decode::<Vec<(Atom, Term<'a>)>>()
-}
-
-fn opt_f32<'a>(opts: &[(Atom, Term<'a>)], key: Atom) -> NifResult<f32> {
-    opt_f32_default(opts, key, f32::NAN).and_then(|value| {
-        if value.is_nan() {
-            Err(rustler::Error::BadArg)
-        } else {
-            Ok(value)
-        }
-    })
-}
-
-fn opt_f32_option<'a>(opts: &[(Atom, Term<'a>)], key: Atom) -> NifResult<Option<f32>> {
-    match opt_term(opts, key) {
-        Some(term) => Ok(Some(term.decode::<f64>()? as f32)),
-        None => Ok(None),
-    }
-}
-
-fn opt_f32_default<'a>(opts: &[(Atom, Term<'a>)], key: Atom, default: f32) -> NifResult<f32> {
-    match opt_term(opts, key) {
-        Some(term) => Ok(term.decode::<f64>()? as f32),
-        None => Ok(default),
-    }
-}
-
-fn opt_bool_option<'a>(opts: &[(Atom, Term<'a>)], key: Atom) -> NifResult<Option<bool>> {
-    match opt_term(opts, key) {
-        Some(term) => Ok(Some(term.decode::<bool>()?)),
-        None => Ok(None),
-    }
-}
-
-fn opt_atom_option<'a>(opts: &[(Atom, Term<'a>)], key: Atom) -> NifResult<Option<Atom>> {
-    match opt_term(opts, key) {
-        Some(term) => Ok(Some(term.decode::<Atom>()?)),
-        None => Ok(None),
-    }
-}
+include!("generated_opts_helpers.rs");
 
 fn point_from_term(term: Term) -> NifResult<Point> {
     let (x, y) = term.decode::<(f64, f64)>()?;
@@ -758,11 +711,6 @@ fn decode_paint(term: Term) -> NifResult<Paint> {
 
 fn decode_colors(colors: Vec<Term>) -> NifResult<Vec<Color>> {
     colors.into_iter().map(decode_color).collect()
-}
-
-fn opt_term<'a>(opts: &[(Atom, Term<'a>)], key: Atom) -> Option<Term<'a>> {
-    opts.iter()
-        .find_map(|(option_key, value)| (*option_key == key).then_some(*value))
 }
 
 fn decode_color(term: Term) -> NifResult<Color> {

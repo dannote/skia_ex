@@ -23,6 +23,10 @@ generate :generated_opts, "native/skia_native/src/generated_opts.rs" do
   build(&Skia.Codegen.generated_opts/0)
 end
 
+generate :generated_opts_helpers, "native/skia_native/src/generated_opts_helpers.rs" do
+  build(&Skia.Codegen.generated_opts_helpers/0)
+end
+
 generate :generated_resources, "native/skia_native/src/generated_resources.rs" do
   build(&Skia.Codegen.generated_resources/0)
 end

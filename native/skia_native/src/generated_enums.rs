@@ -2,7 +2,7 @@
 
 #![allow(dead_code)]
 use rustler::{Atom, NifResult};
-use skia_safe::{paint, BlendMode, FilterMode, PathFillType};
+use skia_safe::{paint, BlendMode, EncodedImageFormat, FilterMode, PathFillType};
 use super::atoms;
 pub const BLEND_MODES: &[&str] = &[
     "src_over",
@@ -26,6 +26,14 @@ pub fn decode_blend_mode(value: Atom) -> NifResult<BlendMode> {
         value if value == atoms::darken() => Ok(BlendMode::Darken),
         value if value == atoms::lighten() => Ok(BlendMode::Lighten),
         value if value == atoms::clear_mode() => Ok(BlendMode::Clear),
+        _ => Err(rustler::Error::BadArg),
+    }
+}
+pub fn decode_encoded_image_format(value: Atom) -> NifResult<EncodedImageFormat> {
+    match value {
+        value if value == atoms::png() => Ok(EncodedImageFormat::PNG),
+        value if value == atoms::jpeg() => Ok(EncodedImageFormat::JPEG),
+        value if value == atoms::webp() => Ok(EncodedImageFormat::WEBP),
         _ => Err(rustler::Error::BadArg),
     }
 }
