@@ -3,6 +3,7 @@ defmodule Skia.Codegen do
 
   alias RustQ.Rust
   alias Skia.Codegen.SkiaSafe
+  alias Skia.CommandSpec.Transforms
 
   @spec generated_targets() :: [{atom(), keyword()}]
   def generated_targets do
@@ -509,7 +510,41 @@ defmodule Skia.Codegen do
   def generated_layers, do: render_template_file("generated_layers.rs")
 
   @spec generated_transforms() :: String.t()
-  def generated_transforms, do: render_template_file("generated_transforms.rs")
+  def generated_transforms do
+    Transforms.commands()
+    |> generated_native_call_impls()
+    |> render_items("generated_transforms.rs")
+  end
+
+  defp generated_native_call_impls(commands) do
+    commands
+    |> Enum.filter(fn {_name, spec} -> Keyword.has_key?(spec, :native_call) end)
+    |> Enum.map(fn {name, spec} -> native_call_impl(name, spec) end)
+  end
+
+  defp native_call_impl(name, spec) do
+    call = Keyword.fetch!(spec, :native_call)
+    handler = Keyword.fetch!(spec, :handler)
+    opts_type = name |> Atom.to_string() |> Macro.camelize() |> Kernel.<>("Opts")
+    setup = call |> Keyword.get(:setup, []) |> Enum.join("\n    ")
+    setup = if setup == "", do: "", else: setup <> "\n    "
+    receiver = native_call_receiver(Keyword.fetch!(call, :receiver))
+    method = Keyword.fetch!(call, :method)
+    args = call |> Keyword.get(:args, []) |> Enum.join(", ")
+
+    Rust.item("""
+    fn #{handler}_impl<'a>(
+        surface: &mut skia_safe::Surface,
+        opts: generated_opts::#{opts_type}<'a>,
+        _raw_opts: &[(Atom, Term<'a>)],
+    ) -> NifResult<()> {
+        #{setup}#{receiver}.#{method}(#{args});
+        Ok(())
+    }
+    """)
+  end
+
+  defp native_call_receiver(:canvas), do: "surface.canvas()"
 
   @spec generated_shapes() :: String.t()
   def generated_shapes, do: render_template_file("generated_shapes.rs")

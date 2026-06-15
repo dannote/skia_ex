@@ -3,9 +3,12 @@ fn decode_paint(term: Term) -> NifResult<Paint> {
         return Ok(fill_paint(color));
     }
 
-    if let Ok((tag, from, to, stops)) = term.decode::<(Atom, (f64, f64), (f64, f64), Vec<Term>)>() {
+    if let Ok((tag, from, to, stops, matrix_term)) =
+        term.decode::<(Atom, (f64, f64), (f64, f64), Vec<Term>, Term)>()
+    {
         if tag == atoms::linear_gradient() {
             let (colors, positions) = decode_gradient_stops(stops)?;
+            let matrix = optional_matrix_from_term(matrix_term)?;
             let mut paint = Paint::default();
             paint.set_anti_alias(true).set_style(PaintStyle::Fill);
             if let Some(shader) = Shader::linear_gradient(
@@ -14,7 +17,7 @@ fn decode_paint(term: Term) -> NifResult<Paint> {
                 positions.as_deref(),
                 TileMode::Clamp,
                 None,
-                None,
+                matrix.as_ref(),
             ) {
                 paint.set_shader(shader);
             }
@@ -22,9 +25,12 @@ fn decode_paint(term: Term) -> NifResult<Paint> {
         }
     }
 
-    if let Ok((tag, center, radius, stops)) = term.decode::<(Atom, (f64, f64), f64, Vec<Term>)>() {
+    if let Ok((tag, center, radius, stops, matrix_term)) =
+        term.decode::<(Atom, (f64, f64), f64, Vec<Term>, Term)>()
+    {
         if tag == atoms::radial_gradient() {
             let (colors, positions) = decode_gradient_stops(stops)?;
+            let matrix = optional_matrix_from_term(matrix_term)?;
             let mut paint = Paint::default();
             paint.set_anti_alias(true).set_style(PaintStyle::Fill);
             if let Some(shader) = Shader::radial_gradient(
@@ -34,7 +40,7 @@ fn decode_paint(term: Term) -> NifResult<Paint> {
                 positions.as_deref(),
                 TileMode::Clamp,
                 None,
-                None,
+                matrix.as_ref(),
             ) {
                 paint.set_shader(shader);
             }
@@ -42,11 +48,12 @@ fn decode_paint(term: Term) -> NifResult<Paint> {
         }
     }
 
-    if let Ok((tag, center, start_degrees, end_degrees, stops)) =
-        term.decode::<(Atom, (f64, f64), f64, f64, Vec<Term>)>()
+    if let Ok((tag, center, start_degrees, end_degrees, stops, matrix_term)) =
+        term.decode::<(Atom, (f64, f64), f64, f64, Vec<Term>, Term)>()
     {
         if tag == atoms::sweep_gradient() {
             let (colors, positions) = decode_gradient_stops(stops)?;
+            let matrix = optional_matrix_from_term(matrix_term)?;
             let mut paint = Paint::default();
             paint.set_anti_alias(true).set_style(PaintStyle::Fill);
             if let Some(shader) = Shader::sweep_gradient(
@@ -56,7 +63,7 @@ fn decode_paint(term: Term) -> NifResult<Paint> {
                 TileMode::Clamp,
                 Some((start_degrees as f32, end_degrees as f32)),
                 None,
-                None,
+                matrix.as_ref(),
             ) {
                 paint.set_shader(shader);
             }
@@ -72,11 +79,7 @@ fn decode_paint(term: Term) -> NifResult<Paint> {
             let tile_x = generated_enums::decode_tile_mode(tile_x)?;
             let tile_y = generated_enums::decode_tile_mode(tile_y)?;
             let sampling = SamplingOptions::from(generated_enums::decode_sampling(sampling)?);
-            let matrix = if matrix_term.decode::<Atom>().is_ok_and(|atom| atom == atoms::nil()) {
-                None
-            } else {
-                Some(matrix_from_term(matrix_term)?)
-            };
+            let matrix = optional_matrix_from_term(matrix_term)?;
             let mut paint = Paint::default();
             paint.set_anti_alias(true).set_style(PaintStyle::Fill);
             if let Some(shader) = image.to_shader((tile_x, tile_y), sampling, matrix.as_ref()) {
@@ -87,6 +90,14 @@ fn decode_paint(term: Term) -> NifResult<Paint> {
     }
 
     Err(rustler::Error::BadArg)
+}
+
+fn optional_matrix_from_term(matrix_term: Term) -> NifResult<Option<Matrix>> {
+    if matrix_term.decode::<Atom>().is_ok_and(|atom| atom == atoms::nil()) {
+        Ok(None)
+    } else {
+        Ok(Some(matrix_from_term(matrix_term)?))
+    }
 }
 
 fn decode_gradient_stops(stops: Vec<Term>) -> NifResult<(Vec<Color>, Option<Vec<f32>>)> {

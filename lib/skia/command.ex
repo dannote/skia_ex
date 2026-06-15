@@ -101,25 +101,32 @@ defmodule Skia.Command do
     raise ArgumentError, "expected #{length(types)}-tuple, got #{inspect(value)}"
   end
 
-  defp normalize_color!(%Skia.Shader.LinearGradient{from: from, to: to, colors: colors}) do
-    normalize_color!({:linear_gradient, from, to, colors})
+  defp normalize_color!(%Skia.Shader.LinearGradient{
+         from: from,
+         to: to,
+         colors: colors,
+         matrix: matrix
+       }) do
+    normalize_color!({:linear_gradient, from, to, colors, matrix})
   end
 
   defp normalize_color!(%Skia.Shader.RadialGradient{
          center: center,
          radius: radius,
-         colors: colors
+         colors: colors,
+         matrix: matrix
        }) do
-    normalize_color!({:radial_gradient, center, radius, colors})
+    normalize_color!({:radial_gradient, center, radius, colors, matrix})
   end
 
   defp normalize_color!(%Skia.Shader.SweepGradient{
          center: center,
          start_degrees: start_degrees,
          end_degrees: end_degrees,
-         colors: colors
+         colors: colors,
+         matrix: matrix
        }) do
-    normalize_color!({:sweep_gradient, center, start_degrees, end_degrees, colors})
+    normalize_color!({:sweep_gradient, center, start_degrees, end_degrees, colors, matrix})
   end
 
   defp normalize_color!(%Skia.Shader.ImageShader{} = shader) do
@@ -141,19 +148,34 @@ defmodule Skia.Command do
   end
 
   defp normalize_color!({:linear_gradient, from, to, colors}) when is_list(colors) do
+    normalize_color!({:linear_gradient, from, to, colors, nil})
+  end
+
+  defp normalize_color!({:linear_gradient, from, to, colors, matrix}) when is_list(colors) do
     {:linear_gradient, normalize_point!(from), normalize_point!(to),
-     Enum.map(colors, &normalize_color!/1)}
+     Enum.map(colors, &normalize_color!/1), normalize_optional_matrix!(matrix)}
   end
 
   defp normalize_color!({:radial_gradient, center, radius, colors}) when is_list(colors) do
+    normalize_color!({:radial_gradient, center, radius, colors, nil})
+  end
+
+  defp normalize_color!({:radial_gradient, center, radius, colors, matrix})
+       when is_list(colors) do
     {:radial_gradient, normalize_point!(center), normalize_number!(radius),
-     Enum.map(colors, &normalize_color!/1)}
+     Enum.map(colors, &normalize_color!/1), normalize_optional_matrix!(matrix)}
   end
 
   defp normalize_color!({:sweep_gradient, center, start_degrees, end_degrees, colors})
        when is_list(colors) do
+    normalize_color!({:sweep_gradient, center, start_degrees, end_degrees, colors, nil})
+  end
+
+  defp normalize_color!({:sweep_gradient, center, start_degrees, end_degrees, colors, matrix})
+       when is_list(colors) do
     {:sweep_gradient, normalize_point!(center), normalize_number!(start_degrees),
-     normalize_number!(end_degrees), Enum.map(colors, &normalize_color!/1)}
+     normalize_number!(end_degrees), Enum.map(colors, &normalize_color!/1),
+     normalize_optional_matrix!(matrix)}
   end
 
   defp normalize_color!({:rgba, red, green, blue, alpha}) do

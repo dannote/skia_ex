@@ -1,15 +1,25 @@
 defmodule Skia.Shader.LinearGradient do
   @moduledoc "Linear gradient paint source."
 
-  @type t :: %__MODULE__{from: {float(), float()}, to: {float(), float()}, colors: [term()]}
-  defstruct [:from, :to, :colors]
+  @type t :: %__MODULE__{
+          from: {float(), float()},
+          to: {float(), float()},
+          colors: [term()],
+          matrix: tuple() | nil
+        }
+  defstruct [:from, :to, :colors, :matrix]
 end
 
 defmodule Skia.Shader.RadialGradient do
   @moduledoc "Radial gradient paint source."
 
-  @type t :: %__MODULE__{center: {float(), float()}, radius: float(), colors: [term()]}
-  defstruct [:center, :radius, :colors]
+  @type t :: %__MODULE__{
+          center: {float(), float()},
+          radius: float(),
+          colors: [term()],
+          matrix: tuple() | nil
+        }
+  defstruct [:center, :radius, :colors, :matrix]
 end
 
 defmodule Skia.Shader.SweepGradient do
@@ -19,9 +29,10 @@ defmodule Skia.Shader.SweepGradient do
           center: {float(), float()},
           start_degrees: float(),
           end_degrees: float(),
-          colors: [term()]
+          colors: [term()],
+          matrix: tuple() | nil
         }
-  defstruct [:center, :start_degrees, :end_degrees, :colors]
+  defstruct [:center, :start_degrees, :end_degrees, :colors, :matrix]
 end
 
 defmodule Skia.Shader.ImageShader do

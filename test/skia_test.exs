@@ -316,6 +316,38 @@ defmodule SkiaTest do
     assert byte_size(raw.data) == 64
   end
 
+  test "supports gradient local matrices" do
+    document =
+      Skia.canvas(4, 4)
+      |> Skia.rect(
+        x: 0,
+        y: 0,
+        width: 4,
+        height: 4,
+        fill: Skia.linear_gradient({0, 0}, {4, 0}, [:red, :blue], matrix: {1, 0, 1, 0, 1, 0})
+      )
+      |> Skia.rect(
+        x: 0,
+        y: 0,
+        width: 4,
+        height: 4,
+        fill: Skia.radial_gradient({2, 2}, 2, [:white, :black], matrix: {1, 0, 0, 0, 1, 1}),
+        blend_mode: :screen
+      )
+      |> Skia.rect(
+        x: 0,
+        y: 0,
+        width: 4,
+        height: 4,
+        fill:
+          Skia.sweep_gradient({2, 2}, 0, 180, [:green, :transparent], matrix: {1, 0, 0, 0, 1, 0}),
+        blend_mode: :overlay
+      )
+
+    assert {:ok, raw} = Skia.to_raw(document)
+    assert byte_size(raw.data) == 64
+  end
+
   test "supports image shader fills" do
     source =
       Skia.canvas(2, 1)

@@ -16,26 +16,37 @@ defmodule Skia do
   def canvas(width, height), do: Document.new(width, height)
 
   @doc "Creates a linear gradient paint value."
-  @spec linear_gradient({number(), number()}, {number(), number()}, [term()]) ::
+  @spec linear_gradient({number(), number()}, {number(), number()}, [term()], keyword()) ::
           Skia.Shader.LinearGradient.t()
-  def linear_gradient(from, to, colors),
-    do: %Skia.Shader.LinearGradient{from: from, to: to, colors: colors}
+  def linear_gradient(from, to, colors, opts \\ []),
+    do: %Skia.Shader.LinearGradient{
+      from: from,
+      to: to,
+      colors: colors,
+      matrix: Keyword.get(opts, :matrix)
+    }
 
   @doc "Creates a radial gradient paint value."
-  @spec radial_gradient({number(), number()}, number(), [term()]) ::
+  @spec radial_gradient({number(), number()}, number(), [term()], keyword()) ::
           Skia.Shader.RadialGradient.t()
-  def radial_gradient(center, radius, colors),
-    do: %Skia.Shader.RadialGradient{center: center, radius: radius, colors: colors}
+  def radial_gradient(center, radius, colors, opts \\ []),
+    do: %Skia.Shader.RadialGradient{
+      center: center,
+      radius: radius,
+      colors: colors,
+      matrix: Keyword.get(opts, :matrix)
+    }
 
   @doc "Creates a sweep/conic gradient paint value."
-  @spec sweep_gradient({number(), number()}, number(), number(), [term()]) ::
+  @spec sweep_gradient({number(), number()}, number(), number(), [term()], keyword()) ::
           Skia.Shader.SweepGradient.t()
-  def sweep_gradient(center, start_degrees, end_degrees, colors) do
+  def sweep_gradient(center, start_degrees, end_degrees, colors, opts \\ []) do
     %Skia.Shader.SweepGradient{
       center: center,
       start_degrees: start_degrees,
       end_degrees: end_degrees,
-      colors: colors
+      colors: colors,
+      matrix: Keyword.get(opts, :matrix)
     }
   end
 
