@@ -17,7 +17,7 @@ doc =
     y: 0,
     width: 160,
     height: 100,
-    fill: Skia.image_shader(image, tile: :repeat, sampling: Skia.SamplingOptions.nearest())
+    fill: Skia.Shader.image(image, tile: :repeat, sampling: Skia.SamplingOptions.nearest())
   )
 
 {:ok, png} = Skia.to_png(doc)

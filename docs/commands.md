@@ -4,7 +4,7 @@
 
 | Command | Args | Options | Defaults | Native references |
 | --- | --- | --- | --- | --- |
-| `background` | `color: color` | — | — | `skia_safe::Canvas::clear` |
+| `clear` | `color: color` | — | — | `skia_safe::Canvas::clear` |
 | `rect` | — | `x: number` required<br>`y: number` required<br>`width: number` required<br>`height: number` required<br>`radius: number`<br>`paint: paint`<br>`fill: color`<br>`stroke: color`<br>`stroke_width: number`<br>`stroke_cap: stroke_cap`<br>`stroke_join: stroke_join`<br>`stroke_miter: number`<br>`blend_mode: blend_mode`<br>`image_filter: image_filter`<br>`path_effect: path_effect`<br>`color_filter: color_filter` | `radius: 0` | `skia_safe::Canvas::draw_rect`<br>`skia_safe::Canvas::draw_rrect` |
 | `oval` | — | `x: number` required<br>`y: number` required<br>`width: number` required<br>`height: number` required<br>`paint: paint`<br>`fill: color`<br>`stroke: color`<br>`stroke_width: number`<br>`stroke_cap: stroke_cap`<br>`stroke_join: stroke_join`<br>`stroke_miter: number`<br>`blend_mode: blend_mode`<br>`image_filter: image_filter`<br>`path_effect: path_effect`<br>`color_filter: color_filter` | — | `skia_safe::Canvas::draw_oval` |
 | `arc` | — | `x: number` required<br>`y: number` required<br>`width: number` required<br>`height: number` required<br>`start_degrees: number` required<br>`sweep_degrees: number` required<br>`use_center: boolean`<br>`paint: paint`<br>`fill: color`<br>`stroke: color`<br>`stroke_width: number`<br>`stroke_cap: stroke_cap`<br>`stroke_join: stroke_join`<br>`stroke_miter: number`<br>`blend_mode: blend_mode`<br>`image_filter: image_filter`<br>`path_effect: path_effect`<br>`color_filter: color_filter` | `use_center: false` | `skia_safe::Canvas::draw_arc` |

@@ -6,7 +6,7 @@ filter =
 
 doc =
   Skia.canvas(160, 100)
-  |> Skia.background("#111827")
+  |> Skia.clear("#111827")
   |> Skia.layer([image_filter: filter], fn layer ->
     Skia.rect(layer, x: 30, y: 20, width: 80, height: 48, radius: 12, fill: :red)
   end)

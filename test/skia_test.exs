@@ -4,7 +4,7 @@ defmodule SkiaTest do
   test "inspects core data structures compactly" do
     document =
       Skia.canvas(800, 600)
-      |> Skia.background(:white)
+      |> Skia.clear(:white)
 
     [command] = Skia.commands(document)
 
@@ -21,7 +21,7 @@ defmodule SkiaTest do
   test "builds fluent command batches" do
     batch =
       Skia.canvas(800, 600)
-      |> Skia.background(:white)
+      |> Skia.clear(:white)
       |> Skia.rect(x: 40, y: 40, width: 200, height: 100, radius: 12, fill: "#ef4444")
       |> Skia.text("Hello", x: 60, y: 100, size: 32)
       |> Skia.to_batch()
@@ -45,7 +45,7 @@ defmodule SkiaTest do
 
       def document do
         canvas 400, 300 do
-          background(:black)
+          clear(:black)
 
           group translate: {20, 30}, rotate: 15 do
             style fill: :white, font: "Inter" do
@@ -75,7 +75,7 @@ defmodule SkiaTest do
   test "renders a raw RGBA buffer through the native batch boundary" do
     document =
       Skia.canvas(2, 1)
-      |> Skia.background(:red)
+      |> Skia.clear(:red)
 
     assert {:ok, raw} = Skia.to_raw(document)
     assert raw.width == 2
@@ -100,7 +100,7 @@ defmodule SkiaTest do
         y: 0,
         width: 8,
         height: 1,
-        fill: Skia.linear_gradient({0, 0}, {8, 0}, [:red, :blue])
+        fill: Skia.Shader.linear_gradient({0, 0}, {8, 0}, [:red, :blue])
       )
 
     assert {:ok, raw} = Skia.to_raw(document)
@@ -110,7 +110,7 @@ defmodule SkiaTest do
   test "renders JPEG through the native batch boundary" do
     document =
       Skia.canvas(2, 2)
-      |> Skia.background(:white)
+      |> Skia.clear(:white)
 
     assert {:ok, jpeg} = Skia.to_jpeg(document)
     assert <<255, 216, 255, _rest::binary>> = jpeg
@@ -119,7 +119,7 @@ defmodule SkiaTest do
   test "encodes debuggable command batches" do
     batch =
       Skia.canvas(8, 8)
-      |> Skia.background(:white)
+      |> Skia.clear(:white)
       |> Skia.to_batch()
       |> :erlang.term_to_binary()
       |> :erlang.binary_to_term()
@@ -134,7 +134,7 @@ defmodule SkiaTest do
 
     document =
       Skia.canvas(4, 4)
-      |> Skia.background(:transparent)
+      |> Skia.clear(:transparent)
       |> Skia.layer([image_filter: filter], fn doc ->
         Skia.circle(doc, x: 2, y: 2, radius: 1, fill: :red)
       end)
@@ -149,7 +149,7 @@ defmodule SkiaTest do
 
     document =
       Skia.canvas(4, 4)
-      |> Skia.background(:transparent)
+      |> Skia.clear(:transparent)
       |> Skia.layer([image_filter: filter], fn doc ->
         Skia.rect(doc, x: 1, y: 1, width: 2, height: 2, fill: :red)
       end)
@@ -161,7 +161,7 @@ defmodule SkiaTest do
   test "renders layers with generic image filters" do
     document =
       Skia.canvas(4, 4)
-      |> Skia.background(:transparent)
+      |> Skia.clear(:transparent)
       |> Skia.layer([image_filter: Skia.ImageFilter.blur(1.0, tile: :decal)], fn doc ->
         Skia.circle(doc, x: 2, y: 2, radius: 1, fill: :red)
       end)
@@ -173,7 +173,7 @@ defmodule SkiaTest do
   test "renders layers through the native batch boundary" do
     document =
       Skia.canvas(2, 1)
-      |> Skia.background(:transparent)
+      |> Skia.clear(:transparent)
       |> Skia.layer([opacity: 0.5], fn doc ->
         Skia.rect(doc, x: 0, y: 0, width: 2, height: 1, fill: :red)
       end)
@@ -187,7 +187,7 @@ defmodule SkiaTest do
   test "renders paths and text through the native batch boundary" do
     document =
       Skia.canvas(64, 64)
-      |> Skia.background(:white)
+      |> Skia.clear(:white)
       |> Skia.path(
         Skia.Path.new()
         |> Skia.Path.move_to(8, 8)
@@ -205,7 +205,7 @@ defmodule SkiaTest do
   test "decodes and draws image resources" do
     source =
       Skia.canvas(4, 4)
-      |> Skia.background(:blue)
+      |> Skia.clear(:blue)
 
     assert {:ok, png} = Skia.to_png(source)
     assert {:ok, image} = Skia.Image.decode(png)
@@ -215,7 +215,7 @@ defmodule SkiaTest do
 
     document =
       Skia.canvas(8, 8)
-      |> Skia.background(:white)
+      |> Skia.clear(:white)
       |> Skia.image(image, x: 2, y: 2, width: 4, height: 4)
 
     assert {:ok, rendered} = Skia.to_png(document)
@@ -225,7 +225,7 @@ defmodule SkiaTest do
   test "records and draws reusable Skia pictures" do
     source =
       Skia.canvas(4, 4)
-      |> Skia.background(:transparent)
+      |> Skia.clear(:transparent)
       |> Skia.rect(x: 0, y: 0, width: 4, height: 4, fill: :red)
 
     assert {:ok, picture} = Skia.Picture.record(source)
@@ -242,7 +242,7 @@ defmodule SkiaTest do
 
     document =
       Skia.canvas(8, 4)
-      |> Skia.background(:transparent)
+      |> Skia.clear(:transparent)
       |> Skia.picture(decoded, x: 4, y: 0)
 
     assert {:ok, raw} = Skia.to_raw(document)
@@ -253,7 +253,7 @@ defmodule SkiaTest do
 
     shader_doc =
       Skia.canvas(4, 4)
-      |> Skia.rect(x: 0, y: 0, width: 4, height: 4, fill: Skia.picture_shader(decoded))
+      |> Skia.rect(x: 0, y: 0, width: 4, height: 4, fill: Skia.Shader.picture(decoded))
 
     assert {:ok, shader_raw} = Skia.to_raw(shader_doc)
     assert byte_size(shader_raw.data) == 64
@@ -318,7 +318,7 @@ defmodule SkiaTest do
   test "supports blend modes and stroke styles" do
     document =
       Skia.canvas(2, 1)
-      |> Skia.background(:blue)
+      |> Skia.clear(:blue)
       |> Skia.rect(x: 0, y: 0, width: 1, height: 1, fill: :red, blend_mode: :multiply)
       |> Skia.line(
         from: {1, 0},
@@ -400,9 +400,9 @@ defmodule SkiaTest do
         width: 4,
         height: 4,
         fill:
-          Skia.sweep_gradient({2, 2}, 0, 360, [
-            Skia.gradient_stop(:red, 0),
-            Skia.gradient_stop(:blue, 1)
+          Skia.Shader.sweep_gradient({2, 2}, 0, 360, [
+            Skia.Shader.stop(:red, 0),
+            Skia.Shader.stop(:blue, 1)
           ])
       )
       |> Skia.rect(x: 0, y: 0, width: 2, height: 2, fill: :white, blend_mode: :soft_light)
@@ -420,7 +420,7 @@ defmodule SkiaTest do
         width: 4,
         height: 4,
         fill:
-          Skia.linear_gradient({0, 0}, {4, 0}, [:red, :blue],
+          Skia.Shader.linear_gradient({0, 0}, {4, 0}, [:red, :blue],
             tile: :mirror,
             matrix: Skia.Matrix.translate(1, 0)
           )
@@ -431,7 +431,7 @@ defmodule SkiaTest do
         width: 4,
         height: 4,
         fill:
-          Skia.radial_gradient({2, 2}, 2, [:white, :black],
+          Skia.Shader.radial_gradient({2, 2}, 2, [:white, :black],
             tile: :repeat,
             matrix: Skia.Matrix.translate(0, 1)
           ),
@@ -443,7 +443,7 @@ defmodule SkiaTest do
         width: 4,
         height: 4,
         fill:
-          Skia.sweep_gradient({2, 2}, 0, 180, [:green, :transparent],
+          Skia.Shader.sweep_gradient({2, 2}, 0, 180, [:green, :transparent],
             tile: :clamp,
             matrix: Skia.Matrix.identity()
           ),
@@ -470,7 +470,7 @@ defmodule SkiaTest do
         y: 0,
         width: 2,
         height: 1,
-        fill: Skia.image_shader(image, tile: :clamp, sampling: :nearest)
+        fill: Skia.Shader.image(image, tile: :clamp, sampling: :nearest)
       )
 
     assert {:ok, raw} = Skia.to_raw(document)
@@ -485,9 +485,9 @@ defmodule SkiaTest do
         y: 0,
         width: 4,
         height: 4,
-        fill: Skia.two_point_conical_gradient({1, 1}, 0.5, {3, 3}, 2, [:red, :blue])
+        fill: Skia.Shader.two_point_conical_gradient({1, 1}, 0.5, {3, 3}, 2, [:red, :blue])
       )
-      |> Skia.rect(x: 1, y: 1, width: 2, height: 2, fill: Skia.color_shader(:green))
+      |> Skia.rect(x: 1, y: 1, width: 2, height: 2, fill: Skia.Shader.color(:green))
 
     assert {:ok, raw} = Skia.to_raw(document)
     assert byte_size(raw.data) == 64
@@ -524,7 +524,7 @@ defmodule SkiaTest do
     document =
       Skia.canvas(4, 4)
       |> Skia.rect(x: 0, y: 0, width: 4, height: 4, fill: :red, color_filter: filter)
-      |> Skia.layer([image_filter: Skia.ImageFilter.shader(Skia.color_shader(:green))], & &1)
+      |> Skia.layer([image_filter: Skia.ImageFilter.shader(Skia.Shader.color(:green))], & &1)
       |> Skia.layer([image_filter: Skia.ImageFilter.color_filter(filter)], & &1)
 
     assert {:ok, raw} = Skia.to_raw(document)
@@ -554,7 +554,7 @@ defmodule SkiaTest do
         y: 0,
         width: 4,
         height: 4,
-        fill: Skia.image_shader(image, sampling: Skia.SamplingOptions.cubic(:catmull_rom))
+        fill: Skia.Shader.image(image, sampling: Skia.SamplingOptions.cubic(:catmull_rom))
       )
 
     assert {:ok, raw} = Skia.to_raw(document)
@@ -732,7 +732,7 @@ defmodule SkiaTest do
   test "compares normal compact and picture rendering overhead" do
     document =
       Skia.canvas(8, 8)
-      |> Skia.background(:white)
+      |> Skia.clear(:white)
       |> Skia.rect(x: 1, y: 1, width: 6, height: 6, fill: :red)
 
     assert {:ok, result} = Skia.Benchmark.compare(document, iterations: 1)
@@ -748,7 +748,7 @@ defmodule SkiaTest do
   test "renders compact batches through native compact renderer" do
     document =
       Skia.canvas(2, 1)
-      |> Skia.background(:red)
+      |> Skia.clear(:red)
 
     assert {:ok, raw} = Skia.Compact.to_raw(document)
     assert raw.data == <<255, 0, 0, 255, 255, 0, 0, 255>>
@@ -794,7 +794,7 @@ defmodule SkiaTest do
           y: 0,
           width: 8,
           height: 8,
-          fill: Skia.two_point_conical_gradient({2, 2}, 0.5, {6, 6}, 4, [:red, :blue])
+          fill: Skia.Shader.two_point_conical_gradient({2, 2}, 0.5, {6, 6}, 4, [:red, :blue])
         ),
       paint:
         Skia.canvas(8, 8)
@@ -932,14 +932,14 @@ defmodule SkiaTest do
           width: 8,
           height: 8,
           fill:
-            Skia.linear_gradient({0, 0}, {8, 0}, [
-              Skia.gradient_stop(:red, 0),
-              Skia.gradient_stop(:blue, 1)
+            Skia.Shader.linear_gradient({0, 0}, {8, 0}, [
+              Skia.Shader.stop(:red, 0),
+              Skia.Shader.stop(:blue, 1)
             ])
         ),
       blend:
         Skia.canvas(4, 4)
-        |> Skia.background(:blue)
+        |> Skia.clear(:blue)
         |> Skia.rect(x: 0, y: 0, width: 4, height: 4, fill: :red, blend_mode: :multiply),
       path:
         (fn ->
@@ -974,7 +974,7 @@ defmodule SkiaTest do
   test "renders a PNG through the native batch boundary" do
     document =
       Skia.canvas(32, 32)
-      |> Skia.background(:transparent)
+      |> Skia.clear(:transparent)
 
     assert {:ok, png} = Skia.to_png(document)
     assert <<137, 80, 78, 71, 13, 10, 26, 10, _rest::binary>> = png

@@ -1,6 +1,6 @@
 source =
   Skia.canvas(64, 64)
-  |> Skia.background(:transparent)
+  |> Skia.clear(:transparent)
   |> Skia.rect(x: 0, y: 0, width: 32, height: 64, fill: :red)
   |> Skia.rect(x: 32, y: 0, width: 32, height: 64, fill: :blue)
 
@@ -18,7 +18,7 @@ mask =
 
 document =
   Skia.canvas(160, 160)
-  |> Skia.background(:white)
+  |> Skia.clear(:white)
   |> Skia.clip_path(mask)
   |> Skia.image(resized, x: 16, y: 16, width: 128, height: 128, sampling: :linear)
 

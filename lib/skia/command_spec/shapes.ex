@@ -5,8 +5,7 @@ defmodule Skia.CommandSpec.Shapes do
 
   def commands do
     [
-      background: [
-        op: :clear,
+      clear: [
         handler: :draw_clear,
         args: [color: T.color()],
         opts: [],

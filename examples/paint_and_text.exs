@@ -3,14 +3,14 @@ IO.inspect(measurement, label: "measurement")
 
 document =
   Skia.canvas(320, 180)
-  |> Skia.background("#111827")
+  |> Skia.clear("#111827")
   |> Skia.rect(
     x: 24,
     y: 24,
     width: 272,
     height: 96,
     radius: 24,
-    fill: Skia.linear_gradient({24, 24}, {296, 120}, [:red, :blue])
+    fill: Skia.Shader.linear_gradient({24, 24}, {296, 120}, [:red, :blue])
   )
   |> Skia.line(
     from: {32, 144},

@@ -7,7 +7,7 @@ spans = [
 
 doc =
   Skia.canvas(240, 80)
-  |> Skia.background(:white)
+  |> Skia.clear(:white)
   |> Skia.text("", x: 12, y: 12, paragraph_style: Skia.ParagraphStyle.new(width: 220), spans: spans)
 
 {:ok, png} = Skia.to_png(doc)

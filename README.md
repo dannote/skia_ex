@@ -11,7 +11,7 @@ canvas operation.
 ```elixir
 document =
   Skia.canvas(1200, 630)
-  |> Skia.background("#020617")
+  |> Skia.clear("#020617")
   |> Skia.group([translate: {80, 80}], fn doc ->
     doc
     |> Skia.text("Launch Week", x: 48, y: 90, size: 56, weight: 700, fill: :white)
@@ -27,18 +27,18 @@ document =
 
 ```elixir
 fill =
-  Skia.two_point_conical_gradient({16, 16}, 0, {48, 48}, 32, [
-    Skia.gradient_stop(:red, 0),
-    Skia.gradient_stop(:blue, 1)
+  Skia.Shader.two_point_conical_gradient({16, 16}, 0, {48, 48}, 32, [
+    Skia.Shader.stop(:red, 0),
+    Skia.Shader.stop(:blue, 1)
   ], tile: :clamp, matrix: Skia.Matrix.rotate(0.2))
 
-solid_shader = Skia.color_shader(:green)
+solid_shader = Skia.Shader.color(:green)
 ```
 
 Image shaders support tile modes and rich sampling:
 
 ```elixir
-Skia.image_shader(image,
+Skia.Shader.image(image,
   tile: {:repeat, :mirror},
   sampling: Skia.SamplingOptions.cubic(:catmull_rom),
   matrix: Skia.Matrix.scale(2, 2)
@@ -136,7 +136,7 @@ Record reusable drawing subtrees as Skia pictures and replay them later:
 Skia.canvas(256, 64)
 |> Skia.picture(picture, x: 96, y: 0, opacity: 0.75)
 
-Skia.rect(doc, x: 0, y: 0, width: 128, height: 128, fill: Skia.picture_shader(picture))
+Skia.rect(doc, x: 0, y: 0, width: 128, height: 128, fill: Skia.Shader.picture(picture))
 ```
 
 ## Fonts

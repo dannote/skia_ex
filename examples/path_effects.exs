@@ -11,7 +11,7 @@ effect =
 
 doc =
   Skia.canvas(160, 100)
-  |> Skia.background(:white)
+  |> Skia.clear(:white)
   |> Skia.path(path, stroke: :blue, stroke_width: 4, path_effect: effect)
 
 {:ok, png} = Skia.to_png(doc)

@@ -101,6 +101,110 @@ defmodule Skia.Shader.GradientStop do
   defstruct [:color, :position]
 end
 
+defmodule Skia.Shader do
+  @moduledoc "Reusable shader paint sources."
+
+  @doc "Creates a linear gradient paint value."
+  @spec linear_gradient({number(), number()}, {number(), number()}, [term()], keyword()) ::
+          Skia.Shader.LinearGradient.t()
+  def linear_gradient(from, to, colors, opts \\ []),
+    do: %Skia.Shader.LinearGradient{
+      from: from,
+      to: to,
+      colors: colors,
+      tile_mode: Keyword.get(opts, :tile, Keyword.get(opts, :tile_mode, :clamp)),
+      matrix: Keyword.get(opts, :matrix)
+    }
+
+  @doc "Creates a two-point conical gradient paint value."
+  @spec two_point_conical_gradient(
+          {number(), number()},
+          number(),
+          {number(), number()},
+          number(),
+          [term()],
+          keyword()
+        ) :: Skia.Shader.TwoPointConicalGradient.t()
+  def two_point_conical_gradient(start, start_radius, finish, end_radius, colors, opts \\ []) do
+    %Skia.Shader.TwoPointConicalGradient{
+      start: start,
+      start_radius: start_radius,
+      end: finish,
+      end_radius: end_radius,
+      colors: colors,
+      tile_mode: Keyword.get(opts, :tile, Keyword.get(opts, :tile_mode, :clamp)),
+      matrix: Keyword.get(opts, :matrix)
+    }
+  end
+
+  @doc "Creates a solid-color shader paint value."
+  @spec color(term()) :: Skia.Shader.ColorShader.t()
+  def color(color), do: %Skia.Shader.ColorShader{color: color}
+
+  @doc "Creates a radial gradient paint value."
+  @spec radial_gradient({number(), number()}, number(), [term()], keyword()) ::
+          Skia.Shader.RadialGradient.t()
+  def radial_gradient(center, radius, colors, opts \\ []),
+    do: %Skia.Shader.RadialGradient{
+      center: center,
+      radius: radius,
+      colors: colors,
+      tile_mode: Keyword.get(opts, :tile, Keyword.get(opts, :tile_mode, :clamp)),
+      matrix: Keyword.get(opts, :matrix)
+    }
+
+  @doc "Creates a sweep/conic gradient paint value."
+  @spec sweep_gradient({number(), number()}, number(), number(), [term()], keyword()) ::
+          Skia.Shader.SweepGradient.t()
+  def sweep_gradient(center, start_degrees, end_degrees, colors, opts \\ []) do
+    %Skia.Shader.SweepGradient{
+      center: center,
+      start_degrees: start_degrees,
+      end_degrees: end_degrees,
+      colors: colors,
+      tile_mode: Keyword.get(opts, :tile, Keyword.get(opts, :tile_mode, :clamp)),
+      matrix: Keyword.get(opts, :matrix)
+    }
+  end
+
+  @doc "Creates a positioned gradient stop."
+  @spec stop(term(), number()) :: Skia.Shader.GradientStop.t()
+  def stop(color, position), do: %Skia.Shader.GradientStop{color: color, position: position}
+
+  @doc "Creates an image shader paint value."
+  @spec image(Skia.Image.t(), keyword()) :: Skia.Shader.ImageShader.t()
+  def image(%Skia.Image{} = image, opts \\ []) do
+    %Skia.Shader.ImageShader{
+      image: image,
+      tile_x: shader_tile(opts) |> elem(0),
+      tile_y: shader_tile(opts) |> elem(1),
+      sampling: Keyword.get(opts, :sampling, :linear),
+      matrix: Keyword.get(opts, :matrix)
+    }
+  end
+
+  @doc "Creates a picture shader paint value."
+  @spec picture(Skia.Picture.t(), keyword()) :: Skia.Shader.PictureShader.t()
+  def picture(%Skia.Picture{} = picture, opts \\ []) do
+    %Skia.Shader.PictureShader{
+      picture: picture,
+      tile_x: shader_tile(opts) |> elem(0),
+      tile_y: shader_tile(opts) |> elem(1),
+      filter: Keyword.get(opts, :filter, :linear),
+      matrix: Keyword.get(opts, :matrix),
+      tile_rect: Keyword.get(opts, :tile_rect)
+    }
+  end
+
+  defp shader_tile(opts) do
+    case Keyword.get(opts, :tile) do
+      nil -> {Keyword.get(opts, :tile_x, :clamp), Keyword.get(opts, :tile_y, :clamp)}
+      {tile_x, tile_y} -> {tile_x, tile_y}
+      tile when is_atom(tile) -> {tile, tile}
+    end
+  end
+end
+
 defmodule Skia.Paint do
   @moduledoc "Reusable paint description for future paint-focused APIs."
 
