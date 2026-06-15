@@ -66,14 +66,14 @@ defmodule Skia.CommandSpec.Paths do
              [
                {:let_mut, "paint", "decode_paint(fill)?"},
                {:stmt, "apply_blend_mode(&mut paint, raw_opts)?"},
-               {:call, "surface.canvas()", :draw_path, ["&outline", "&paint"]}
+               {:call, "surface.canvas()", :draw_path, [{:ref, "outline"}, {:ref, "paint"}]}
              ],
              [
                {:if_let, "Some(stroke_color)", "opts.stroke",
                 [
                   {:let_mut, "paint", "fill_paint(decode_color(stroke_color)?)"},
                   {:stmt, "apply_blend_mode(&mut paint, raw_opts)?"},
-                  {:call, "surface.canvas()", :draw_path, ["&outline", "&paint"]}
+                  {:call, "surface.canvas()", :draw_path, [{:ref, "outline"}, {:ref, "paint"}]}
                 ]}
              ]}
           ]
@@ -92,13 +92,13 @@ defmodule Skia.CommandSpec.Paths do
        [
          {:let_mut, "paint", "decode_paint(fill)?"},
          {:stmt, "apply_blend_mode(&mut paint, raw_opts)?"},
-         {:call, "surface.canvas()", :draw_path, ["&#{path_var}", "&paint"]}
+         {:call, "surface.canvas()", :draw_path, [{:ref, path_var}, {:ref, "paint"}]}
        ]},
       {:if_let, "Some(stroke)", "#{opts_var}.stroke",
        [
          {:call, "surface.canvas()", :draw_path,
           [
-            "&#{path_var}",
+            {:ref, path_var},
             "&stroke_paint(decode_color(stroke)?, #{opts_var}.stroke_width.unwrap_or(1.0), raw_opts)?"
           ]}
        ]}

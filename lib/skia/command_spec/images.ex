@@ -45,7 +45,7 @@ defmodule Skia.CommandSpec.Images do
                      "src",
                      "Rect::from_xywh(opts.x, opts.y, width, height)",
                      "sampling",
-                     "&paint"
+                     {:ref, "paint"}
                    ]}
                 ]},
                {"(_, _, Some(source))",
@@ -53,16 +53,16 @@ defmodule Skia.CommandSpec.Images do
                   {:call, "surface.canvas()", :draw_image_rect_with_sampling_options,
                    [
                      "image",
-                     "Some((&source, skia_safe::canvas::SrcRectConstraint::Strict))",
+                     {:some, "(&source, skia_safe::canvas::SrcRectConstraint::Strict)"},
                      "Rect::from_xywh(opts.x, opts.y, source.width(), source.height())",
                      "sampling",
-                     "&paint"
+                     {:ref, "paint"}
                    ]}
                 ]},
                {"_",
                 [
                   {:call, "surface.canvas()", :draw_image_with_sampling_options,
-                   ["image", "(opts.x, opts.y)", "sampling", "Some(&paint)"]}
+                   ["image", {:tuple, ["opts.x", "opts.y"]}, "sampling", {:some, {:ref, "paint"}}]}
                 ]}
              ]}
           ]

@@ -39,7 +39,7 @@ defmodule Skia.CommandSpec.Layers do
             {:let_mut, "rec", "SaveLayerRec::default().paint(&paint)"},
             {:if_let, "Some(ref bounds)", "bounds", [{:assign, "rec", "rec.bounds(bounds)"}]}
           ],
-          body: [{:call, "surface.canvas()", :save_layer, ["&rec"]}]
+          body: [{:call, "surface.canvas()", :save_layer, [{:ref, "rec"}]}]
         ],
         native_refs: ["skia_safe::Canvas::save_layer", "skia_safe::ImageFilter::blur"]
       ],

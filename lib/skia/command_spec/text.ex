@@ -40,7 +40,7 @@ defmodule Skia.CommandSpec.Text do
              ],
              [
                {:call, "surface.canvas()", :draw_str,
-                ["text", "(opts.x, opts.y)", "&font", "&paint"]}
+                ["text", {:tuple, ["opts.x", "opts.y"]}, {:ref, "font"}, {:ref, "paint"}]}
              ]}
           ]
         ],

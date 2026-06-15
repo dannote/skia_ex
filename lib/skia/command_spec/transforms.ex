@@ -10,7 +10,9 @@ defmodule Skia.CommandSpec.Transforms do
           [name: :x, type: :number, required: true],
           [name: :y, type: :number, required: true]
         ],
-        transform: [body: [{:call, "surface.canvas()", :translate, ["(opts.x, opts.y)"]}]],
+        transform: [
+          body: [{:call, "surface.canvas()", :translate, [{:tuple, ["opts.x", "opts.y"]}]}]
+        ],
         native_refs: ["skia_safe::Canvas::translate"]
       ],
       scale: [
@@ -20,14 +22,14 @@ defmodule Skia.CommandSpec.Transforms do
           [name: :x, type: :number, required: true],
           [name: :y, type: :number, required: true]
         ],
-        transform: [body: [{:call, "surface.canvas()", :scale, ["(opts.x, opts.y)"]}]],
+        transform: [body: [{:call, "surface.canvas()", :scale, [{:tuple, ["opts.x", "opts.y"]}]}]],
         native_refs: ["skia_safe::Canvas::scale"]
       ],
       rotate: [
         handler: :draw_rotate,
         args: [],
         opts: [[name: :degrees, type: :number, required: true]],
-        transform: [body: [{:call, "surface.canvas()", :rotate, ["opts.degrees", "None"]}]],
+        transform: [body: [{:call, "surface.canvas()", :rotate, ["opts.degrees", :none]}]],
         native_refs: ["skia_safe::Canvas::rotate"]
       ],
       rotate_at: [
@@ -41,7 +43,7 @@ defmodule Skia.CommandSpec.Transforms do
         transform: [
           body: [
             {:call, "surface.canvas()", :rotate,
-             ["opts.degrees", "Some(Point::new(opts.x, opts.y))"]}
+             ["opts.degrees", {:some, "Point::new(opts.x, opts.y)"}]}
           ]
         ],
         native_refs: ["skia_safe::Canvas::rotate"]
