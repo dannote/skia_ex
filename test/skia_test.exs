@@ -324,14 +324,22 @@ defmodule SkiaTest do
         y: 0,
         width: 4,
         height: 4,
-        fill: Skia.linear_gradient({0, 0}, {4, 0}, [:red, :blue], matrix: {1, 0, 1, 0, 1, 0})
+        fill:
+          Skia.linear_gradient({0, 0}, {4, 0}, [:red, :blue],
+            tile: :mirror,
+            matrix: Skia.Matrix.translate(1, 0)
+          )
       )
       |> Skia.rect(
         x: 0,
         y: 0,
         width: 4,
         height: 4,
-        fill: Skia.radial_gradient({2, 2}, 2, [:white, :black], matrix: {1, 0, 0, 0, 1, 1}),
+        fill:
+          Skia.radial_gradient({2, 2}, 2, [:white, :black],
+            tile: :repeat,
+            matrix: Skia.Matrix.translate(0, 1)
+          ),
         blend_mode: :screen
       )
       |> Skia.rect(
@@ -340,7 +348,10 @@ defmodule SkiaTest do
         width: 4,
         height: 4,
         fill:
-          Skia.sweep_gradient({2, 2}, 0, 180, [:green, :transparent], matrix: {1, 0, 0, 0, 1, 0}),
+          Skia.sweep_gradient({2, 2}, 0, 180, [:green, :transparent],
+            tile: :clamp,
+            matrix: Skia.Matrix.identity()
+          ),
         blend_mode: :overlay
       )
 
@@ -364,7 +375,7 @@ defmodule SkiaTest do
         y: 0,
         width: 2,
         height: 1,
-        fill: Skia.image_shader(image, tile_x: :clamp, tile_y: :clamp, sampling: :nearest)
+        fill: Skia.image_shader(image, tile: :clamp, sampling: :nearest)
       )
 
     assert {:ok, raw} = Skia.to_raw(document)

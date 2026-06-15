@@ -105,18 +105,20 @@ defmodule Skia.Command do
          from: from,
          to: to,
          colors: colors,
+         tile_mode: tile_mode,
          matrix: matrix
        }) do
-    normalize_color!({:linear_gradient, from, to, colors, matrix})
+    normalize_color!({:linear_gradient, from, to, colors, tile_mode, matrix})
   end
 
   defp normalize_color!(%Skia.Shader.RadialGradient{
          center: center,
          radius: radius,
          colors: colors,
+         tile_mode: tile_mode,
          matrix: matrix
        }) do
-    normalize_color!({:radial_gradient, center, radius, colors, matrix})
+    normalize_color!({:radial_gradient, center, radius, colors, tile_mode, matrix})
   end
 
   defp normalize_color!(%Skia.Shader.SweepGradient{
@@ -124,9 +126,12 @@ defmodule Skia.Command do
          start_degrees: start_degrees,
          end_degrees: end_degrees,
          colors: colors,
+         tile_mode: tile_mode,
          matrix: matrix
        }) do
-    normalize_color!({:sweep_gradient, center, start_degrees, end_degrees, colors, matrix})
+    normalize_color!(
+      {:sweep_gradient, center, start_degrees, end_degrees, colors, tile_mode, matrix}
+    )
   end
 
   defp normalize_color!(%Skia.Shader.ImageShader{} = shader) do
@@ -148,33 +153,52 @@ defmodule Skia.Command do
   end
 
   defp normalize_color!({:linear_gradient, from, to, colors}) when is_list(colors) do
-    normalize_color!({:linear_gradient, from, to, colors, nil})
+    normalize_color!({:linear_gradient, from, to, colors, :clamp, nil})
   end
 
   defp normalize_color!({:linear_gradient, from, to, colors, matrix}) when is_list(colors) do
+    normalize_color!({:linear_gradient, from, to, colors, :clamp, matrix})
+  end
+
+  defp normalize_color!({:linear_gradient, from, to, colors, tile_mode, matrix})
+       when is_list(colors) and is_atom(tile_mode) do
     {:linear_gradient, normalize_point!(from), normalize_point!(to),
-     Enum.map(colors, &normalize_color!/1), normalize_optional_matrix!(matrix)}
+     Enum.map(colors, &normalize_color!/1), tile_mode, normalize_optional_matrix!(matrix)}
   end
 
   defp normalize_color!({:radial_gradient, center, radius, colors}) when is_list(colors) do
-    normalize_color!({:radial_gradient, center, radius, colors, nil})
+    normalize_color!({:radial_gradient, center, radius, colors, :clamp, nil})
   end
 
   defp normalize_color!({:radial_gradient, center, radius, colors, matrix})
        when is_list(colors) do
+    normalize_color!({:radial_gradient, center, radius, colors, :clamp, matrix})
+  end
+
+  defp normalize_color!({:radial_gradient, center, radius, colors, tile_mode, matrix})
+       when is_list(colors) and is_atom(tile_mode) do
     {:radial_gradient, normalize_point!(center), normalize_number!(radius),
-     Enum.map(colors, &normalize_color!/1), normalize_optional_matrix!(matrix)}
+     Enum.map(colors, &normalize_color!/1), tile_mode, normalize_optional_matrix!(matrix)}
   end
 
   defp normalize_color!({:sweep_gradient, center, start_degrees, end_degrees, colors})
        when is_list(colors) do
-    normalize_color!({:sweep_gradient, center, start_degrees, end_degrees, colors, nil})
+    normalize_color!({:sweep_gradient, center, start_degrees, end_degrees, colors, :clamp, nil})
   end
 
   defp normalize_color!({:sweep_gradient, center, start_degrees, end_degrees, colors, matrix})
        when is_list(colors) do
+    normalize_color!(
+      {:sweep_gradient, center, start_degrees, end_degrees, colors, :clamp, matrix}
+    )
+  end
+
+  defp normalize_color!(
+         {:sweep_gradient, center, start_degrees, end_degrees, colors, tile_mode, matrix}
+       )
+       when is_list(colors) and is_atom(tile_mode) do
     {:sweep_gradient, normalize_point!(center), normalize_number!(start_degrees),
-     normalize_number!(end_degrees), Enum.map(colors, &normalize_color!/1),
+     normalize_number!(end_degrees), Enum.map(colors, &normalize_color!/1), tile_mode,
      normalize_optional_matrix!(matrix)}
   end
 
@@ -227,6 +251,9 @@ defmodule Skia.Command do
   defp normalize_point!(value), do: raise(ArgumentError, "invalid point #{inspect(value)}")
 
   defp normalize_optional_matrix!(nil), do: nil
+
+  defp normalize_optional_matrix!(%Skia.Matrix{} = matrix),
+    do: matrix |> Skia.Matrix.to_tuple() |> normalize_optional_matrix!()
 
   defp normalize_optional_matrix!({m00, m01, m02, m10, m11, m12}) do
     {normalize_number!(m00), normalize_number!(m01), normalize_number!(m02),

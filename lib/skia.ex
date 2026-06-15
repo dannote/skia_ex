@@ -23,6 +23,7 @@ defmodule Skia do
       from: from,
       to: to,
       colors: colors,
+      tile_mode: Keyword.get(opts, :tile, Keyword.get(opts, :tile_mode, :clamp)),
       matrix: Keyword.get(opts, :matrix)
     }
 
@@ -34,6 +35,7 @@ defmodule Skia do
       center: center,
       radius: radius,
       colors: colors,
+      tile_mode: Keyword.get(opts, :tile, Keyword.get(opts, :tile_mode, :clamp)),
       matrix: Keyword.get(opts, :matrix)
     }
 
@@ -46,6 +48,7 @@ defmodule Skia do
       start_degrees: start_degrees,
       end_degrees: end_degrees,
       colors: colors,
+      tile_mode: Keyword.get(opts, :tile, Keyword.get(opts, :tile_mode, :clamp)),
       matrix: Keyword.get(opts, :matrix)
     }
   end
@@ -60,11 +63,19 @@ defmodule Skia do
   def image_shader(%Skia.Image{} = image, opts \\ []) do
     %Skia.Shader.ImageShader{
       image: image,
-      tile_x: Keyword.get(opts, :tile_x, :clamp),
-      tile_y: Keyword.get(opts, :tile_y, :clamp),
+      tile_x: image_shader_tile(opts) |> elem(0),
+      tile_y: image_shader_tile(opts) |> elem(1),
       sampling: Keyword.get(opts, :sampling, :linear),
       matrix: Keyword.get(opts, :matrix)
     }
+  end
+
+  defp image_shader_tile(opts) do
+    case Keyword.get(opts, :tile) do
+      nil -> {Keyword.get(opts, :tile_x, :clamp), Keyword.get(opts, :tile_y, :clamp)}
+      {tile_x, tile_y} -> {tile_x, tile_y}
+      tile when is_atom(tile) -> {tile, tile}
+    end
   end
 
   @doc "Measures text using the native text engine."

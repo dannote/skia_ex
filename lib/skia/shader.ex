@@ -5,9 +5,10 @@ defmodule Skia.Shader.LinearGradient do
           from: {float(), float()},
           to: {float(), float()},
           colors: [term()],
+          tile_mode: atom(),
           matrix: tuple() | nil
         }
-  defstruct [:from, :to, :colors, :matrix]
+  defstruct [:from, :to, :colors, tile_mode: :clamp, matrix: nil]
 end
 
 defmodule Skia.Shader.RadialGradient do
@@ -17,9 +18,10 @@ defmodule Skia.Shader.RadialGradient do
           center: {float(), float()},
           radius: float(),
           colors: [term()],
+          tile_mode: atom(),
           matrix: tuple() | nil
         }
-  defstruct [:center, :radius, :colors, :matrix]
+  defstruct [:center, :radius, :colors, tile_mode: :clamp, matrix: nil]
 end
 
 defmodule Skia.Shader.SweepGradient do
@@ -30,9 +32,10 @@ defmodule Skia.Shader.SweepGradient do
           start_degrees: float(),
           end_degrees: float(),
           colors: [term()],
+          tile_mode: atom(),
           matrix: tuple() | nil
         }
-  defstruct [:center, :start_degrees, :end_degrees, :colors, :matrix]
+  defstruct [:center, :start_degrees, :end_degrees, :colors, tile_mode: :clamp, matrix: nil]
 end
 
 defmodule Skia.Shader.ImageShader do

@@ -3,11 +3,12 @@ fn decode_paint(term: Term) -> NifResult<Paint> {
         return Ok(fill_paint(color));
     }
 
-    if let Ok((tag, from, to, stops, matrix_term)) =
-        term.decode::<(Atom, (f64, f64), (f64, f64), Vec<Term>, Term)>()
+    if let Ok((tag, from, to, stops, tile_mode, matrix_term)) =
+        term.decode::<(Atom, (f64, f64), (f64, f64), Vec<Term>, Atom, Term)>()
     {
         if tag == atoms::linear_gradient() {
             let (colors, positions) = decode_gradient_stops(stops)?;
+            let tile_mode = generated_enums::decode_tile_mode(tile_mode)?;
             let matrix = optional_matrix_from_term(matrix_term)?;
             let mut paint = Paint::default();
             paint.set_anti_alias(true).set_style(PaintStyle::Fill);
@@ -15,7 +16,7 @@ fn decode_paint(term: Term) -> NifResult<Paint> {
                 ((from.0 as f32, from.1 as f32), (to.0 as f32, to.1 as f32)),
                 colors.as_slice(),
                 positions.as_deref(),
-                TileMode::Clamp,
+                tile_mode,
                 None,
                 matrix.as_ref(),
             ) {
@@ -25,11 +26,12 @@ fn decode_paint(term: Term) -> NifResult<Paint> {
         }
     }
 
-    if let Ok((tag, center, radius, stops, matrix_term)) =
-        term.decode::<(Atom, (f64, f64), f64, Vec<Term>, Term)>()
+    if let Ok((tag, center, radius, stops, tile_mode, matrix_term)) =
+        term.decode::<(Atom, (f64, f64), f64, Vec<Term>, Atom, Term)>()
     {
         if tag == atoms::radial_gradient() {
             let (colors, positions) = decode_gradient_stops(stops)?;
+            let tile_mode = generated_enums::decode_tile_mode(tile_mode)?;
             let matrix = optional_matrix_from_term(matrix_term)?;
             let mut paint = Paint::default();
             paint.set_anti_alias(true).set_style(PaintStyle::Fill);
@@ -38,7 +40,7 @@ fn decode_paint(term: Term) -> NifResult<Paint> {
                 radius as f32,
                 colors.as_slice(),
                 positions.as_deref(),
-                TileMode::Clamp,
+                tile_mode,
                 None,
                 matrix.as_ref(),
             ) {
@@ -48,11 +50,12 @@ fn decode_paint(term: Term) -> NifResult<Paint> {
         }
     }
 
-    if let Ok((tag, center, start_degrees, end_degrees, stops, matrix_term)) =
-        term.decode::<(Atom, (f64, f64), f64, f64, Vec<Term>, Term)>()
+    if let Ok((tag, center, start_degrees, end_degrees, stops, tile_mode, matrix_term)) =
+        term.decode::<(Atom, (f64, f64), f64, f64, Vec<Term>, Atom, Term)>()
     {
         if tag == atoms::sweep_gradient() {
             let (colors, positions) = decode_gradient_stops(stops)?;
+            let tile_mode = generated_enums::decode_tile_mode(tile_mode)?;
             let matrix = optional_matrix_from_term(matrix_term)?;
             let mut paint = Paint::default();
             paint.set_anti_alias(true).set_style(PaintStyle::Fill);
@@ -60,7 +63,7 @@ fn decode_paint(term: Term) -> NifResult<Paint> {
                 (center.0 as f32, center.1 as f32),
                 colors.as_slice(),
                 positions.as_deref(),
-                TileMode::Clamp,
+                tile_mode,
                 Some((start_degrees as f32, end_degrees as f32)),
                 None,
                 matrix.as_ref(),
