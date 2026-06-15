@@ -44,6 +44,8 @@ defmodule Skia.Command do
   end
 
   defp normalize_opts!(name, opts, option_specs) do
+    opts = expand_paint_opts(opts)
+
     Enum.map(option_specs, fn option_spec ->
       key = Keyword.fetch!(option_spec, :name)
       type = Keyword.fetch!(option_spec, :type)
@@ -76,6 +78,7 @@ defmodule Skia.Command do
   defp normalize_value!(_name, _key, :boolean, value) when is_boolean(value), do: value
   defp normalize_value!(_name, :spans, :term, value), do: normalize_spans!(value)
   defp normalize_value!(_name, _key, :term, value), do: value
+  defp normalize_value!(_name, _key, :paint, %Skia.Paint{} = value), do: value
   defp normalize_value!(_name, _key, :color, value), do: normalize_color!(value)
   defp normalize_value!(_name, _key, :path, %Skia.Path{} = value), do: value
   defp normalize_value!(_name, _key, :image, %Skia.Image{} = value), do: value
@@ -93,6 +96,14 @@ defmodule Skia.Command do
   defp normalize_value!(name, key, type, value) do
     raise ArgumentError,
           "invalid #{inspect(key)} for #{name}: expected #{inspect(type)}, got #{inspect(value)}"
+  end
+
+  defp expand_paint_opts(opts) do
+    case Keyword.pop(opts, :paint) do
+      {nil, opts} -> opts
+      {%Skia.Paint{} = paint, opts} -> Keyword.merge(Skia.Paint.to_opts(paint), opts)
+      {paint, _opts} -> raise ArgumentError, "invalid paint #{inspect(paint)}"
+    end
   end
 
   defp normalize_tuple!(types, value) when tuple_size(value) == length(types) do
@@ -140,6 +151,33 @@ defmodule Skia.Command do
 
   defp normalize_image_filter!(%Skia.ImageFilter.Shader{shader: shader}) do
     {:shader_image_filter, normalize_color!(shader)}
+  end
+
+  defp normalize_image_filter!(%Skia.ImageFilter.Magnifier{} = filter) do
+    {:magnifier_filter, normalize_rect!(filter.bounds), normalize_number!(filter.zoom),
+     normalize_number!(filter.inset), normalize_sampling_options!(filter.sampling),
+     normalize_optional_filter!(filter.input)}
+  end
+
+  defp normalize_image_filter!(%Skia.ImageFilter.MatrixConvolution{} = filter) do
+    {:matrix_convolution_filter, filter.kernel_size,
+     Enum.map(filter.kernel, &normalize_number!/1),
+     {normalize_number!(filter.gain), normalize_number!(filter.bias), filter.offset, filter.tile,
+      filter.convolve_alpha, normalize_optional_filter!(filter.input)}}
+  end
+
+  defp normalize_image_filter!(%Skia.ImageFilter.MatrixTransform{} = filter) do
+    {:matrix_transform_filter, normalize_optional_matrix!(filter.matrix),
+     normalize_sampling_options!(filter.sampling), normalize_optional_filter!(filter.input)}
+  end
+
+  defp normalize_image_filter!(%Skia.ImageFilter.Merge{filters: filters}) when is_list(filters) do
+    {:merge_filter, Enum.map(filters, &normalize_optional_filter!/1)}
+  end
+
+  defp normalize_image_filter!(%Skia.ImageFilter.Tile{} = filter) do
+    {:tile_filter, normalize_rect!(filter.src), normalize_rect!(filter.dst),
+     normalize_optional_filter!(filter.input)}
   end
 
   defp normalize_image_filter!(%Skia.ImageFilter.Morphology{
@@ -383,6 +421,19 @@ defmodule Skia.Command do
      normalize_number!(effect.deviation), effect.seed}
   end
 
+  defp normalize_path_effect!(%Skia.PathEffect.Path1D{} = effect) do
+    {:path_1d_effect, effect.path, normalize_number!(effect.advance),
+     normalize_number!(effect.phase), effect.style}
+  end
+
+  defp normalize_path_effect!(%Skia.PathEffect.Line2D{} = effect) do
+    {:line_2d_effect, normalize_number!(effect.width), normalize_optional_matrix!(effect.matrix)}
+  end
+
+  defp normalize_path_effect!(%Skia.PathEffect.Path2D{} = effect) do
+    {:path_2d_effect, normalize_optional_matrix!(effect.matrix), effect.path}
+  end
+
   defp normalize_path_effect!(%Skia.PathEffect.Compose{outer: outer, inner: inner}) do
     {:compose_path_effect, normalize_path_effect!(outer), normalize_path_effect!(inner)}
   end
@@ -455,6 +506,13 @@ defmodule Skia.Command do
       other -> other
     end)
   end
+
+  defp normalize_rect!({x, y, width, height}) do
+    {normalize_number!(x), normalize_number!(y), normalize_number!(width),
+     normalize_number!(height)}
+  end
+
+  defp normalize_rect!(value), do: raise(ArgumentError, "invalid rect #{inspect(value)}")
 
   defp normalize_point!({x, y}), do: {normalize_number!(x), normalize_number!(y)}
   defp normalize_point!(value), do: raise(ArgumentError, "invalid point #{inspect(value)}")

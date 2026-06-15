@@ -532,6 +532,61 @@ defmodule SkiaTest do
     assert byte_size(raw.data) == 128
   end
 
+  test "supports first-class paint values" do
+    paint =
+      Skia.Paint.new(
+        fill: :red,
+        image_filter: Skia.ImageFilter.blur(0.5),
+        color_filter: Skia.ColorFilter.blend(:blue, :src_in),
+        blend_mode: :src_over
+      )
+
+    document =
+      Skia.canvas(4, 4)
+      |> Skia.rect(x: 0, y: 0, width: 4, height: 4, paint: paint)
+
+    assert {:ok, raw} = Skia.to_raw(document)
+    assert byte_size(raw.data) == 64
+  end
+
+  test "supports advanced image filters" do
+    filter =
+      Skia.ImageFilter.merge([
+        Skia.ImageFilter.magnifier({0, 0, 4, 4}, 1.2, 0.5),
+        Skia.ImageFilter.matrix_transform(Skia.Matrix.translate(1, 0)),
+        Skia.ImageFilter.tile({0, 0, 2, 2}, {0, 0, 4, 4}),
+        Skia.ImageFilter.matrix_convolution({1, 1}, [1.0])
+      ])
+
+    document =
+      Skia.canvas(4, 4)
+      |> Skia.layer([image_filter: filter], fn doc ->
+        Skia.rect(doc, x: 0, y: 0, width: 4, height: 4, fill: :red)
+      end)
+
+    assert {:ok, raw} = Skia.to_raw(document)
+    assert byte_size(raw.data) == 64
+  end
+
+  test "supports 1D and 2D path effects" do
+    stamp =
+      Skia.Path.new()
+      |> Skia.Path.move_to(0, 0)
+      |> Skia.Path.line_to(1, 1)
+
+    effect =
+      Skia.PathEffect.path_1d(stamp, 2, style: :rotate)
+      |> Skia.PathEffect.sum(Skia.PathEffect.line_2d(1, Skia.Matrix.scale(2, 2)))
+      |> Skia.PathEffect.sum(Skia.PathEffect.path_2d(Skia.Matrix.scale(2, 2), stamp))
+
+    document =
+      Skia.canvas(8, 4)
+      |> Skia.line(from: {0, 2}, to: {8, 2}, stroke: :red, stroke_width: 1, path_effect: effect)
+
+    assert {:ok, raw} = Skia.to_raw(document)
+    assert byte_size(raw.data) == 128
+  end
+
   test "supports trim and discrete path effects" do
     effect =
       Skia.PathEffect.trim(0.1, 0.9)

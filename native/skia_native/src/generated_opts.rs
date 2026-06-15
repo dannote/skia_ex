@@ -9,6 +9,7 @@ pub struct RectOpts<'a> {
     pub width: f32,
     pub height: f32,
     pub radius: Option<f32>,
+    pub paint: Option<Term<'a>>,
     pub fill: Option<Term<'a>>,
     pub stroke: Option<Term<'a>>,
     pub stroke_width: Option<f32>,
@@ -28,6 +29,7 @@ pub fn decode_rect_opts<'a>(opts: &[(Atom, Term<'a>)]) -> NifResult<RectOpts<'a>
         width: opt_f32(opts, atoms::width())?,
         height: opt_f32(opts, atoms::height())?,
         radius: opt_f32_option(opts, atoms::radius())?,
+        paint: opt_term(opts, atoms::paint()),
         fill: opt_term(opts, atoms::fill()),
         stroke: opt_term(opts, atoms::stroke()),
         stroke_width: opt_f32_option(opts, atoms::stroke_width())?,
@@ -46,6 +48,7 @@ pub struct OvalOpts<'a> {
     pub y: f32,
     pub width: f32,
     pub height: f32,
+    pub paint: Option<Term<'a>>,
     pub fill: Option<Term<'a>>,
     pub stroke: Option<Term<'a>>,
     pub stroke_width: Option<f32>,
@@ -64,6 +67,7 @@ pub fn decode_oval_opts<'a>(opts: &[(Atom, Term<'a>)]) -> NifResult<OvalOpts<'a>
         y: opt_f32(opts, atoms::y())?,
         width: opt_f32(opts, atoms::width())?,
         height: opt_f32(opts, atoms::height())?,
+        paint: opt_term(opts, atoms::paint()),
         fill: opt_term(opts, atoms::fill()),
         stroke: opt_term(opts, atoms::stroke()),
         stroke_width: opt_f32_option(opts, atoms::stroke_width())?,
@@ -85,6 +89,7 @@ pub struct ArcOpts<'a> {
     pub start_degrees: f32,
     pub sweep_degrees: f32,
     pub use_center: Option<bool>,
+    pub paint: Option<Term<'a>>,
     pub fill: Option<Term<'a>>,
     pub stroke: Option<Term<'a>>,
     pub stroke_width: Option<f32>,
@@ -106,6 +111,7 @@ pub fn decode_arc_opts<'a>(opts: &[(Atom, Term<'a>)]) -> NifResult<ArcOpts<'a>> 
         start_degrees: opt_f32(opts, atoms::start_degrees())?,
         sweep_degrees: opt_f32(opts, atoms::sweep_degrees())?,
         use_center: opt_bool_option(opts, atoms::use_center())?,
+        paint: opt_term(opts, atoms::paint()),
         fill: opt_term(opts, atoms::fill()),
         stroke: opt_term(opts, atoms::stroke()),
         stroke_width: opt_f32_option(opts, atoms::stroke_width())?,
@@ -123,6 +129,7 @@ pub struct CircleOpts<'a> {
     pub x: f32,
     pub y: f32,
     pub radius: f32,
+    pub paint: Option<Term<'a>>,
     pub fill: Option<Term<'a>>,
     pub stroke: Option<Term<'a>>,
     pub stroke_width: Option<f32>,
@@ -140,6 +147,7 @@ pub fn decode_circle_opts<'a>(opts: &[(Atom, Term<'a>)]) -> NifResult<CircleOpts
         x: opt_f32(opts, atoms::x())?,
         y: opt_f32(opts, atoms::y())?,
         radius: opt_f32(opts, atoms::radius())?,
+        paint: opt_term(opts, atoms::paint()),
         fill: opt_term(opts, atoms::fill()),
         stroke: opt_term(opts, atoms::stroke()),
         stroke_width: opt_f32_option(opts, atoms::stroke_width())?,
@@ -334,6 +342,7 @@ pub fn decode_concat_opts<'a>(opts: &[(Atom, Term<'a>)]) -> NifResult<ConcatOpts
     })
 }
 pub struct PathOpts<'a> {
+    pub paint: Option<Term<'a>>,
     pub fill: Option<Term<'a>>,
     pub stroke: Option<Term<'a>>,
     pub stroke_width: Option<f32>,
@@ -349,6 +358,7 @@ pub struct PathOpts<'a> {
 }
 pub fn decode_path_opts<'a>(opts: &[(Atom, Term<'a>)]) -> NifResult<PathOpts<'a>> {
     Ok(PathOpts {
+        paint: opt_term(opts, atoms::paint()),
         fill: opt_term(opts, atoms::fill()),
         stroke: opt_term(opts, atoms::stroke()),
         stroke_width: opt_f32_option(opts, atoms::stroke_width())?,
@@ -364,6 +374,7 @@ pub fn decode_path_opts<'a>(opts: &[(Atom, Term<'a>)]) -> NifResult<PathOpts<'a>
     })
 }
 pub struct PathOpOpts<'a> {
+    pub paint: Option<Term<'a>>,
     pub fill: Option<Term<'a>>,
     pub stroke: Option<Term<'a>>,
     pub stroke_width: Option<f32>,
@@ -380,6 +391,7 @@ pub struct PathOpOpts<'a> {
 }
 pub fn decode_path_op_opts<'a>(opts: &[(Atom, Term<'a>)]) -> NifResult<PathOpOpts<'a>> {
     Ok(PathOpOpts {
+        paint: opt_term(opts, atoms::paint()),
         fill: opt_term(opts, atoms::fill()),
         stroke: opt_term(opts, atoms::stroke()),
         stroke_width: opt_f32_option(opts, atoms::stroke_width())?,
@@ -396,6 +408,7 @@ pub fn decode_path_op_opts<'a>(opts: &[(Atom, Term<'a>)]) -> NifResult<PathOpOpt
     })
 }
 pub struct PathOutlineOpts<'a> {
+    pub paint: Option<Term<'a>>,
     pub fill: Option<Term<'a>>,
     pub stroke: Option<Term<'a>>,
     pub stroke_width: Option<f32>,
@@ -414,6 +427,7 @@ pub fn decode_path_outline_opts<'a>(
     opts: &[(Atom, Term<'a>)],
 ) -> NifResult<PathOutlineOpts<'a>> {
     Ok(PathOutlineOpts {
+        paint: opt_term(opts, atoms::paint()),
         fill: opt_term(opts, atoms::fill()),
         stroke: opt_term(opts, atoms::stroke()),
         stroke_width: opt_f32_option(opts, atoms::stroke_width())?,

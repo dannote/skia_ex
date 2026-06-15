@@ -45,6 +45,64 @@ defmodule Skia.ImageFilter do
     defstruct [:shader]
   end
 
+  defmodule Magnifier do
+    @moduledoc "Magnifier image filter."
+    @type t :: %__MODULE__{
+            bounds: tuple(),
+            zoom: float(),
+            inset: float(),
+            sampling: term(),
+            input: Skia.ImageFilter.t() | nil
+          }
+    defstruct [:bounds, :zoom, :inset, sampling: :linear, input: nil]
+  end
+
+  defmodule MatrixConvolution do
+    @moduledoc "Matrix convolution image filter."
+    @type t :: %__MODULE__{
+            kernel_size: {integer(), integer()},
+            kernel: [float()],
+            gain: float(),
+            bias: float(),
+            offset: {integer(), integer()},
+            tile: atom(),
+            convolve_alpha: boolean(),
+            input: Skia.ImageFilter.t() | nil
+          }
+    defstruct [
+      :kernel_size,
+      :kernel,
+      gain: 1.0,
+      bias: 0.0,
+      offset: {0, 0},
+      tile: :clamp,
+      convolve_alpha: true,
+      input: nil
+    ]
+  end
+
+  defmodule MatrixTransform do
+    @moduledoc "Matrix transform image filter."
+    @type t :: %__MODULE__{
+            matrix: Skia.Matrix.t(),
+            sampling: term(),
+            input: Skia.ImageFilter.t() | nil
+          }
+    defstruct [:matrix, sampling: :linear, input: nil]
+  end
+
+  defmodule Merge do
+    @moduledoc "Merge image filters using source-over."
+    @type t :: %__MODULE__{filters: [Skia.ImageFilter.t() | nil]}
+    defstruct [:filters]
+  end
+
+  defmodule Tile do
+    @moduledoc "Tile image filter."
+    @type t :: %__MODULE__{src: tuple(), dst: tuple(), input: Skia.ImageFilter.t() | nil}
+    defstruct [:src, :dst, input: nil]
+  end
+
   defmodule Morphology do
     @moduledoc "Dilate/erode morphology image filter."
     @type t :: %__MODULE__{
@@ -63,6 +121,11 @@ defmodule Skia.ImageFilter do
           | DropShadow.t()
           | ColorFilter.t()
           | Shader.t()
+          | Magnifier.t()
+          | MatrixConvolution.t()
+          | MatrixTransform.t()
+          | Merge.t()
+          | Tile.t()
           | Morphology.t()
 
   @doc "Creates a Gaussian blur image filter."
@@ -115,6 +178,51 @@ defmodule Skia.ImageFilter do
   @doc "Creates an image filter from a shader/paint source."
   @spec shader(term()) :: Shader.t()
   def shader(shader), do: %Shader{shader: shader}
+
+  @doc "Creates a magnifier image filter."
+  @spec magnifier(tuple(), number(), number(), keyword()) :: Magnifier.t()
+  def magnifier(bounds, zoom, inset, opts \\ []) do
+    %Magnifier{
+      bounds: bounds,
+      zoom: zoom * 1.0,
+      inset: inset * 1.0,
+      sampling: Keyword.get(opts, :sampling, :linear),
+      input: Keyword.get(opts, :input)
+    }
+  end
+
+  @doc "Creates a matrix convolution image filter."
+  @spec matrix_convolution({integer(), integer()}, [number()], keyword()) :: MatrixConvolution.t()
+  def matrix_convolution(kernel_size, kernel, opts \\ []) do
+    %MatrixConvolution{
+      kernel_size: kernel_size,
+      kernel: Enum.map(kernel, &:erlang.float/1),
+      gain: :erlang.float(Keyword.get(opts, :gain, 1.0)),
+      bias: :erlang.float(Keyword.get(opts, :bias, 0.0)),
+      offset: Keyword.get(opts, :offset, {0, 0}),
+      tile: Keyword.get(opts, :tile, :clamp),
+      convolve_alpha: Keyword.get(opts, :convolve_alpha, true),
+      input: Keyword.get(opts, :input)
+    }
+  end
+
+  @doc "Creates a matrix transform image filter."
+  @spec matrix_transform(Skia.Matrix.t(), keyword()) :: MatrixTransform.t()
+  def matrix_transform(matrix, opts \\ []) do
+    %MatrixTransform{
+      matrix: matrix,
+      sampling: Keyword.get(opts, :sampling, :linear),
+      input: Keyword.get(opts, :input)
+    }
+  end
+
+  @doc "Merges image filters using source-over."
+  @spec merge([t() | nil]) :: Merge.t()
+  def merge(filters), do: %Merge{filters: filters}
+
+  @doc "Creates a tile image filter."
+  @spec tile(tuple(), tuple(), keyword()) :: Tile.t()
+  def tile(src, dst, opts \\ []), do: %Tile{src: src, dst: dst, input: Keyword.get(opts, :input)}
 
   @doc "Creates a dilate image filter."
   @spec dilate(number() | {number(), number()}, keyword()) :: Morphology.t()

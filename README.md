@@ -46,9 +46,12 @@ Skia.image_shader(image,
 
 ## Filters and effects
 
-Paints can carry image filters, color filters, blend modes, and path effects:
+Paints can carry image filters, color filters, blend modes, and path effects. You can pass options directly or build a reusable `%Skia.Paint{}`:
 
 ```elixir
+paint = Skia.Paint.new(fill: :red, image_filter: Skia.ImageFilter.blur(2), blend_mode: :src_over)
+Skia.rect(doc, x: 0, y: 0, width: 100, height: 100, paint: paint)
+
 color_filter =
   Skia.ColorFilter.blend(:blue, :src_in)
   |> Skia.ColorFilter.compose(Skia.ColorFilter.matrix([
@@ -62,6 +65,9 @@ path_effect =
   Skia.PathEffect.trim(0.05, 0.95)
   |> Skia.PathEffect.compose(Skia.PathEffect.dash([8, 4]))
   |> Skia.PathEffect.sum(Skia.PathEffect.discrete(6, 1.5, seed: 42))
+
+stamp = Skia.Path.new() |> Skia.Path.move_to(0, 0) |> Skia.Path.line_to(1, 1)
+advanced_effect = Skia.PathEffect.path_1d(stamp, 8, style: :rotate)
 
 Skia.path(doc, path,
   stroke: :red,
@@ -79,6 +85,13 @@ Layer and image-filter graphs are composable:
 filter =
   Skia.ImageFilter.blur(2)
   |> Skia.ImageFilter.compose(Skia.ImageFilter.offset(4, 2))
+  |> Skia.ImageFilter.compose(Skia.ImageFilter.matrix_transform(Skia.Matrix.scale(1.2, 1.2)))
+
+advanced = Skia.ImageFilter.merge([
+  Skia.ImageFilter.magnifier({0, 0, 100, 100}, 1.5, 4),
+  Skia.ImageFilter.tile({0, 0, 20, 20}, {0, 0, 100, 100}),
+  Skia.ImageFilter.matrix_convolution({1, 1}, [1.0])
+])
 
 Skia.layer(doc, [image_filter: filter], fn layer ->
   Skia.rect(layer, x: 0, y: 0, width: 80, height: 80, fill: :red)

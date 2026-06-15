@@ -101,4 +101,27 @@ defmodule Skia.Paint do
     :path_effect,
     :color_filter
   ]
+
+  @spec new(keyword()) :: t()
+  def new(opts \\ []) do
+    struct(
+      __MODULE__,
+      Keyword.take(opts, [
+        :fill,
+        :stroke,
+        :stroke_width,
+        :blend_mode,
+        :image_filter,
+        :path_effect,
+        :color_filter
+      ])
+    )
+  end
+
+  @spec to_opts(t()) :: keyword()
+  def to_opts(%__MODULE__{} = paint) do
+    paint
+    |> Map.from_struct()
+    |> Enum.reject(fn {_key, value} -> is_nil(value) end)
+  end
 end

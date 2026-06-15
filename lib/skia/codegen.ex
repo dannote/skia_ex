@@ -103,6 +103,11 @@ defmodule Skia.Codegen do
     :morphology_filter,
     :color_filter_image_filter,
     :shader_image_filter,
+    :magnifier_filter,
+    :matrix_convolution_filter,
+    :matrix_transform_filter,
+    :merge_filter,
+    :tile_filter,
     :blend_color_filter,
     :matrix_color_filter,
     :compose_color_filter,
@@ -114,6 +119,11 @@ defmodule Skia.Codegen do
     :sum_path_effect,
     :trim_path_effect,
     :discrete_path_effect,
+    :path_1d_effect,
+    :line_2d_effect,
+    :path_2d_effect,
+    :translate,
+    :morph,
     :normal,
     :inverted,
     :sampling_options,
@@ -955,6 +965,7 @@ defmodule Skia.Codegen do
               :color_filter,
               :path_effect,
               :sampling_options,
+              :paint,
               :term
             ],
        do: "Term<'a>"
@@ -978,6 +989,7 @@ defmodule Skia.Codegen do
               :color_filter,
               :path_effect,
               :sampling_options,
+              :paint,
               :term
             ],
        do: "Option<Term<'a>>"
@@ -1023,6 +1035,7 @@ defmodule Skia.Codegen do
               :color_filter,
               :path_effect,
               :sampling_options,
+              :paint,
               :term
             ],
        do: "opt_term(opts, #{atom}).ok_or(rustler::Error::BadArg)?"
@@ -1053,6 +1066,7 @@ defmodule Skia.Codegen do
               :color_filter,
               :path_effect,
               :sampling_options,
+              :paint,
               :term
             ],
        do: "opt_term(opts, #{atom})"

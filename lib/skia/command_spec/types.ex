@@ -6,6 +6,7 @@ defmodule Skia.CommandSpec.Types do
   def color_filter, do: :color_filter
   def path_effect, do: :path_effect
   def sampling_options, do: :sampling_options
+  def paint, do: :paint
   def blend_mode, do: {:enum, :blend_mode, skia: "SkBlendMode", rust: :BlendMode}
   def sampling, do: {:enum, :sampling, skia: "SkFilterMode", rust: :FilterMode}
   def tile_mode, do: {:enum, :tile_mode, skia: "SkTileMode", rust: :TileMode}
@@ -25,6 +26,7 @@ defmodule Skia.CommandSpec.Types do
 
   def paint_opts do
     [
+      [name: :paint, type: paint()],
       [name: :fill, type: color()],
       [name: :stroke, type: color()],
       [name: :stroke_width, type: :number],
