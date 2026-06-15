@@ -425,6 +425,79 @@ defmodule SkiaTest do
     assert raw.data == <<255, 0, 0, 255, 0, 0, 255, 255>>
   end
 
+  test "supports rich sampling options" do
+    source =
+      Skia.canvas(2, 2)
+      |> Skia.rect(x: 0, y: 0, width: 1, height: 1, fill: :red)
+      |> Skia.rect(x: 1, y: 1, width: 1, height: 1, fill: :blue)
+
+    assert {:ok, png} = Skia.to_png(source)
+    assert {:ok, image} = Skia.Image.decode(png)
+
+    document =
+      Skia.canvas(4, 4)
+      |> Skia.image(image,
+        x: 0,
+        y: 0,
+        width: 4,
+        height: 4,
+        sampling: Skia.SamplingOptions.mipmap(:linear, :linear)
+      )
+      |> Skia.rect(
+        x: 0,
+        y: 0,
+        width: 4,
+        height: 4,
+        fill: Skia.image_shader(image, sampling: Skia.SamplingOptions.cubic(:catmull_rom))
+      )
+
+    assert {:ok, raw} = Skia.to_raw(document)
+    assert byte_size(raw.data) == 64
+  end
+
+  test "supports path effects and paint image filters" do
+    document =
+      Skia.canvas(8, 4)
+      |> Skia.line(
+        from: {0, 2},
+        to: {8, 2},
+        stroke: :red,
+        stroke_width: 2,
+        path_effect: Skia.PathEffect.dash([2, 1])
+      )
+      |> Skia.rect(
+        x: 1,
+        y: 1,
+        width: 3,
+        height: 2,
+        fill: :blue,
+        image_filter: Skia.ImageFilter.blur(1)
+      )
+
+    assert {:ok, raw} = Skia.to_raw(document)
+    assert byte_size(raw.data) == 128
+  end
+
+  test "supports composed path effects" do
+    effect =
+      Skia.PathEffect.corner(1)
+      |> Skia.PathEffect.compose(Skia.PathEffect.dash([2, 1], phase: 0))
+      |> Skia.PathEffect.sum(Skia.PathEffect.corner(0.5))
+
+    path =
+      Skia.Path.new()
+      |> Skia.Path.move_to(0, 3)
+      |> Skia.Path.line_to(3, 0)
+      |> Skia.Path.line_to(6, 3)
+
+    document =
+      Skia.canvas(8, 4)
+      |> Skia.path(path, stroke: :red, stroke_width: 1, path_effect: effect)
+
+    assert {:ok, raw} = Skia.to_raw(document)
+    assert byte_size(raw.data) == 128
+  end
+
   test "supports path boolean operations" do
     a =
       Skia.Path.new()

@@ -74,14 +74,14 @@ fn decode_paint(term: Term) -> NifResult<Paint> {
         }
     }
 
-    if let Ok((tag, image_term, tile_x, tile_y, sampling, matrix_term)) =
-        term.decode::<(Atom, Term, Atom, Atom, Atom, Term)>()
+    if let Ok((tag, image_term, tile_x, tile_y, sampling_term, matrix_term)) =
+        term.decode::<(Atom, Term, Atom, Atom, Term, Term)>()
     {
         if tag == atoms::image_shader() {
             let image = image_from_term(image_term)?;
             let tile_x = generated_enums::decode_tile_mode(tile_x)?;
             let tile_y = generated_enums::decode_tile_mode(tile_y)?;
-            let sampling = SamplingOptions::from(generated_enums::decode_sampling(sampling)?);
+            let sampling = decode_sampling_options(sampling_term)?;
             let matrix = optional_matrix_from_term(matrix_term)?;
             let mut paint = Paint::default();
             paint.set_anti_alias(true).set_style(PaintStyle::Fill);
@@ -177,6 +177,64 @@ fn optional_image_filter_from_term(term: Term) -> NifResult<Option<skia_safe::Im
     } else {
         Ok(Some(decode_image_filter(term)?))
     }
+}
+
+fn decode_path_effect(term: Term) -> NifResult<PathEffect> {
+    if let Ok((tag, intervals, phase)) = term.decode::<(Atom, Vec<f64>, f64)>() {
+        if tag == atoms::dash_path_effect() {
+            let intervals = intervals.into_iter().map(|value| value as f32).collect::<Vec<_>>();
+            return PathEffect::dash(intervals.as_slice(), phase as f32)
+                .ok_or(rustler::Error::BadArg);
+        }
+    }
+
+    if let Ok((tag, radius)) = term.decode::<(Atom, f64)>() {
+        if tag == atoms::corner_path_effect() {
+            return PathEffect::corner_path(radius as f32).ok_or(rustler::Error::BadArg);
+        }
+    }
+
+    if let Ok((tag, first, second)) = term.decode::<(Atom, Term, Term)>() {
+        if tag == atoms::compose_path_effect() {
+            return Ok(PathEffect::compose(decode_path_effect(first)?, decode_path_effect(second)?));
+        }
+        if tag == atoms::sum_path_effect() {
+            return Ok(PathEffect::sum(decode_path_effect(first)?, decode_path_effect(second)?));
+        }
+    }
+
+    Err(rustler::Error::BadArg)
+}
+
+fn decode_sampling_options(term: Term) -> NifResult<SamplingOptions> {
+    if let Ok((tag, filter, mipmap)) = term.decode::<(Atom, Atom, Atom)>() {
+        if tag == atoms::sampling_options() {
+            return Ok(SamplingOptions::new(
+                generated_enums::decode_sampling(filter)?,
+                generated_enums::decode_mipmap_mode(mipmap)?,
+            ));
+        }
+    }
+
+    if let Ok((tag, cubic_term)) = term.decode::<(Atom, Term)>() {
+        if tag == atoms::sampling_cubic() {
+            let cubic = if cubic_term.decode::<Atom>().is_ok_and(|atom| atom == atoms::mitchell()) {
+                CubicResampler::mitchell()
+            } else if cubic_term.decode::<Atom>().is_ok_and(|atom| atom == atoms::catmull_rom()) {
+                CubicResampler::catmull_rom()
+            } else {
+                let (b, c) = cubic_term.decode::<(f64, f64)>()?;
+                CubicResampler { b: b as f32, c: c as f32 }
+            };
+            return Ok(SamplingOptions::from(cubic));
+        }
+
+        if tag == atoms::sampling_aniso() {
+            return Ok(SamplingOptions::from_aniso(cubic_term.decode::<i64>()? as i32));
+        }
+    }
+
+    Err(rustler::Error::BadArg)
 }
 
 fn optional_matrix_from_term(matrix_term: Term) -> NifResult<Option<Matrix>> {

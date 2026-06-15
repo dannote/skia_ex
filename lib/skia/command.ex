@@ -80,6 +80,10 @@ defmodule Skia.Command do
   defp normalize_value!(_name, _key, :image, %Skia.Image{} = value), do: value
   defp normalize_value!(_name, _key, :font, %Skia.Font{} = value), do: value
   defp normalize_value!(_name, _key, :image_filter, value), do: normalize_image_filter!(value)
+  defp normalize_value!(_name, _key, :path_effect, value), do: normalize_path_effect!(value)
+
+  defp normalize_value!(_name, _key, :sampling_options, value),
+    do: normalize_sampling_options!(value)
 
   defp normalize_value!(_name, _key, {:tuple, types}, value) when is_tuple(value),
     do: normalize_tuple!(types, value)
@@ -186,8 +190,8 @@ defmodule Skia.Command do
   end
 
   defp normalize_color!(%Skia.Shader.ImageShader{} = shader) do
-    {:image_shader, shader.image, shader.tile_x, shader.tile_y, shader.sampling,
-     normalize_optional_matrix!(shader.matrix)}
+    {:image_shader, shader.image, shader.tile_x, shader.tile_y,
+     normalize_sampling_options!(shader.sampling), normalize_optional_matrix!(shader.matrix)}
   end
 
   defp normalize_color!(%Skia.Shader.GradientStop{color: color, position: position}) do
@@ -195,8 +199,9 @@ defmodule Skia.Command do
   end
 
   defp normalize_color!({:image_shader, %Skia.Image{} = image, tile_x, tile_y, sampling, matrix})
-       when is_atom(tile_x) and is_atom(tile_y) and is_atom(sampling) do
-    {:image_shader, image, tile_x, tile_y, sampling, normalize_optional_matrix!(matrix)}
+       when is_atom(tile_x) and is_atom(tile_y) do
+    {:image_shader, image, tile_x, tile_y, normalize_sampling_options!(sampling),
+     normalize_optional_matrix!(matrix)}
   end
 
   defp normalize_color!({:gradient_stop, color, position}) do
@@ -297,6 +302,56 @@ defmodule Skia.Command do
   end
 
   defp normalize_color!(color), do: raise(ArgumentError, "invalid color #{inspect(color)}")
+
+  defp normalize_path_effect!(%Skia.PathEffect.Dash{intervals: intervals, phase: phase}) do
+    {:dash_path_effect, Enum.map(intervals, &normalize_number!/1), normalize_number!(phase)}
+  end
+
+  defp normalize_path_effect!(%Skia.PathEffect.Corner{radius: radius}) do
+    {:corner_path_effect, normalize_number!(radius)}
+  end
+
+  defp normalize_path_effect!(%Skia.PathEffect.Compose{outer: outer, inner: inner}) do
+    {:compose_path_effect, normalize_path_effect!(outer), normalize_path_effect!(inner)}
+  end
+
+  defp normalize_path_effect!(%Skia.PathEffect.Sum{first: first, second: second}) do
+    {:sum_path_effect, normalize_path_effect!(first), normalize_path_effect!(second)}
+  end
+
+  defp normalize_path_effect!(value),
+    do: raise(ArgumentError, "invalid path effect #{inspect(value)}")
+
+  defp normalize_sampling_options!(%Skia.SamplingOptions{} = sampling) do
+    cond do
+      is_integer(sampling.max_aniso) ->
+        {:sampling_aniso, sampling.max_aniso}
+
+      sampling.cubic != nil ->
+        {:sampling_cubic, normalize_cubic!(sampling.cubic)}
+
+      true ->
+        {:sampling_options, sampling.filter, sampling.mipmap}
+    end
+  end
+
+  defp normalize_sampling_options!(sampling) when is_atom(sampling) do
+    {:sampling_options, sampling, :none}
+  end
+
+  defp normalize_sampling_options!({filter, mipmap}) when is_atom(filter) and is_atom(mipmap) do
+    {:sampling_options, filter, mipmap}
+  end
+
+  defp normalize_sampling_options!(value),
+    do: raise(ArgumentError, "invalid sampling options #{inspect(value)}")
+
+  defp normalize_cubic!(:mitchell), do: :mitchell
+  defp normalize_cubic!(:catmull_rom), do: :catmull_rom
+  defp normalize_cubic!({b, c}), do: {normalize_number!(b), normalize_number!(c)}
+
+  defp normalize_cubic!(value),
+    do: raise(ArgumentError, "invalid cubic sampling #{inspect(value)}")
 
   defp normalize_point!({x, y}), do: {normalize_number!(x), normalize_number!(y)}
   defp normalize_point!(value), do: raise(ArgumentError, "invalid point #{inspect(value)}")

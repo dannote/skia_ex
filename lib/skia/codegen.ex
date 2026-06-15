@@ -67,7 +67,9 @@ defmodule Skia.Codegen do
 
   @extra_enum_specs %{
     encoded_image_format: [skia: "SkEncodedImageFormat", rust: :EncodedImageFormat],
-    tile_mode: [skia: "SkTileMode", rust: :TileMode]
+    sampling: [skia: "SkFilterMode", rust: :FilterMode],
+    tile_mode: [skia: "SkTileMode", rust: :TileMode],
+    mipmap_mode: [skia: "SkMipmapMode", rust: :MipmapMode]
   }
 
   @native_atoms [
@@ -99,6 +101,15 @@ defmodule Skia.Codegen do
     :morphology_filter,
     :dilate,
     :erode,
+    :dash_path_effect,
+    :corner_path_effect,
+    :compose_path_effect,
+    :sum_path_effect,
+    :sampling_options,
+    :sampling_cubic,
+    :sampling_aniso,
+    :mitchell,
+    :catmull_rom,
     :matrix,
     :left,
     :center,
@@ -371,6 +382,7 @@ defmodule Skia.Codegen do
   def generated_style_helpers do
     helpers = [
       enum_option_applicator(:apply_blend_mode, :paint, "&mut Paint", @paint_enum_options),
+      paint_effects_applicator(),
       stroke_options_applicator(),
       enum_option_applicator(:apply_fill_rule, :path, "&mut skia_safe::Path", @path_enum_options)
     ]
@@ -378,6 +390,21 @@ defmodule Skia.Codegen do
     "generated_style_helpers.rs"
     |> template_path()
     |> RustQ.render_file!(preamble: generated_rust_preamble(), splice: [items: helpers])
+  end
+
+  defp enum_option_applicator(:apply_blend_mode = name, target_name, target_type, options) do
+    "enum_option_applicator.rs"
+    |> template_path()
+    |> RustQ.render_file!(
+      bind: [function: name],
+      splice: [
+        args: [Rust.arg(target_name, target_type), Rust.arg(:opts, "&[(Atom, Term<'a>)]")],
+        options:
+          enum_option_lines(target_name, options) ++
+            [Rust.stmt("apply_paint_effects(paint, opts)?;")]
+      ]
+    )
+    |> Rust.item()
   end
 
   defp enum_option_applicator(name, target_name, target_type, options) do
@@ -391,6 +418,20 @@ defmodule Skia.Codegen do
       ]
     )
     |> Rust.item()
+  end
+
+  defp paint_effects_applicator do
+    Rust.item("""
+    fn apply_paint_effects<'a>(paint: &mut Paint, opts: &[(Atom, Term<'a>)]) -> NifResult<()> {
+        if let Some(term) = opt_term(opts, atoms::image_filter()) {
+            paint.set_image_filter(decode_image_filter(term)?);
+        }
+        if let Some(term) = opt_term(opts, atoms::path_effect()) {
+            paint.set_path_effect(decode_path_effect(term)?);
+        }
+        Ok(())
+    }
+    """)
   end
 
   defp stroke_options_applicator do
@@ -848,8 +889,18 @@ defmodule Skia.Codegen do
   defp rust_required_type(:integer), do: "i64"
   defp rust_required_type(:string), do: "String"
 
-  defp rust_required_type(type) when type in [:color, :path, :image, :font, :image_filter, :term],
-    do: "Term<'a>"
+  defp rust_required_type(type)
+       when type in [
+              :color,
+              :path,
+              :image,
+              :font,
+              :image_filter,
+              :path_effect,
+              :sampling_options,
+              :term
+            ],
+       do: "Term<'a>"
 
   defp rust_required_type({:tuple, _types}), do: "Term<'a>"
 
@@ -860,8 +911,18 @@ defmodule Skia.Codegen do
   defp rust_optional_type(:integer), do: "Option<i64>"
   defp rust_optional_type(:string), do: "Option<String>"
 
-  defp rust_optional_type(type) when type in [:color, :path, :image, :font, :image_filter, :term],
-    do: "Option<Term<'a>>"
+  defp rust_optional_type(type)
+       when type in [
+              :color,
+              :path,
+              :image,
+              :font,
+              :image_filter,
+              :path_effect,
+              :sampling_options,
+              :term
+            ],
+       do: "Option<Term<'a>>"
 
   defp rust_optional_type({:tuple, _types}), do: "Option<Term<'a>>"
 
@@ -895,7 +956,16 @@ defmodule Skia.Codegen do
     do: "opt_term(opts, #{atom}).ok_or(rustler::Error::BadArg)?.decode::<String>()?"
 
   defp required_decoder(type, atom)
-       when type in [:color, :path, :image, :font, :image_filter, :term],
+       when type in [
+              :color,
+              :path,
+              :image,
+              :font,
+              :image_filter,
+              :path_effect,
+              :sampling_options,
+              :term
+            ],
        do: "opt_term(opts, #{atom}).ok_or(rustler::Error::BadArg)?"
 
   defp required_decoder({:tuple, _types}, atom),
@@ -915,7 +985,16 @@ defmodule Skia.Codegen do
       "match opt_term(opts, #{atom}) { Some(term) => Some(term.decode::<String>()?), None => None }"
 
   defp optional_decoder(type, atom)
-       when type in [:color, :path, :image, :font, :image_filter, :term],
+       when type in [
+              :color,
+              :path,
+              :image,
+              :font,
+              :image_filter,
+              :path_effect,
+              :sampling_options,
+              :term
+            ],
        do: "opt_term(opts, #{atom})"
 
   defp optional_decoder({:tuple, _types}, atom), do: "opt_term(opts, #{atom})"

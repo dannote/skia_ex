@@ -5,6 +5,19 @@ fn apply_blend_mode<'a>(paint: &mut Paint, opts: &[(Atom, Term<'a>)]) -> NifResu
         paint
             .set_blend_mode(generated_enums::decode_blend_mode(term.decode::<Atom>()?)?);
     }
+    apply_paint_effects(paint, opts)?;
+    Ok(())
+}
+fn apply_paint_effects<'a>(
+    paint: &mut Paint,
+    opts: &[(Atom, Term<'a>)],
+) -> NifResult<()> {
+    if let Some(term) = opt_term(opts, atoms::image_filter()) {
+        paint.set_image_filter(decode_image_filter(term)?);
+    }
+    if let Some(term) = opt_term(opts, atoms::path_effect()) {
+        paint.set_path_effect(decode_path_effect(term)?);
+    }
     Ok(())
 }
 fn apply_stroke_options<'a>(

@@ -5,9 +5,9 @@ use skia_safe::{
     canvas::SaveLayerRec,
     image_filters, path_utils, surfaces,
     textlayout::{FontCollection, ParagraphBuilder, ParagraphStyle, TextAlign, TextDirection, TextStyle},
-    AlphaType, Color, ColorType, Data, EncodedImageFormat, FilterMode, Font, FontMgr, FontStyle,
-    IPoint, Image, ImageInfo, Matrix, Paint, PaintStyle, PathBuilder, Point, RRect, Rect,
-    SamplingOptions, Shader, TileMode,
+    AlphaType, Color, ColorType, CubicResampler, Data, EncodedImageFormat, FilterMode, Font,
+    FontMgr, FontStyle, IPoint, Image, ImageInfo, Matrix, Paint, PaintStyle,
+    PathBuilder, PathEffect, Point, RRect, Rect, SamplingOptions, Shader, TileMode,
 };
 
 include!("generated_resources.rs");
@@ -314,9 +314,7 @@ fn rect_from_term(term: Term) -> NifResult<Rect> {
 
 fn opt_sampling<'a>(opts: &[(Atom, Term<'a>)], key: Atom) -> NifResult<SamplingOptions> {
     match opt_term(opts, key) {
-        Some(term) => Ok(SamplingOptions::from(generated_enums::decode_sampling(
-            term.decode::<Atom>()?,
-        )?)),
+        Some(term) => decode_sampling_options(term),
         None => Ok(SamplingOptions::default()),
     }
 }

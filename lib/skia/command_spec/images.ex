@@ -15,7 +15,7 @@ defmodule Skia.CommandSpec.Images do
           [name: :height, type: :number],
           [name: :source, type: {:tuple, [:number, :number, :number, :number]}],
           [name: :opacity, type: :number],
-          [name: :sampling, type: T.sampling()],
+          [name: :sampling, type: T.sampling_options()],
           [name: :blend_mode, type: T.blend_mode()]
         ],
         image_draw: [

@@ -3,7 +3,8 @@
 #![allow(dead_code)]
 use rustler::{Atom, NifResult};
 use skia_safe::{
-    paint, BlendMode, EncodedImageFormat, FilterMode, PathFillType, PathOp, TileMode,
+    paint, BlendMode, EncodedImageFormat, FilterMode, MipmapMode, PathFillType, PathOp,
+    TileMode,
 };
 use super::atoms;
 pub const BLEND_MODES: &[&str] = &[
@@ -59,6 +60,7 @@ pub const FILL_RULES: &[&str] = &[
     "inverse_winding",
     "inverse_even_odd",
 ];
+pub const MIPMAP_MODES: &[&str] = &["none", "nearest", "linear"];
 pub const PATH_OPS: &[&str] = &[
     "difference",
     "intersect",
@@ -129,6 +131,14 @@ pub fn decode_fill_rule(value: Atom) -> NifResult<PathFillType> {
         value if value == atoms::even_odd() => Ok(PathFillType::EvenOdd),
         value if value == atoms::inverse_winding() => Ok(PathFillType::InverseWinding),
         value if value == atoms::inverse_even_odd() => Ok(PathFillType::InverseEvenOdd),
+        _ => Err(rustler::Error::BadArg),
+    }
+}
+pub fn decode_mipmap_mode(value: Atom) -> NifResult<MipmapMode> {
+    match value {
+        value if value == atoms::none() => Ok(MipmapMode::None),
+        value if value == atoms::nearest() => Ok(MipmapMode::Nearest),
+        value if value == atoms::linear() => Ok(MipmapMode::Linear),
         _ => Err(rustler::Error::BadArg),
     }
 }

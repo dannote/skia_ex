@@ -3,6 +3,8 @@ defmodule Skia.CommandSpec.Types do
 
   def color, do: :color
   def image_filter, do: :image_filter
+  def path_effect, do: :path_effect
+  def sampling_options, do: :sampling_options
   def blend_mode, do: {:enum, :blend_mode, skia: "SkBlendMode", rust: :BlendMode}
   def sampling, do: {:enum, :sampling, skia: "SkFilterMode", rust: :FilterMode}
   def tile_mode, do: {:enum, :tile_mode, skia: "SkTileMode", rust: :TileMode}
@@ -28,7 +30,9 @@ defmodule Skia.CommandSpec.Types do
       [name: :stroke_cap, type: stroke_cap()],
       [name: :stroke_join, type: stroke_join()],
       [name: :stroke_miter, type: :number],
-      [name: :blend_mode, type: blend_mode()]
+      [name: :blend_mode, type: blend_mode()],
+      [name: :image_filter, type: image_filter()],
+      [name: :path_effect, type: path_effect()]
     ]
   end
 end

@@ -45,7 +45,7 @@ defmodule Skia.Shader.ImageShader do
           image: Skia.Image.t(),
           tile_x: atom(),
           tile_y: atom(),
-          sampling: atom(),
+          sampling: atom() | Skia.SamplingOptions.t(),
           matrix: tuple() | nil
         }
   defstruct [:image, tile_x: :clamp, tile_y: :clamp, sampling: :linear, matrix: nil]
@@ -65,7 +65,9 @@ defmodule Skia.Paint do
           fill: term(),
           stroke: term(),
           stroke_width: float() | nil,
-          blend_mode: atom() | nil
+          blend_mode: atom() | nil,
+          image_filter: Skia.ImageFilter.t() | nil,
+          path_effect: Skia.PathEffect.t() | nil
         }
-  defstruct [:fill, :stroke, :stroke_width, :blend_mode]
+  defstruct [:fill, :stroke, :stroke_width, :blend_mode, :image_filter, :path_effect]
 end
