@@ -76,6 +76,8 @@ defmodule Skia.Codegen do
     :ok,
     :error,
     :invalid_batch,
+    :invalid_command,
+    :invalid_path,
     :invalid_image,
     :invalid_font,
     :invalid_picture,
@@ -221,6 +223,11 @@ defmodule Skia.Codegen do
       lifetime: :a
     ],
     encode_picture: [
+      args: [env: "Env<'a>", picture_term: "Term<'a>"],
+      returns: "NifResult<Term<'a>>",
+      lifetime: :a
+    ],
+    picture_info: [
       args: [env: "Env<'a>", picture_term: "Term<'a>"],
       returns: "NifResult<Term<'a>>",
       lifetime: :a
@@ -435,12 +442,21 @@ defmodule Skia.Codegen do
       |> Enum.uniq()
       |> Enum.sort()
 
+    case_lines =
+      Enum.map_join(cases, "\n", fn {atom, call} ->
+        "        value if value == atoms::#{atom}() => #{call},"
+      end)
+
     item =
-      RustQ.Rustler.atom_dispatch(:draw_command,
-        args: [canvas: "&skia_safe::Canvas", command: :Term],
-        on: "command.map_get(atoms::op())?.decode::<Atom>()?",
-        cases: cases
-      )
+      Rust.item("""
+      fn draw_command(canvas: &skia_safe::Canvas, command: Term) -> NifResult<()> {
+          let value = command.map_get(atoms::op())?.decode::<Atom>()?;
+          match value {
+      #{case_lines}
+              _ => Err(rustler::Error::BadArg),
+          }
+      }
+      """)
 
     "generated_dispatch.rs"
     |> template_path()

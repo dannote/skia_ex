@@ -32,5 +32,6 @@ defmodule Skia.Native do
   def record_picture(_batch), do: :erlang.nif_error(:nif_not_loaded)
   def decode_picture(_bytes), do: :erlang.nif_error(:nif_not_loaded)
   def encode_picture(_picture), do: :erlang.nif_error(:nif_not_loaded)
+  def picture_info(_picture), do: :erlang.nif_error(:nif_not_loaded)
   def path_to_svg(_path_term), do: :erlang.nif_error(:nif_not_loaded)
 end

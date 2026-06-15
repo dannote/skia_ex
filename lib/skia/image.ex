@@ -40,6 +40,19 @@ defmodule Skia.Image do
     end
   end
 
+  @spec from_picture(Skia.Picture.t(), keyword()) :: {:ok, t()} | {:error, atom()}
+  def from_picture(%Skia.Picture{} = picture, opts \\ []) do
+    width = Keyword.get(opts, :width, Skia.Picture.width(picture))
+    height = Keyword.get(opts, :height, Skia.Picture.height(picture))
+
+    case Skia.canvas(width, height)
+         |> Skia.picture(picture)
+         |> Skia.to_png() do
+      {:ok, png} -> decode(png)
+      {:error, reason, _batch} -> {:error, reason}
+    end
+  end
+
   @spec decode(binary()) :: {:ok, t()} | {:error, atom()}
   def decode(binary) when is_binary(binary) do
     case Skia.Native.decode_image(binary) do

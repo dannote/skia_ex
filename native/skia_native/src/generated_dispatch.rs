@@ -26,6 +26,6 @@ fn draw_command(canvas: &skia_safe::Canvas, command: Term) -> NifResult<()> {
         value if value == atoms::scale() => draw_scale(canvas, command),
         value if value == atoms::text() => draw_text(canvas, command),
         value if value == atoms::translate() => draw_translate(canvas, command),
-        _ => Ok(()),
+        _ => Err(rustler::Error::BadArg),
     }
 }

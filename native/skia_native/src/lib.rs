@@ -82,7 +82,10 @@ fn encode_image_impl<'a>(
     format: Atom,
     quality: u32,
 ) -> NifResult<Term<'a>> {
-    let image = image_from_term(image_term)?;
+    let image = match image_from_term(image_term) {
+        Ok(image) => image,
+        Err(_) => return Ok((atoms::error(), atoms::invalid_image()).encode(env)),
+    };
     let format = match generated_enums::decode_encoded_image_format(format) {
         Ok(format) => format,
         Err(_) => return Ok((atoms::error(), atoms::unsupported_format()).encode(env)),
@@ -103,7 +106,10 @@ fn resize_image_impl<'a>(
     if width <= 0 || height <= 0 {
         return Ok((atoms::error(), atoms::invalid_image()).encode(env));
     }
-    let image = image_from_term(image_term)?;
+    let image = match image_from_term(image_term) {
+        Ok(image) => image,
+        Err(_) => return Ok((atoms::error(), atoms::invalid_image()).encode(env)),
+    };
     let encoded = render_image_resource(
         &image,
         None,
@@ -121,7 +127,10 @@ fn crop_image_impl<'a>(
     image_term: Term<'a>,
     source: (f64, f64, f64, f64),
 ) -> NifResult<Term<'a>> {
-    let image = image_from_term(image_term)?;
+    let image = match image_from_term(image_term) {
+        Ok(image) => image,
+        Err(_) => return Ok((atoms::error(), atoms::invalid_image()).encode(env)),
+    };
     let src = Rect::from_xywh(
         source.0 as f32,
         source.1 as f32,
@@ -163,7 +172,10 @@ fn measure_text_impl<'a>(
     font_term: Term<'a>,
     size: f64,
 ) -> NifResult<Term<'a>> {
-    let font = font_from_term(font_term, size as f32)?;
+    let font = match font_from_term(font_term, size as f32) {
+        Ok(font) => font,
+        Err(_) => return Ok((atoms::error(), atoms::invalid_font()).encode(env)),
+    };
     let paint = Paint::default();
     let (width, bounds) = font.measure_str(text, Some(&paint));
 
@@ -181,7 +193,7 @@ fn measure_text_impl<'a>(
 fn path_to_svg_impl<'a>(env: Env<'a>, path_term: Term<'a>) -> NifResult<Term<'a>> {
     match build_path(path_term) {
         Ok(path) => Ok((atoms::ok(), path.to_svg()).encode(env)),
-        Err(_) => Ok((atoms::error(), rustler::types::atom::badarg()).encode(env)),
+        Err(_) => Ok((atoms::error(), atoms::invalid_path()).encode(env)),
     }
 }
 
@@ -199,7 +211,9 @@ fn record_picture_impl<'a>(env: Env<'a>, batch: Term<'a>) -> NifResult<Term<'a>>
         canvas.clear(Color::TRANSPARENT);
 
         for command in batch.map_get(atoms::commands())?.decode::<Vec<Term>>()? {
-            draw_command(canvas, command)?;
+            if let Err(reason) = draw_command_result(canvas, command)? {
+                return Ok((atoms::error(), reason).encode(env));
+            }
         }
     }
 
@@ -231,8 +245,33 @@ fn decode_picture_impl<'a>(env: Env<'a>, bytes: Binary<'a>) -> NifResult<Term<'a
 }
 
 fn encode_picture_impl<'a>(env: Env<'a>, picture_term: Term<'a>) -> NifResult<Term<'a>> {
-    let picture_ref = decode_encoded_picture_ref(picture_term)?;
+    let picture_ref = match decode_encoded_picture_ref(picture_term) {
+        Ok(picture_ref) => picture_ref,
+        Err(_) => return Ok((atoms::error(), atoms::invalid_picture()).encode(env)),
+    };
     Ok((atoms::ok(), binary(env, &picture_ref.bytes)?).encode(env))
+}
+
+fn picture_info_impl<'a>(env: Env<'a>, picture_term: Term<'a>) -> NifResult<Term<'a>> {
+    let picture = match picture_from_term(picture_term) {
+        Ok(picture) => picture,
+        Err(_) => return Ok((atoms::error(), atoms::invalid_picture()).encode(env)),
+    };
+    let cull = picture.cull_rect();
+
+    Ok((
+        atoms::ok(),
+        (
+            cull.left,
+            cull.top,
+            cull.right,
+            cull.bottom,
+            picture.approximate_op_count() as i64,
+            picture.approximate_op_count_nested(true) as i64,
+            picture.approximate_bytes_used() as i64,
+        ),
+    )
+        .encode(env))
 }
 
 fn image_from_term(image_term: Term) -> NifResult<Image> {
@@ -304,13 +343,23 @@ fn render_surface(batch: Term) -> NifResult<Result<skia_safe::Surface, Atom>> {
     surface.canvas().clear(Color::TRANSPARENT);
 
     for command in batch.map_get(atoms::commands())?.decode::<Vec<Term>>()? {
-        draw_command(surface.canvas(), command)?;
+        if let Err(reason) = draw_command_result(surface.canvas(), command)? {
+            return Ok(Err(reason));
+        }
     }
 
     Ok(Ok(surface))
 }
 
 include!("generated_dispatch.rs");
+
+fn draw_command_result(canvas: &skia_safe::Canvas, command: Term) -> NifResult<Result<(), Atom>> {
+    match draw_command(canvas, command) {
+        Ok(()) => Ok(Ok(())),
+        Err(_) => Ok(Err(atoms::invalid_command())),
+    }
+}
+
 include!("generated_handlers.rs");
 include!("generated_style_helpers.rs");
 include!("generated_layers.rs");

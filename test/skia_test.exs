@@ -228,8 +228,13 @@ defmodule SkiaTest do
       |> Skia.rect(x: 0, y: 0, width: 4, height: 4, fill: :red)
 
     assert {:ok, picture} = Skia.Picture.record(source)
-    assert picture.width == 4
-    assert picture.height == 4
+    assert Skia.Picture.width(picture) == 4
+    assert Skia.Picture.height(picture) == 4
+    assert inspect(picture) == "#Skia.Picture<4x4>"
+    assert {:ok, info} = Skia.Picture.info(picture)
+    assert info.cull_rect == {0.0, 0.0, 4.0, 4.0}
+    assert info.op_count >= 1
+    assert info.bytes_used > 0
     assert {:ok, bytes} = Skia.Picture.to_bytes(picture)
     assert byte_size(bytes) > 0
     assert {:ok, decoded} = Skia.Picture.from_bytes(bytes, 4, 4)
@@ -241,6 +246,23 @@ defmodule SkiaTest do
 
     assert {:ok, raw} = Skia.to_raw(document)
     assert <<0, 0, 0, 0, _::binary-size(12), 255, 0, 0, 255, _::binary>> = raw.data
+    assert {:ok, image} = Skia.Image.from_picture(decoded)
+    assert Skia.Image.width(image) == 4
+    assert Skia.Image.height(image) == 4
+  end
+
+  test "returns explicit native error atoms for malformed native inputs" do
+    assert {:error, :invalid_picture} = Skia.Picture.from_bytes("not a picture", 4, 4)
+    assert {:error, :invalid_picture} = Skia.Picture.from_bytes("not a picture", 0, 4)
+    assert {:error, :invalid_path} = Skia.Path.to_svg(Skia.Path.from_svg("not a path"))
+
+    invalid = %Skia.Document{
+      width: 4,
+      height: 4,
+      commands: [%Skia.Command{op: :unknown, args: [], opts: []}]
+    }
+
+    assert {:error, :invalid_command, _batch} = Skia.to_raw(invalid)
   end
 
   test "supports image encode resize and crop helpers" do
@@ -693,9 +715,25 @@ defmodule SkiaTest do
 
     assert {4, 4, commands} = Skia.to_compact_batch(document)
     assert is_binary(Skia.to_compact_binary(document))
-    assert [_, _, _] = commands
+    assert [{clip_rect_id, [], _}, _, _] = commands
+    assert clip_rect_id == Skia.Compact.op_id(:clip_rect)
     assert {:ok, raw} = Skia.to_raw(document)
     assert byte_size(raw.data) == 64
+  end
+
+  test "compares normal compact and picture rendering overhead" do
+    document =
+      Skia.canvas(8, 8)
+      |> Skia.background(:white)
+      |> Skia.rect(x: 1, y: 1, width: 6, height: 6, fill: :red)
+
+    assert {:ok, result} = Skia.Benchmark.compare(document, iterations: 1)
+    assert result.iterations == 1
+    assert result.normal_batch_bytes > 0
+    assert result.compact_batch_bytes > 0
+    assert result.normal_render_us >= 0
+    assert result.picture_record_us >= 0
+    assert result.picture_replay_us >= 0
   end
 
   test "supports render options and preflight validation" do

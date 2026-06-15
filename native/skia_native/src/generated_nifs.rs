@@ -72,6 +72,10 @@ fn encode_picture<'a>(env: Env<'a>, picture_term: Term<'a>) -> NifResult<Term<'a
     encode_picture_impl(env, picture_term)
 }
 #[rustler::nif(schedule = "DirtyCpu")]
+fn picture_info<'a>(env: Env<'a>, picture_term: Term<'a>) -> NifResult<Term<'a>> {
+    picture_info_impl(env, picture_term)
+}
+#[rustler::nif(schedule = "DirtyCpu")]
 fn path_to_svg<'a>(env: Env<'a>, path_term: Term<'a>) -> NifResult<Term<'a>> {
     path_to_svg_impl(env, path_term)
 }

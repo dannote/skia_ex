@@ -128,8 +128,10 @@ Record reusable drawing subtrees as Skia pictures and replay them later:
   |> Skia.rect(x: 0, y: 0, width: 64, height: 64, fill: :red)
   |> Skia.Picture.record()
 
+{:ok, info} = Skia.Picture.info(picture)
 {:ok, bytes} = Skia.Picture.to_bytes(picture)
 {:ok, picture} = Skia.Picture.from_bytes(bytes, 64, 64)
+{:ok, image} = Skia.Image.from_picture(picture)
 
 Skia.canvas(256, 64)
 |> Skia.picture(picture, x: 96, y: 0, opacity: 0.75)
@@ -151,6 +153,24 @@ spans = [
 Skia.text(doc, "Hello", x: 0, y: 0, style: style, paragraph_style: paragraph)
 Skia.text(doc, "", x: 0, y: 32, paragraph_style: paragraph, spans: spans)
 ```
+
+## Compact batches and benchmarking
+
+`Skia.to_batch/1` returns the normal map/struct batch consumed by the native renderer.
+`Skia.to_binary_batch/1` encodes that normal batch as ETF. `Skia.to_compact_batch/1`
+uses stable operation ids and compact values for storage/transport experiments, and
+`Skia.to_compact_binary/1` writes compressed ETF.
+
+```elixir
+{:ok, stats} = Skia.Benchmark.compare(document, iterations: 20)
+stats.normal_batch_bytes
+stats.compact_batch_bytes
+stats.picture_replay_us
+```
+
+Native operations return tagged errors such as `:invalid_image`, `:invalid_picture`,
+`:invalid_path`, and `:invalid_command` instead of leaking raw NIF badarg failures
+through public helpers.
 
 ## Development
 
