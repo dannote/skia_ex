@@ -12,9 +12,8 @@ defmodule Skia.CommandSpec.Shapes do
         opts: [],
         shape_draw: [
           body: [
-            "if let Some(color) = args.first().and_then(|term| decode_color(*term).ok()) {",
-            "    surface.canvas().clear(color);",
-            "}"
+            {:if_let, "Some(color)", "args.first().and_then(|term| decode_color(*term).ok())",
+             [{:call, "surface.canvas()", :clear, ["color"]}]}
           ]
         ],
         native_refs: ["skia_safe::Canvas::clear"]
@@ -26,10 +25,10 @@ defmodule Skia.CommandSpec.Shapes do
         opts: T.rect_opts() ++ [[name: :radius, type: :number]] ++ T.paint_opts(),
         shape_draw: [
           setup: [
-            "let rect = Rect::from_xywh(opts.x, opts.y, opts.width, opts.height);",
-            "let radius = opts.radius.unwrap_or(0.0);"
+            {:let, "rect", "Rect::from_xywh(opts.x, opts.y, opts.width, opts.height)"},
+            {:let, "radius", "opts.radius.unwrap_or(0.0)"}
           ],
-          body: paint_shape_body("draw_rect_shape(surface, rect, radius, &paint);")
+          body: paint_shape_body({:stmt, "draw_rect_shape(surface, rect, radius, &paint)"})
         ],
         native_refs: ["skia_safe::Canvas::draw_rect", "skia_safe::Canvas::draw_rrect"]
       ],
@@ -38,8 +37,8 @@ defmodule Skia.CommandSpec.Shapes do
         args: [],
         opts: T.rect_opts() ++ T.paint_opts(),
         shape_draw: [
-          setup: ["let rect = Rect::from_xywh(opts.x, opts.y, opts.width, opts.height);"],
-          body: paint_shape_body("surface.canvas().draw_oval(rect, &paint);")
+          setup: [{:let, "rect", "Rect::from_xywh(opts.x, opts.y, opts.width, opts.height)"}],
+          body: paint_shape_body({:call, "surface.canvas()", :draw_oval, ["rect", "&paint"]})
         ],
         native_refs: ["skia_safe::Canvas::draw_oval"]
       ],
@@ -56,12 +55,13 @@ defmodule Skia.CommandSpec.Shapes do
             ] ++ T.paint_opts(),
         shape_draw: [
           setup: [
-            "let rect = Rect::from_xywh(opts.x, opts.y, opts.width, opts.height);",
-            "let use_center = opts.use_center.unwrap_or(false);"
+            {:let, "rect", "Rect::from_xywh(opts.x, opts.y, opts.width, opts.height)"},
+            {:let, "use_center", "opts.use_center.unwrap_or(false)"}
           ],
           body:
             paint_shape_body(
-              "surface.canvas().draw_arc(rect, opts.start_degrees, opts.sweep_degrees, use_center, &paint);"
+              {:call, "surface.canvas()", :draw_arc,
+               ["rect", "opts.start_degrees", "opts.sweep_degrees", "use_center", "&paint"]}
             )
         ],
         native_refs: ["skia_safe::Canvas::draw_arc"]
@@ -76,8 +76,11 @@ defmodule Skia.CommandSpec.Shapes do
             [name: :radius, type: :number, required: true]
           ] ++ T.paint_opts(),
         shape_draw: [
-          setup: ["let center = Point::new(opts.x, opts.y);"],
-          body: paint_shape_body("surface.canvas().draw_circle(center, opts.radius, &paint);")
+          setup: [{:let, "center", "Point::new(opts.x, opts.y)"}],
+          body:
+            paint_shape_body(
+              {:call, "surface.canvas()", :draw_circle, ["center", "opts.radius", "&paint"]}
+            )
         ],
         native_refs: ["skia_safe::Canvas::draw_circle"]
       ],
@@ -96,9 +99,10 @@ defmodule Skia.CommandSpec.Shapes do
         ],
         shape_draw: [
           body: [
-            "let color = decode_color(opts.stroke)?;",
-            "let paint = stroke_paint(color, opts.stroke_width.unwrap_or(1.0), raw_opts)?;",
-            "surface.canvas().draw_line(point_from_term(opts.from)?, point_from_term(opts.to)?, &paint);"
+            {:let, "color", "decode_color(opts.stroke)?"},
+            {:let, "paint", "stroke_paint(color, opts.stroke_width.unwrap_or(1.0), raw_opts)?"},
+            {:call, "surface.canvas()", :draw_line,
+             ["point_from_term(opts.from)?", "point_from_term(opts.to)?", "&paint"]}
           ]
         ],
         native_refs: ["skia_safe::Canvas::draw_line"]
@@ -108,14 +112,13 @@ defmodule Skia.CommandSpec.Shapes do
 
   defp paint_shape_body(draw_call) do
     [
-      "if let Some(mut paint) = opt_fill_paint(raw_opts, atoms::fill())? {",
-      "    apply_blend_mode(&mut paint, raw_opts)?;",
-      "    #{draw_call}",
-      "}",
-      "if let Some(color) = opt_color(raw_opts, atoms::stroke())? {",
-      "    let paint = stroke_paint(color, opts.stroke_width.unwrap_or(1.0), raw_opts)?;",
-      "    #{draw_call}",
-      "}"
+      {:if_let, "Some(mut paint)", "opt_fill_paint(raw_opts, atoms::fill())?",
+       [{:stmt, "apply_blend_mode(&mut paint, raw_opts)?"}, draw_call]},
+      {:if_let, "Some(color)", "opt_color(raw_opts, atoms::stroke())?",
+       [
+         {:let, "paint", "stroke_paint(color, opts.stroke_width.unwrap_or(1.0), raw_opts)?"},
+         draw_call
+       ]}
     ]
   end
 end

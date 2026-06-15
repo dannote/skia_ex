@@ -569,8 +569,8 @@ defmodule Skia.Codegen do
   defp body_impl(name, spec, key) do
     handler = Keyword.fetch!(spec, :handler)
     command_body = Keyword.fetch!(spec, key)
-    setup = command_body |> Keyword.get(:setup, []) |> Enum.join("\n    ")
-    body = command_body |> command_body_lines() |> Enum.join("\n    ")
+    setup = command_body |> Keyword.get(:setup, []) |> rust_lines()
+    body = command_body |> command_body_lines() |> rust_lines()
     setup = if setup == "", do: "", else: setup <> "\n\n    "
     params = body_impl_params(name, spec, setup <> body)
     lifetime = if Enum.any?(params, &String.contains?(&1, "'a")), do: "<'a>", else: ""
@@ -591,6 +591,26 @@ defmodule Skia.Codegen do
       Keyword.has_key?(command_body, :body) -> Keyword.fetch!(command_body, :body)
       Keyword.has_key?(command_body, :call) -> [Keyword.fetch!(command_body, :call)]
     end
+  end
+
+  defp rust_lines(lines), do: Enum.map_join(lines, "\n    ", &rust_line/1)
+
+  defp rust_line(line) when is_binary(line), do: line
+  defp rust_line({:stmt, expr}), do: "#{expr};"
+  defp rust_line({:let, pattern, expr}), do: "let #{pattern} = #{expr};"
+  defp rust_line({:let_mut, pattern, expr}), do: "let mut #{pattern} = #{expr};"
+  defp rust_line({:assign, target, expr}), do: "#{target} = #{expr};"
+
+  defp rust_line({:call, receiver, method, args}) do
+    "#{receiver}.#{method}(#{Enum.join(args, ", ")});"
+  end
+
+  defp rust_line({:if, condition, then_lines}) do
+    "if #{condition} {\n    #{rust_lines(then_lines)}\n}"
+  end
+
+  defp rust_line({:if_let, pattern, expr, then_lines}) do
+    "if let #{pattern} = #{expr} {\n    #{rust_lines(then_lines)}\n}"
   end
 
   defp body_impl_params(name, spec, source) do
