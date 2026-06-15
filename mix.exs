@@ -1,7 +1,7 @@
 defmodule Skia.MixProject do
   use Mix.Project
 
-  @version "0.1.0-rc.3"
+  @version "0.1.0-rc.4"
   @source_url "https://github.com/dannote/skia_ex"
 
   def project do
@@ -59,6 +59,7 @@ defmodule Skia.MixProject do
           "native/skia_native/src",
           "native/skia_native/Cargo.toml",
           "native/skia_native/Cargo.lock",
+          "native/skia_native/Cross.toml",
           "examples",
           "mix.exs",
           "README.md",

@@ -10,13 +10,13 @@ permissions:
 
 jobs:
   build_release:
-    name: NIF ${{ matrix.nif }} - ${{ matrix.target }} (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
+    name: NIF ${{ matrix.nif }} - ${{ matrix.job.target }} (${{ matrix.job.os }})
+    runs-on: ${{ matrix.job.os }}
     strategy:
       fail-fast: false
       matrix:
         nif: ["2.15"]
-        include:
+        job:
           - target: aarch64-unknown-linux-gnu
             os: ubuntu-22.04
             use_cross: true
@@ -48,13 +48,13 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
-          target: ${{ matrix.target }}
+          target: ${{ matrix.job.target }}
 
       - name: Restore Rust cache
         uses: Swatinem/rust-cache@v2
         with:
           prefix-key: rustler-precompiled
-          shared-key: ${{ matrix.target }}-${{ matrix.nif }}
+          shared-key: ${{ matrix.job.target }}-${{ matrix.nif }}
 
       - name: Build the project
         id: build-crate
@@ -62,9 +62,9 @@ jobs:
         with:
           project-name: skia_native
           project-version: ${{ env.PROJECT_VERSION }}
-          target: ${{ matrix.target }}
+          target: ${{ matrix.job.target }}
           nif-version: ${{ matrix.nif }}
-          use-cross: ${{ matrix.use_cross }}
+          use-cross: ${{ matrix.job.use_cross }}
 
       - name: Artifact upload
         uses: actions/upload-artifact@v4
