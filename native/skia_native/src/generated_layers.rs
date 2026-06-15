@@ -26,6 +26,10 @@ fn draw_save_layer_impl<'a>(
             paint.set_image_filter(filter);
         }
     }
+    if let Some(term) = opts.image_filter {
+        let filter = decode_image_filter(term)?;
+        paint.set_image_filter(filter);
+    }
     let mut rec = SaveLayerRec::default().paint(&paint);
     if let Some(ref bounds) = bounds {
         rec = rec.bounds(bounds);

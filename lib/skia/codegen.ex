@@ -92,6 +92,7 @@ defmodule Skia.Codegen do
     :sweep_gradient,
     :gradient_stop,
     :image_shader,
+    :blur_filter,
     :matrix,
     :left,
     :center,
@@ -840,7 +841,10 @@ defmodule Skia.Codegen do
   defp rust_required_type({:enum, _name, _opts}), do: "Atom"
   defp rust_required_type(:integer), do: "i64"
   defp rust_required_type(:string), do: "String"
-  defp rust_required_type(type) when type in [:color, :path, :image, :font, :term], do: "Term<'a>"
+
+  defp rust_required_type(type) when type in [:color, :path, :image, :font, :image_filter, :term],
+    do: "Term<'a>"
+
   defp rust_required_type({:tuple, _types}), do: "Term<'a>"
 
   defp rust_optional_type(:number), do: "Option<f32>"
@@ -850,7 +854,7 @@ defmodule Skia.Codegen do
   defp rust_optional_type(:integer), do: "Option<i64>"
   defp rust_optional_type(:string), do: "Option<String>"
 
-  defp rust_optional_type(type) when type in [:color, :path, :image, :font, :term],
+  defp rust_optional_type(type) when type in [:color, :path, :image, :font, :image_filter, :term],
     do: "Option<Term<'a>>"
 
   defp rust_optional_type({:tuple, _types}), do: "Option<Term<'a>>"
@@ -884,8 +888,9 @@ defmodule Skia.Codegen do
   defp required_decoder(:string, atom),
     do: "opt_term(opts, #{atom}).ok_or(rustler::Error::BadArg)?.decode::<String>()?"
 
-  defp required_decoder(type, atom) when type in [:color, :path, :image, :font, :term],
-    do: "opt_term(opts, #{atom}).ok_or(rustler::Error::BadArg)?"
+  defp required_decoder(type, atom)
+       when type in [:color, :path, :image, :font, :image_filter, :term],
+       do: "opt_term(opts, #{atom}).ok_or(rustler::Error::BadArg)?"
 
   defp required_decoder({:tuple, _types}, atom),
     do: "opt_term(opts, #{atom}).ok_or(rustler::Error::BadArg)?"
@@ -903,8 +908,9 @@ defmodule Skia.Codegen do
     do:
       "match opt_term(opts, #{atom}) { Some(term) => Some(term.decode::<String>()?), None => None }"
 
-  defp optional_decoder(type, atom) when type in [:color, :path, :image, :font, :term],
-    do: "opt_term(opts, #{atom})"
+  defp optional_decoder(type, atom)
+       when type in [:color, :path, :image, :font, :image_filter, :term],
+       do: "opt_term(opts, #{atom})"
 
   defp optional_decoder({:tuple, _types}, atom), do: "opt_term(opts, #{atom})"
 

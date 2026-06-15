@@ -2,6 +2,7 @@ defmodule Skia.CommandSpec.Types do
   @moduledoc false
 
   def color, do: :color
+  def image_filter, do: :image_filter
   def blend_mode, do: {:enum, :blend_mode, skia: "SkBlendMode", rust: :BlendMode}
   def sampling, do: {:enum, :sampling, skia: "SkFilterMode", rust: :FilterMode}
   def tile_mode, do: {:enum, :tile_mode, skia: "SkTileMode", rust: :TileMode}

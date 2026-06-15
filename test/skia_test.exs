@@ -126,6 +126,18 @@ defmodule SkiaTest do
     assert %{width: 8, height: 8, commands: [%Skia.Command{op: :clear}]} = batch
   end
 
+  test "renders layers with generic image filters" do
+    document =
+      Skia.canvas(4, 4)
+      |> Skia.background(:transparent)
+      |> Skia.layer([image_filter: Skia.ImageFilter.blur(1.0, tile: :decal)], fn doc ->
+        Skia.circle(doc, x: 2, y: 2, radius: 1, fill: :red)
+      end)
+
+    assert {:ok, raw} = Skia.to_raw(document)
+    assert byte_size(raw.data) == 64
+  end
+
   test "renders layers through the native batch boundary" do
     document =
       Skia.canvas(2, 1)

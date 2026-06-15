@@ -95,6 +95,18 @@ fn decode_paint(term: Term) -> NifResult<Paint> {
     Err(rustler::Error::BadArg)
 }
 
+fn decode_image_filter(term: Term) -> NifResult<skia_safe::ImageFilter> {
+    if let Ok((tag, sigma_x, sigma_y, tile_mode)) = term.decode::<(Atom, f64, f64, Atom)>() {
+        if tag == atoms::blur_filter() {
+            let tile_mode = generated_enums::decode_tile_mode(tile_mode)?;
+            return image_filters::blur((sigma_x as f32, sigma_y as f32), tile_mode, None, None)
+                .ok_or(rustler::Error::BadArg);
+        }
+    }
+
+    Err(rustler::Error::BadArg)
+}
+
 fn optional_matrix_from_term(matrix_term: Term) -> NifResult<Option<Matrix>> {
     if matrix_term.decode::<Atom>().is_ok_and(|atom| atom == atoms::nil()) {
         Ok(None)

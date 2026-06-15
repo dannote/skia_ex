@@ -79,6 +79,7 @@ defmodule Skia.Command do
   defp normalize_value!(_name, _key, :path, %Skia.Path{} = value), do: value
   defp normalize_value!(_name, _key, :image, %Skia.Image{} = value), do: value
   defp normalize_value!(_name, _key, :font, %Skia.Font{} = value), do: value
+  defp normalize_value!(_name, _key, :image_filter, value), do: normalize_image_filter!(value)
 
   defp normalize_value!(_name, _key, {:tuple, types}, value) when is_tuple(value),
     do: normalize_tuple!(types, value)
@@ -100,6 +101,26 @@ defmodule Skia.Command do
   defp normalize_tuple!(types, value) do
     raise ArgumentError, "expected #{length(types)}-tuple, got #{inspect(value)}"
   end
+
+  defp normalize_image_filter!(%Skia.ImageFilter.Blur{
+         sigma_x: sigma_x,
+         sigma_y: sigma_y,
+         tile_mode: tile_mode
+       })
+       when is_atom(tile_mode) do
+    {:blur_filter, normalize_number!(sigma_x), normalize_number!(sigma_y), tile_mode}
+  end
+
+  defp normalize_image_filter!({:blur, sigma}) do
+    normalize_image_filter!(Skia.ImageFilter.blur(sigma))
+  end
+
+  defp normalize_image_filter!({:blur, sigma_x, sigma_y}) do
+    normalize_image_filter!(Skia.ImageFilter.blur(sigma_x, sigma_y))
+  end
+
+  defp normalize_image_filter!(value),
+    do: raise(ArgumentError, "invalid image filter #{inspect(value)}")
 
   defp normalize_color!(%Skia.Shader.LinearGradient{
          from: from,

@@ -13,7 +13,7 @@
 | `text` | `text: string` | `x: number` required<br>`y: number` required<br>`width: number`<br>`size: number`<br>`fill: color`<br>`font: font`<br>`weight: integer`<br>`align: atom`<br>`direction: atom`<br>`font_family: string`<br>`line_height: number` | `size: 16`<br>`fill: :black` | `skia_safe::Canvas::draw_str`<br>`skia_safe::Font::measure_str` |
 | `image` | `image: image` | `x: number` required<br>`y: number` required<br>`width: number`<br>`height: number`<br>`source: {number, number, number, number}`<br>`opacity: number`<br>`sampling: sampling`<br>`blend_mode: blend_mode` | — | `skia_safe::Canvas::draw_image_with_sampling_options`<br>`skia_safe::Canvas::draw_image_rect_with_sampling_options` |
 | `save` | — | — | — | `skia_safe::Canvas::save` |
-| `save_layer` | — | `opacity: number`<br>`bounds: {number, number, number, number}`<br>`blend_mode: blend_mode`<br>`blur: number` | `opacity: 1.0` | `skia_safe::Canvas::save_layer`<br>`skia_safe::ImageFilter::blur` |
+| `save_layer` | — | `opacity: number`<br>`bounds: {number, number, number, number}`<br>`blend_mode: blend_mode`<br>`blur: number`<br>`image_filter: image_filter` | `opacity: 1.0` | `skia_safe::Canvas::save_layer`<br>`skia_safe::ImageFilter::blur` |
 | `restore` | — | — | — | `skia_safe::Canvas::restore` |
 | `push_style` | — | `style: term` required | — | — |
 | `pop_style` | — | — | — | — |

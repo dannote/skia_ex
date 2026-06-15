@@ -20,7 +20,8 @@ defmodule Skia.CommandSpec.Layers do
           [name: :opacity, type: :number],
           [name: :bounds, type: {:tuple, [:number, :number, :number, :number]}],
           [name: :blend_mode, type: T.blend_mode()],
-          [name: :blur, type: :number]
+          [name: :blur, type: :number],
+          [name: :image_filter, type: T.image_filter()]
         ],
         layer: [
           setup: [
@@ -35,6 +36,11 @@ defmodule Skia.CommandSpec.Layers do
                {:if_let, "Some(filter)",
                 "image_filters::blur((sigma, sigma), TileMode::Decal, None, None)",
                 [{:call, "paint", :set_image_filter, ["filter"]}]}
+             ]},
+            {:if_let, "Some(term)", "opts.image_filter",
+             [
+               {:let, "filter", "decode_image_filter(term)?"},
+               {:call, "paint", :set_image_filter, ["filter"]}
              ]},
             {:let_mut, "rec", "SaveLayerRec::default().paint(&paint)"},
             {:if_let, "Some(ref bounds)", "bounds", [{:assign, "rec", "rec.bounds(bounds)"}]}
