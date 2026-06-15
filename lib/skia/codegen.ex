@@ -3,6 +3,7 @@ defmodule Skia.Codegen do
 
   alias RustQ.Rust
   alias Skia.Codegen.SkiaSafe
+  alias Skia.CommandSpec.Shapes
   alias Skia.CommandSpec.Transforms
 
   @spec generated_targets() :: [{atom(), keyword()}]
@@ -547,7 +548,119 @@ defmodule Skia.Codegen do
   defp native_call_receiver(:canvas), do: "surface.canvas()"
 
   @spec generated_shapes() :: String.t()
-  def generated_shapes, do: render_template_file("generated_shapes.rs")
+  def generated_shapes do
+    Shapes.commands()
+    |> generated_shape_impls()
+    |> render_items("generated_shapes.rs")
+  end
+
+  defp generated_shape_impls(commands) do
+    command_impls =
+      commands
+      |> Enum.filter(fn {_name, spec} -> Keyword.has_key?(spec, :shape) end)
+      |> Enum.map(fn {name, spec} -> shape_impl(name, spec) end)
+
+    command_impls ++ [rect_shape_helper()]
+  end
+
+  defp rect_shape_helper do
+    Rust.item("""
+    fn draw_rect_shape(surface: &mut skia_safe::Surface, rect: Rect, radius: f32, paint: &Paint) {
+        if radius > 0.0 {
+            surface
+                .canvas()
+                .draw_rrect(RRect::new_rect_xy(rect, radius, radius), paint);
+        } else {
+            surface.canvas().draw_rect(rect, paint);
+        }
+    }
+    """)
+  end
+
+  defp shape_impl(name, spec) do
+    case Keyword.fetch!(spec, :shape) do
+      :clear -> clear_shape_impl(spec)
+      shape -> painted_shape_impl(name, spec, shape)
+    end
+  end
+
+  defp clear_shape_impl(spec) do
+    handler = Keyword.fetch!(spec, :handler)
+
+    Rust.item("""
+    fn #{handler}_impl<'a>(surface: &mut skia_safe::Surface, args: Vec<Term<'a>>) -> NifResult<()> {
+        if let Some(color) = args.first().and_then(|term| decode_color(*term).ok()) {
+            surface.canvas().clear(color);
+        }
+
+        Ok(())
+    }
+    """)
+  end
+
+  defp painted_shape_impl(name, spec, shape) do
+    handler = Keyword.fetch!(spec, :handler)
+    opts_type = name |> Atom.to_string() |> Macro.camelize() |> Kernel.<>("Opts")
+    opts_name = "opts"
+    setup = shape |> Keyword.get(:setup, []) |> Enum.join("\n    ")
+    setup = if setup == "", do: "", else: setup <> "\n\n    "
+    fill = shape_paint_pass(shape, :fill)
+    stroke = shape_paint_pass(shape, :stroke)
+
+    Rust.item("""
+    fn #{handler}_impl<'a>(
+        surface: &mut skia_safe::Surface,
+        #{opts_name}: generated_opts::#{opts_type}<'a>,
+        raw_opts: &[(Atom, Term<'a>)],
+    ) -> NifResult<()> {
+        #{setup}#{fill}#{stroke}Ok(())
+    }
+    """)
+  end
+
+  defp shape_paint_pass(shape, :fill) do
+    case Keyword.get(shape, :fill) do
+      nil ->
+        ""
+
+      call ->
+        """
+        if let Some(mut paint) = opt_fill_paint(raw_opts, atoms::fill())? {
+            apply_blend_mode(&mut paint, raw_opts)?;
+            #{call}
+        }
+
+        """
+    end
+  end
+
+  defp shape_paint_pass(shape, :stroke) do
+    case Keyword.get(shape, :stroke) do
+      nil ->
+        ""
+
+      call ->
+        stroke_width = Keyword.get(shape, :stroke_width, "opts.stroke_width.unwrap_or(1.0)")
+        stroke_color = Keyword.get(shape, :stroke_color, "opt_color(raw_opts, atoms::stroke())?")
+
+        if Keyword.get(shape, :required_stroke, false) do
+          """
+          let color = decode_color(opts.stroke)?;
+          let paint = stroke_paint(color, #{stroke_width}, raw_opts)?;
+          #{call}
+
+          """
+        else
+          """
+          if let Some(color) = #{stroke_color} {
+              let paint = stroke_paint(color, #{stroke_width}, raw_opts)?;
+              #{call}
+          }
+
+          """
+        end
+    end
+  end
 
   @spec generated_text() :: String.t()
   def generated_text, do: render_template_file("generated_text.rs")
