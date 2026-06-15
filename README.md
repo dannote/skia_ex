@@ -1,6 +1,6 @@
 # Skia
 
-Batched, Elixir-native drawing API for a future Rustler + Skia renderer.
+Batched, Elixir-native drawing API backed by Rustler + `skia-safe`.
 
 The public API builds immutable Elixir documents. Rendering crosses the native
 boundary once with a normalized command batch instead of calling a NIF for every
@@ -9,44 +9,114 @@ canvas operation.
 ## Example
 
 ```elixir
-use Skia.DSL
-
 document =
-  canvas 1200, 630 do
-    background "#020617"
-
-    group translate: {80, 80} do
-      style fill: :white, font: "Inter" do
-        text "Launch Week", x: 48, y: 90, size: 56, weight: 700
-        rect x: 48, y: 140, width: 320, height: 96, radius: 24, fill: "#3b82f6"
-      end
-    end
-  end
+  Skia.canvas(1200, 630)
+  |> Skia.background("#020617")
+  |> Skia.group([translate: {80, 80}], fn doc ->
+    doc
+    |> Skia.text("Launch Week", x: 48, y: 90, size: 56, weight: 700, fill: :white)
+    |> Skia.rect(x: 48, y: 140, width: 320, height: 96, radius: 24, fill: "#3b82f6")
+  end)
 
 {:ok, png} = Skia.to_png(document)
 {:ok, %{width: width, height: height, stride: stride, data: rgba}} = Skia.to_raw(document)
 ```
 
-The Rustler native boundary is already present. The current NIF uses
-`skia-safe` for CPU raster rendering and supports the first batch commands:
-background clears, rectangles, circles, lines, paths, text, decoded images,
-image source rectangles, clip rectangles/circles/paths, save/restore, layers,
-translate, and rotate. PNG, JPEG, raw RGBA, and WEBP encoding entry points are
-available; WEBP depends on the native Skia build supporting WEBP encoding.
-
-See `examples/` for runnable snippets covering images, clipping, gradients,
-stroke options, and text measurement.
-
-## Installation
-
-After publication, add `skia` to your dependencies:
+## Paint sources and shaders
 
 ```elixir
-def deps do
-  [
-    {:skia, "~> 0.1.0"}
-  ]
-end
+fill =
+  Skia.two_point_conical_gradient({16, 16}, 0, {48, 48}, 32, [
+    Skia.gradient_stop(:red, 0),
+    Skia.gradient_stop(:blue, 1)
+  ], tile: :clamp, matrix: Skia.Matrix.rotate(0.2))
+
+solid_shader = Skia.color_shader(:green)
+```
+
+Image shaders support tile modes and rich sampling:
+
+```elixir
+Skia.image_shader(image,
+  tile: {:repeat, :mirror},
+  sampling: Skia.SamplingOptions.cubic(:catmull_rom),
+  matrix: Skia.Matrix.scale(2, 2)
+)
+```
+
+## Filters and effects
+
+Paints can carry image filters, color filters, blend modes, and path effects:
+
+```elixir
+color_filter =
+  Skia.ColorFilter.blend(:blue, :src_in)
+  |> Skia.ColorFilter.compose(Skia.ColorFilter.matrix([
+    1, 0, 0, 0, 0,
+    0, 1, 0, 0, 0,
+    0, 0, 1, 0, 0,
+    0, 0, 0, 1, 0
+  ]))
+
+path_effect =
+  Skia.PathEffect.trim(0.05, 0.95)
+  |> Skia.PathEffect.compose(Skia.PathEffect.dash([8, 4]))
+  |> Skia.PathEffect.sum(Skia.PathEffect.discrete(6, 1.5, seed: 42))
+
+Skia.path(doc, path,
+  stroke: :red,
+  stroke_width: 2,
+  blend_mode: :src_over,
+  color_filter: color_filter,
+  image_filter: Skia.ImageFilter.blur(2),
+  path_effect: path_effect
+)
+```
+
+Layer and image-filter graphs are composable:
+
+```elixir
+filter =
+  Skia.ImageFilter.blur(2)
+  |> Skia.ImageFilter.compose(Skia.ImageFilter.offset(4, 2))
+
+Skia.layer(doc, [image_filter: filter], fn layer ->
+  Skia.rect(layer, x: 0, y: 0, width: 80, height: 80, fill: :red)
+end)
+```
+
+## Paths
+
+Paths are immutable Elixir structs and support absolute, relative, conic, cubic,
+SVG import, and SVG export:
+
+```elixir
+path =
+  Skia.Path.new()
+  |> Skia.Path.move_to(0, 0)
+  |> Skia.Path.r_line_to(40, 0)
+  |> Skia.Path.conic_to(60, 20, 40, 40, 0.5)
+  |> Skia.Path.close()
+
+svg_path = Skia.Path.from_svg("M0 0L100 0L100 100Z")
+{:ok, svg} = Skia.Path.to_svg(svg_path)
+```
+
+## Text
+
+Use direct options for convenience or reusable style structs for paragraph text:
+
+```elixir
+style = Skia.TextStyle.new(size: 16, fill: :black, font_family: "Arial", line_height: 20)
+paragraph = Skia.ParagraphStyle.new(width: 320, align: :center, direction: :ltr)
+
+spans = [
+  Skia.TextSpan.new("Hello ", fill: :red, size: 18),
+  Skia.TextSpan.new("Skia", fill: :blue, size: 24)
+]
+
+Skia.text(doc, "Hello", x: 0, y: 0, style: style, paragraph_style: paragraph)
+Skia.text(doc, "", x: 0, y: 32, paragraph_style: paragraph, spans: spans)
 ```
 
 ## Development
@@ -55,3 +125,5 @@ end
 mix deps.get
 mix ci
 ```
+
+See `docs/commands.md` for the generated command reference.

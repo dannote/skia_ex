@@ -55,12 +55,48 @@ fn draw_paragraph_text<'a>(
     let mut font_collection = FontCollection::new();
     font_collection.set_default_font_manager(FontMgr::default(), None);
     let mut paragraph_builder = ParagraphBuilder::new(&paragraph_style, font_collection);
-    paragraph_builder.push_style(&text_style);
-    paragraph_builder.add_text(text);
+    if let Some(spans_term) = opts.spans {
+        for (span_text, style_opts) in spans_term
+            .decode::<Vec<(String, Vec<(Atom, Term)>)>>()?
+        {
+            let span_style = text_style_from_opts(&text_style, &style_opts)?;
+            paragraph_builder.push_style(&span_style);
+            paragraph_builder.add_text(span_text);
+            paragraph_builder.pop();
+        }
+    } else {
+        paragraph_builder.push_style(&text_style);
+        paragraph_builder.add_text(text);
+        paragraph_builder.pop();
+    }
     let mut paragraph = paragraph_builder.build();
     paragraph.layout(width);
     paragraph.paint(surface.canvas(), Point::new(x, y));
     Ok(())
+}
+fn text_style_from_opts<'a>(
+    base: &TextStyle,
+    opts: &[(Atom, Term<'a>)],
+) -> NifResult<TextStyle> {
+    let mut style = base.clone();
+    if let Some(size) = opt_f32_option(opts, atoms::size())? {
+        style.set_font_size(size);
+    }
+    if let Some(fill) = opt_term(opts, atoms::fill()) {
+        style.set_color(decode_color(fill)?);
+    }
+    if let Some(ref family) = opt_term(opts, atoms::font_family())
+        .map(|term| term.decode::<String>())
+        .transpose()?
+    {
+        style.set_font_families(&[family]);
+    }
+    if let Some(line_height) = opt_f32_option(opts, atoms::line_height())? {
+        let font_size = opt_f32_option(opts, atoms::size())?.unwrap_or(base.font_size());
+        style.set_height(line_height / font_size);
+        style.set_height_override(true);
+    }
+    Ok(style)
 }
 fn decode_text_align(value: Atom) -> NifResult<TextAlign> {
     if value == atoms::center() {

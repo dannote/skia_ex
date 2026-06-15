@@ -74,6 +74,7 @@ defmodule Skia.Command do
     do: value
 
   defp normalize_value!(_name, _key, :boolean, value) when is_boolean(value), do: value
+  defp normalize_value!(_name, :spans, :term, value), do: normalize_spans!(value)
   defp normalize_value!(_name, _key, :term, value), do: value
   defp normalize_value!(_name, _key, :color, value), do: normalize_color!(value)
   defp normalize_value!(_name, _key, :path, %Skia.Path{} = value), do: value
@@ -372,6 +373,16 @@ defmodule Skia.Command do
     {:corner_path_effect, normalize_number!(radius)}
   end
 
+  defp normalize_path_effect!(%Skia.PathEffect.Trim{start: start, stop: stop, mode: mode})
+       when mode in [:normal, :inverted] do
+    {:trim_path_effect, normalize_number!(start), normalize_number!(stop), mode}
+  end
+
+  defp normalize_path_effect!(%Skia.PathEffect.Discrete{} = effect) do
+    {:discrete_path_effect, normalize_number!(effect.segment_length),
+     normalize_number!(effect.deviation), effect.seed}
+  end
+
   defp normalize_path_effect!(%Skia.PathEffect.Compose{outer: outer, inner: inner}) do
     {:compose_path_effect, normalize_path_effect!(outer), normalize_path_effect!(inner)}
   end
@@ -413,6 +424,37 @@ defmodule Skia.Command do
 
   defp normalize_cubic!(value),
     do: raise(ArgumentError, "invalid cubic sampling #{inspect(value)}")
+
+  defp normalize_spans!(spans) when is_list(spans), do: Enum.map(spans, &normalize_span!/1)
+
+  defp normalize_spans!(value),
+    do: raise(ArgumentError, "invalid text spans #{inspect(value)}")
+
+  defp normalize_span!(%Skia.TextSpan{text: text, style: style}) when is_binary(text) do
+    {text, normalize_text_style!(style)}
+  end
+
+  defp normalize_span!({text, %Skia.TextStyle{} = style}) when is_binary(text) do
+    {text, normalize_text_style!(style)}
+  end
+
+  defp normalize_span!(text) when is_binary(text), do: {text, []}
+
+  defp normalize_span!(value),
+    do: raise(ArgumentError, "invalid text span #{inspect(value)}")
+
+  defp normalize_text_style!(nil), do: []
+
+  defp normalize_text_style!(%Skia.TextStyle{} = style) do
+    style
+    |> Skia.TextStyle.to_opts()
+    |> Enum.map(fn
+      {:size, value} -> {:size, normalize_number!(value)}
+      {:fill, value} -> {:fill, normalize_color!(value)}
+      {:line_height, value} -> {:line_height, normalize_number!(value)}
+      other -> other
+    end)
+  end
 
   defp normalize_point!({x, y}), do: {normalize_number!(x), normalize_number!(y)}
   defp normalize_point!(value), do: raise(ArgumentError, "invalid point #{inspect(value)}")

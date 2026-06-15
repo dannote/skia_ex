@@ -532,6 +532,24 @@ defmodule SkiaTest do
     assert byte_size(raw.data) == 128
   end
 
+  test "supports trim and discrete path effects" do
+    effect =
+      Skia.PathEffect.trim(0.1, 0.9)
+      |> Skia.PathEffect.compose(Skia.PathEffect.discrete(2, 0.5, seed: 1))
+
+    path =
+      Skia.Path.new()
+      |> Skia.Path.move_to(0, 2)
+      |> Skia.Path.line_to(8, 2)
+
+    document =
+      Skia.canvas(8, 4)
+      |> Skia.path(path, stroke: :red, stroke_width: 1, path_effect: effect)
+
+    assert {:ok, raw} = Skia.to_raw(document)
+    assert byte_size(raw.data) == 128
+  end
+
   test "supports composed path effects" do
     effect =
       Skia.PathEffect.corner(1)
@@ -572,6 +590,25 @@ defmodule SkiaTest do
 
     assert {:ok, raw} = Skia.to_raw(document)
     assert byte_size(raw.data) == 64
+  end
+
+  test "supports styled text spans" do
+    spans = [
+      Skia.TextSpan.new("Red ", fill: :red, size: 12),
+      Skia.TextSpan.new("Blue", fill: :blue, size: 16)
+    ]
+
+    document =
+      Skia.canvas(96, 48)
+      |> Skia.text("",
+        x: 0,
+        y: 0,
+        paragraph_style: Skia.ParagraphStyle.new(width: 96),
+        spans: spans
+      )
+
+    assert {:ok, png} = Skia.to_png(document)
+    assert <<137, 80, 78, 71, 13, 10, 26, 10, _rest::binary>> = png
   end
 
   test "supports reusable text and paragraph styles" do

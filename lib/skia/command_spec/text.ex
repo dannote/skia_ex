@@ -20,7 +20,8 @@ defmodule Skia.CommandSpec.Text do
           [name: :align, type: :atom],
           [name: :direction, type: :atom],
           [name: :font_family, type: :string],
-          [name: :line_height, type: :number]
+          [name: :line_height, type: :number],
+          [name: :spans, type: :term]
         ],
         text_draw: [
           setup: [

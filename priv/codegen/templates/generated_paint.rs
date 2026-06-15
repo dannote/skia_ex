@@ -285,6 +285,34 @@ fn decode_path_effect(term: Term) -> NifResult<PathEffect> {
         }
     }
 
+    if let Ok((tag, start, stop, mode)) = term.decode::<(Atom, f64, f64, Atom)>() {
+        if tag == atoms::trim_path_effect() {
+            let mode = if mode == atoms::inverted() {
+                skia_safe::trim_path_effect::Mode::Inverted
+            } else if mode == atoms::normal() {
+                skia_safe::trim_path_effect::Mode::Normal
+            } else {
+                return Err(rustler::Error::BadArg);
+            };
+            return PathEffect::trim(start as f32, stop as f32, mode)
+                .ok_or(rustler::Error::BadArg);
+        }
+    }
+
+    if let Ok((tag, segment_length, deviation, seed_term)) =
+        term.decode::<(Atom, f64, f64, Term)>()
+    {
+        if tag == atoms::discrete_path_effect() {
+            let seed = if seed_term.decode::<Atom>().is_ok_and(|atom| atom == atoms::nil()) {
+                None
+            } else {
+                Some(seed_term.decode::<i64>()? as u32)
+            };
+            return PathEffect::discrete(segment_length as f32, deviation as f32, seed)
+                .ok_or(rustler::Error::BadArg);
+        }
+    }
+
     if let Ok((tag, first, second)) = term.decode::<(Atom, Term, Term)>() {
         if tag == atoms::compose_path_effect() {
             return Ok(PathEffect::compose(decode_path_effect(first)?, decode_path_effect(second)?));

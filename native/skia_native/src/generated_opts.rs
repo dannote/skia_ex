@@ -189,6 +189,7 @@ pub struct TextOpts<'a> {
     pub direction: Option<Atom>,
     pub font_family: Option<String>,
     pub line_height: Option<f32>,
+    pub spans: Option<Term<'a>>,
     _phantom: std::marker::PhantomData<&'a ()>,
 }
 pub fn decode_text_opts<'a>(opts: &[(Atom, Term<'a>)]) -> NifResult<TextOpts<'a>> {
@@ -210,6 +211,7 @@ pub fn decode_text_opts<'a>(opts: &[(Atom, Term<'a>)]) -> NifResult<TextOpts<'a>
             None => None,
         },
         line_height: opt_f32_option(opts, atoms::line_height())?,
+        spans: opt_term(opts, atoms::spans()),
         _phantom: std::marker::PhantomData,
     })
 }
