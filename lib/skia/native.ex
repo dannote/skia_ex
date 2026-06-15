@@ -15,4 +15,5 @@ defmodule Skia.Native do
   def crop_image(_image, _source), do: :erlang.nif_error(:nif_not_loaded)
   def load_font(_bytes), do: :erlang.nif_error(:nif_not_loaded)
   def measure_text(_text, _font, _size), do: :erlang.nif_error(:nif_not_loaded)
+  def path_to_svg(_path_term), do: :erlang.nif_error(:nif_not_loaded)
 end

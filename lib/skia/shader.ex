@@ -24,6 +24,28 @@ defmodule Skia.Shader.RadialGradient do
   defstruct [:center, :radius, :colors, tile_mode: :clamp, matrix: nil]
 end
 
+defmodule Skia.Shader.TwoPointConicalGradient do
+  @moduledoc "Two-point conical gradient paint source."
+
+  @type t :: %__MODULE__{
+          start: {float(), float()},
+          start_radius: float(),
+          end: {float(), float()},
+          end_radius: float(),
+          colors: [term()],
+          tile_mode: atom(),
+          matrix: tuple() | nil
+        }
+  defstruct [:start, :start_radius, :end, :end_radius, :colors, tile_mode: :clamp, matrix: nil]
+end
+
+defmodule Skia.Shader.ColorShader do
+  @moduledoc "Solid color shader paint source."
+
+  @type t :: %__MODULE__{color: term()}
+  defstruct [:color]
+end
+
 defmodule Skia.Shader.SweepGradient do
   @moduledoc "Sweep/conic gradient paint source."
 
@@ -67,7 +89,16 @@ defmodule Skia.Paint do
           stroke_width: float() | nil,
           blend_mode: atom() | nil,
           image_filter: Skia.ImageFilter.t() | nil,
-          path_effect: Skia.PathEffect.t() | nil
+          path_effect: Skia.PathEffect.t() | nil,
+          color_filter: Skia.ColorFilter.t() | nil
         }
-  defstruct [:fill, :stroke, :stroke_width, :blend_mode, :image_filter, :path_effect]
+  defstruct [
+    :fill,
+    :stroke,
+    :stroke_width,
+    :blend_mode,
+    :image_filter,
+    :path_effect,
+    :color_filter
+  ]
 end

@@ -27,6 +27,31 @@ defmodule Skia do
       matrix: Keyword.get(opts, :matrix)
     }
 
+  @doc "Creates a two-point conical gradient paint value."
+  @spec two_point_conical_gradient(
+          {number(), number()},
+          number(),
+          {number(), number()},
+          number(),
+          [term()],
+          keyword()
+        ) :: Skia.Shader.TwoPointConicalGradient.t()
+  def two_point_conical_gradient(start, start_radius, finish, end_radius, colors, opts \\ []) do
+    %Skia.Shader.TwoPointConicalGradient{
+      start: start,
+      start_radius: start_radius,
+      end: finish,
+      end_radius: end_radius,
+      colors: colors,
+      tile_mode: Keyword.get(opts, :tile, Keyword.get(opts, :tile_mode, :clamp)),
+      matrix: Keyword.get(opts, :matrix)
+    }
+  end
+
+  @doc "Creates a solid-color shader paint value."
+  @spec color_shader(term()) :: Skia.Shader.ColorShader.t()
+  def color_shader(color), do: %Skia.Shader.ColorShader{color: color}
+
   @doc "Creates a radial gradient paint value."
   @spec radial_gradient({number(), number()}, number(), [term()], keyword()) ::
           Skia.Shader.RadialGradient.t()
@@ -96,7 +121,16 @@ defmodule Skia do
   end
 
   for {name, spec} <- CommandSpec.all(),
-      name not in [:save, :save_layer, :restore, :translate, :rotate, :push_style, :pop_style] do
+      name not in [
+        :save,
+        :save_layer,
+        :restore,
+        :translate,
+        :rotate,
+        :push_style,
+        :pop_style,
+        :text
+      ] do
     args = Keyword.get(spec, :args, [])
     arg_vars = Enum.map(args, fn {arg_name, _type} -> Macro.var(arg_name, __MODULE__) end)
 
@@ -118,6 +152,27 @@ defmodule Skia do
       end
     end
   end
+
+  @doc "Adds text with optional `%Skia.TextStyle{}` and `%Skia.ParagraphStyle{}` values."
+  @spec text(Document.t(), String.t(), keyword()) :: Document.t()
+  def text(%Document{} = document, text, opts \\ []) when is_binary(text) do
+    {text_style, opts} = Keyword.pop(opts, :style)
+    {paragraph_style, opts} = Keyword.pop(opts, :paragraph_style)
+
+    opts =
+      []
+      |> Keyword.merge(style_opts(text_style, Skia.TextStyle))
+      |> Keyword.merge(style_opts(paragraph_style, Skia.ParagraphStyle))
+      |> Keyword.merge(opts)
+
+    append_command(document, :text, [text], opts)
+  end
+
+  defp style_opts(nil, _module), do: []
+  defp style_opts(%Skia.TextStyle{} = style, Skia.TextStyle), do: Skia.TextStyle.to_opts(style)
+
+  defp style_opts(%Skia.ParagraphStyle{} = style, Skia.ParagraphStyle),
+    do: Skia.ParagraphStyle.to_opts(style)
 
   @doc "Adds a saved canvas group with optional transforms."
   @spec group(Document.t(), keyword(), (Document.t() -> Document.t())) :: Document.t()

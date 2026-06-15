@@ -425,6 +425,60 @@ defmodule SkiaTest do
     assert raw.data == <<255, 0, 0, 255, 0, 0, 255, 255>>
   end
 
+  test "supports conical and color shaders" do
+    document =
+      Skia.canvas(4, 4)
+      |> Skia.rect(
+        x: 0,
+        y: 0,
+        width: 4,
+        height: 4,
+        fill: Skia.two_point_conical_gradient({1, 1}, 0.5, {3, 3}, 2, [:red, :blue])
+      )
+      |> Skia.rect(x: 1, y: 1, width: 2, height: 2, fill: Skia.color_shader(:green))
+
+    assert {:ok, raw} = Skia.to_raw(document)
+    assert byte_size(raw.data) == 64
+  end
+
+  test "supports color filters and image-filter shader leaves" do
+    filter =
+      Skia.ColorFilter.blend(:blue, :src_in)
+      |> Skia.ColorFilter.compose(
+        Skia.ColorFilter.matrix([
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0
+        ])
+      )
+
+    document =
+      Skia.canvas(4, 4)
+      |> Skia.rect(x: 0, y: 0, width: 4, height: 4, fill: :red, color_filter: filter)
+      |> Skia.layer([image_filter: Skia.ImageFilter.shader(Skia.color_shader(:green))], & &1)
+      |> Skia.layer([image_filter: Skia.ImageFilter.color_filter(filter)], & &1)
+
+    assert {:ok, raw} = Skia.to_raw(document)
+    assert byte_size(raw.data) == 64
+  end
+
   test "supports rich sampling options" do
     source =
       Skia.canvas(2, 2)
@@ -496,6 +550,40 @@ defmodule SkiaTest do
 
     assert {:ok, raw} = Skia.to_raw(document)
     assert byte_size(raw.data) == 128
+  end
+
+  test "supports conic, relative, and SVG paths" do
+    path =
+      Skia.Path.new()
+      |> Skia.Path.move_to(1, 2)
+      |> Skia.Path.r_line_to(2, 0)
+      |> Skia.Path.r_conic_to(1, -2, 2, 0, 0.5)
+      |> Skia.Path.r_cubic_to(1, 0, 1, 1, 0, 1)
+
+    svg_path = Skia.Path.from_svg("M0 0L3 0L3 3Z")
+
+    assert {:ok, svg} = Skia.Path.to_svg(svg_path)
+    assert is_binary(svg)
+
+    document =
+      Skia.canvas(4, 4)
+      |> Skia.path(path, stroke: :red, stroke_width: 1)
+      |> Skia.path(svg_path, fill: :blue)
+
+    assert {:ok, raw} = Skia.to_raw(document)
+    assert byte_size(raw.data) == 64
+  end
+
+  test "supports reusable text and paragraph styles" do
+    style = Skia.TextStyle.new(size: 12, fill: :black, font_family: "Arial", line_height: 14)
+    paragraph = Skia.ParagraphStyle.new(width: 48, align: :center, direction: :ltr)
+
+    document =
+      Skia.canvas(96, 48)
+      |> Skia.text("Styled text", x: 0, y: 0, style: style, paragraph_style: paragraph)
+
+    assert {:ok, png} = Skia.to_png(document)
+    assert <<137, 80, 78, 71, 13, 10, 26, 10, _rest::binary>> = png
   end
 
   test "supports path boolean operations" do

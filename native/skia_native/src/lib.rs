@@ -5,8 +5,9 @@ use skia_safe::{
     canvas::SaveLayerRec,
     image_filters, path_utils, surfaces,
     textlayout::{FontCollection, ParagraphBuilder, ParagraphStyle, TextAlign, TextDirection, TextStyle},
-    AlphaType, Color, ColorType, CubicResampler, Data, EncodedImageFormat, FilterMode, Font,
-    FontMgr, FontStyle, IPoint, Image, ImageInfo, Matrix, Paint, PaintStyle,
+    color_filters, AlphaType, Color, ColorFilter, ColorType, CubicResampler, Data,
+    EncodedImageFormat, FilterMode, Font, FontMgr, FontStyle, IPoint, Image, ImageInfo, Matrix,
+    Paint, PaintStyle,
     PathBuilder, PathEffect, Point, RRect, Rect, SamplingOptions, Shader, TileMode,
 };
 
@@ -175,6 +176,13 @@ fn measure_text_impl<'a>(
         bounds.bottom,
     )
         .encode(env))
+}
+
+fn path_to_svg_impl<'a>(env: Env<'a>, path_term: Term<'a>) -> NifResult<Term<'a>> {
+    match build_path(path_term) {
+        Ok(path) => Ok((atoms::ok(), path.to_svg()).encode(env)),
+        Err(_) => Ok((atoms::error(), rustler::types::atom::badarg()).encode(env)),
+    }
 }
 
 fn image_from_term(image_term: Term) -> NifResult<Image> {

@@ -80,6 +80,7 @@ defmodule Skia.Command do
   defp normalize_value!(_name, _key, :image, %Skia.Image{} = value), do: value
   defp normalize_value!(_name, _key, :font, %Skia.Font{} = value), do: value
   defp normalize_value!(_name, _key, :image_filter, value), do: normalize_image_filter!(value)
+  defp normalize_value!(_name, _key, :color_filter, value), do: normalize_color_filter!(value)
   defp normalize_value!(_name, _key, :path_effect, value), do: normalize_path_effect!(value)
 
   defp normalize_value!(_name, _key, :sampling_options, value),
@@ -131,6 +132,15 @@ defmodule Skia.Command do
      {normalize_optional_filter!(shadow.input), shadow.shadow_only}}
   end
 
+  defp normalize_image_filter!(%Skia.ImageFilter.ColorFilter{color_filter: filter, input: input}) do
+    {:color_filter_image_filter, normalize_color_filter!(filter),
+     normalize_optional_filter!(input)}
+  end
+
+  defp normalize_image_filter!(%Skia.ImageFilter.Shader{shader: shader}) do
+    {:shader_image_filter, normalize_color!(shader)}
+  end
+
   defp normalize_image_filter!(%Skia.ImageFilter.Morphology{
          op: op,
          radius_x: x,
@@ -164,6 +174,17 @@ defmodule Skia.Command do
          matrix: matrix
        }) do
     normalize_color!({:linear_gradient, from, to, colors, tile_mode, matrix})
+  end
+
+  defp normalize_color!(%Skia.Shader.TwoPointConicalGradient{} = gradient) do
+    normalize_color!(
+      {:two_point_conical_gradient, gradient.start, gradient.start_radius, gradient.end,
+       gradient.end_radius, gradient.colors, gradient.tile_mode, gradient.matrix}
+    )
+  end
+
+  defp normalize_color!(%Skia.Shader.ColorShader{color: color}) do
+    {:color_shader, normalize_color!(color)}
   end
 
   defp normalize_color!(%Skia.Shader.RadialGradient{
@@ -222,6 +243,25 @@ defmodule Skia.Command do
      Enum.map(colors, &normalize_color!/1), tile_mode, normalize_optional_matrix!(matrix)}
   end
 
+  defp normalize_color!(
+         {:two_point_conical_gradient, start, start_radius, finish, end_radius, colors}
+       )
+       when is_list(colors) do
+    normalize_color!(
+      {:two_point_conical_gradient, start, start_radius, finish, end_radius, colors, :clamp, nil}
+    )
+  end
+
+  defp normalize_color!(
+         {:two_point_conical_gradient, start, start_radius, finish, end_radius, colors, tile_mode,
+          matrix}
+       )
+       when is_list(colors) and is_atom(tile_mode) do
+    {:two_point_conical_gradient, normalize_point!(start), normalize_number!(start_radius),
+     normalize_point!(finish), normalize_number!(end_radius),
+     {Enum.map(colors, &normalize_color!/1), tile_mode, normalize_optional_matrix!(matrix)}}
+  end
+
   defp normalize_color!({:radial_gradient, center, radius, colors}) when is_list(colors) do
     normalize_color!({:radial_gradient, center, radius, colors, :clamp, nil})
   end
@@ -256,6 +296,10 @@ defmodule Skia.Command do
     {:sweep_gradient, normalize_point!(center), normalize_number!(start_degrees),
      normalize_number!(end_degrees), Enum.map(colors, &normalize_color!/1), tile_mode,
      normalize_optional_matrix!(matrix)}
+  end
+
+  defp normalize_color!({:color_shader, color}) do
+    {:color_shader, normalize_color!(color)}
   end
 
   defp normalize_color!({:rgba, red, green, blue, alpha}) do
@@ -302,6 +346,23 @@ defmodule Skia.Command do
   end
 
   defp normalize_color!(color), do: raise(ArgumentError, "invalid color #{inspect(color)}")
+
+  defp normalize_color_filter!(%Skia.ColorFilter.Blend{color: color, blend_mode: blend_mode})
+       when is_atom(blend_mode) do
+    {:blend_color_filter, normalize_color!(color), blend_mode}
+  end
+
+  defp normalize_color_filter!(%Skia.ColorFilter.Matrix{matrix: matrix, clamp: clamp})
+       when is_list(matrix) and is_boolean(clamp) do
+    {:matrix_color_filter, Enum.map(matrix, &normalize_number!/1), clamp}
+  end
+
+  defp normalize_color_filter!(%Skia.ColorFilter.Compose{outer: outer, inner: inner}) do
+    {:compose_color_filter, normalize_color_filter!(outer), normalize_color_filter!(inner)}
+  end
+
+  defp normalize_color_filter!(value),
+    do: raise(ArgumentError, "invalid color filter #{inspect(value)}")
 
   defp normalize_path_effect!(%Skia.PathEffect.Dash{intervals: intervals, phase: phase}) do
     {:dash_path_effect, Enum.map(intervals, &normalize_number!/1), normalize_number!(phase)}

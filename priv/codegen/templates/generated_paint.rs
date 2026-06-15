@@ -26,6 +26,42 @@ fn decode_paint(term: Term) -> NifResult<Paint> {
         }
     }
 
+    if let Ok((tag, start, start_radius, end, end_radius, gradient_opts)) =
+        term.decode::<(Atom, (f64, f64), f64, (f64, f64), f64, Term)>()
+    {
+        if tag == atoms::two_point_conical_gradient() {
+            let (stops, tile_mode, matrix_term) = gradient_opts.decode::<(Vec<Term>, Atom, Term)>()?;
+            let (colors, positions) = decode_gradient_stops(stops)?;
+            let tile_mode = generated_enums::decode_tile_mode(tile_mode)?;
+            let matrix = optional_matrix_from_term(matrix_term)?;
+            let mut paint = Paint::default();
+            paint.set_anti_alias(true).set_style(PaintStyle::Fill);
+            if let Some(shader) = Shader::two_point_conical_gradient(
+                (start.0 as f32, start.1 as f32),
+                start_radius as f32,
+                (end.0 as f32, end.1 as f32),
+                end_radius as f32,
+                colors.as_slice(),
+                positions.as_deref(),
+                tile_mode,
+                None,
+                matrix.as_ref(),
+            ) {
+                paint.set_shader(shader);
+            }
+            return Ok(paint);
+        }
+    }
+
+    if let Ok((tag, color_term)) = term.decode::<(Atom, Term)>() {
+        if tag == atoms::color_shader() {
+            let mut paint = Paint::default();
+            paint.set_anti_alias(true).set_style(PaintStyle::Fill);
+            paint.set_shader(skia_safe::shaders::color(decode_color(color_term)?));
+            return Ok(paint);
+        }
+    }
+
     if let Ok((tag, center, radius, stops, tile_mode, matrix_term)) =
         term.decode::<(Atom, (f64, f64), f64, Vec<Term>, Atom, Term)>()
     {
@@ -152,6 +188,24 @@ fn decode_image_filter(term: Term) -> NifResult<skia_safe::ImageFilter> {
         }
     }
 
+    if let Ok((tag, filter_term, input_term)) = term.decode::<(Atom, Term, Term)>() {
+        if tag == atoms::color_filter_image_filter() {
+            return image_filters::color_filter(
+                decode_color_filter(filter_term)?,
+                optional_image_filter_from_term(input_term)?,
+                None,
+            )
+            .ok_or(rustler::Error::BadArg);
+        }
+    }
+
+    if let Ok((tag, shader_term)) = term.decode::<(Atom, Term)>() {
+        if tag == atoms::shader_image_filter() {
+            return image_filters::shader(decode_shader(shader_term)?, None)
+                .ok_or(rustler::Error::BadArg);
+        }
+    }
+
     if let Ok((tag, op, radius_x, radius_y, input_term)) =
         term.decode::<(Atom, Atom, f64, f64, Term)>()
     {
@@ -177,6 +231,43 @@ fn optional_image_filter_from_term(term: Term) -> NifResult<Option<skia_safe::Im
     } else {
         Ok(Some(decode_image_filter(term)?))
     }
+}
+
+fn decode_shader(term: Term) -> NifResult<Shader> {
+    let paint = decode_paint(term)?;
+    paint.shader().ok_or(rustler::Error::BadArg)
+}
+
+fn decode_color_filter(term: Term) -> NifResult<ColorFilter> {
+    if let Ok((tag, color_term, blend_mode)) = term.decode::<(Atom, Term, Atom)>() {
+        if tag == atoms::blend_color_filter() {
+            return color_filters::blend(
+                decode_color(color_term)?,
+                generated_enums::decode_blend_mode(blend_mode)?,
+            )
+            .ok_or(rustler::Error::BadArg);
+        }
+    }
+
+    if let Ok((tag, matrix, clamp)) = term.decode::<(Atom, Vec<f64>, bool)>() {
+        if tag == atoms::matrix_color_filter() && matrix.len() == 20 {
+            let mut values = [0.0_f32; 20];
+            for (index, value) in matrix.into_iter().enumerate() {
+                values[index] = value as f32;
+            }
+            let clamp = if clamp { color_filters::Clamp::Yes } else { color_filters::Clamp::No };
+            return Ok(color_filters::matrix_row_major(&values, clamp));
+        }
+    }
+
+    if let Ok((tag, outer, inner)) = term.decode::<(Atom, Term, Term)>() {
+        if tag == atoms::compose_color_filter() {
+            return color_filters::compose(decode_color_filter(outer)?, decode_color_filter(inner)?)
+                .ok_or(rustler::Error::BadArg);
+        }
+    }
+
+    Err(rustler::Error::BadArg)
 }
 
 fn decode_path_effect(term: Term) -> NifResult<PathEffect> {

@@ -59,3 +59,7 @@ fn measure_text<'a>(
 ) -> NifResult<Term<'a>> {
     measure_text_impl(env, text, font_term, size)
 }
+#[rustler::nif(schedule = "DirtyCpu")]
+fn path_to_svg<'a>(env: Env<'a>, path_term: Term<'a>) -> NifResult<Term<'a>> {
+    path_to_svg_impl(env, path_term)
+}

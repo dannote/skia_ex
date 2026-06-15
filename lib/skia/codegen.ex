@@ -94,11 +94,18 @@ defmodule Skia.Codegen do
     :sweep_gradient,
     :gradient_stop,
     :image_shader,
+    :two_point_conical_gradient,
+    :color_shader,
     :blur_filter,
     :compose_filter,
     :offset_filter,
     :drop_shadow_filter,
     :morphology_filter,
+    :color_filter_image_filter,
+    :shader_image_filter,
+    :blend_color_filter,
+    :matrix_color_filter,
+    :compose_color_filter,
     :dilate,
     :erode,
     :dash_path_effect,
@@ -118,10 +125,17 @@ defmodule Skia.Codegen do
     :ltr,
     :rtl,
     :segments,
+    :svg,
     :move_to,
     :line_to,
     :quad_to,
+    :conic_to,
     :cubic_to,
+    :r_move_to,
+    :r_line_to,
+    :r_quad_to,
+    :r_conic_to,
+    :r_cubic_to,
     :close
   ]
 
@@ -173,6 +187,11 @@ defmodule Skia.Codegen do
     ],
     measure_text: [
       args: [env: "Env<'a>", text: :String, font_term: "Term<'a>", size: :f64],
+      returns: "NifResult<Term<'a>>",
+      lifetime: :a
+    ],
+    path_to_svg: [
+      args: [env: "Env<'a>", path_term: "Term<'a>"],
       returns: "NifResult<Term<'a>>",
       lifetime: :a
     ]
@@ -428,6 +447,9 @@ defmodule Skia.Codegen do
         }
         if let Some(term) = opt_term(opts, atoms::path_effect()) {
             paint.set_path_effect(decode_path_effect(term)?);
+        }
+        if let Some(term) = opt_term(opts, atoms::color_filter()) {
+            paint.set_color_filter(decode_color_filter(term)?);
         }
         Ok(())
     }
@@ -896,6 +918,7 @@ defmodule Skia.Codegen do
               :image,
               :font,
               :image_filter,
+              :color_filter,
               :path_effect,
               :sampling_options,
               :term
@@ -918,6 +941,7 @@ defmodule Skia.Codegen do
               :image,
               :font,
               :image_filter,
+              :color_filter,
               :path_effect,
               :sampling_options,
               :term
@@ -962,6 +986,7 @@ defmodule Skia.Codegen do
               :image,
               :font,
               :image_filter,
+              :color_filter,
               :path_effect,
               :sampling_options,
               :term
@@ -991,6 +1016,7 @@ defmodule Skia.Codegen do
               :image,
               :font,
               :image_filter,
+              :color_filter,
               :path_effect,
               :sampling_options,
               :term

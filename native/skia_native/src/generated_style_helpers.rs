@@ -18,6 +18,9 @@ fn apply_paint_effects<'a>(
     if let Some(term) = opt_term(opts, atoms::path_effect()) {
         paint.set_path_effect(decode_path_effect(term)?);
     }
+    if let Some(term) = opt_term(opts, atoms::color_filter()) {
+        paint.set_color_filter(decode_color_filter(term)?);
+    }
     Ok(())
 }
 fn apply_stroke_options<'a>(

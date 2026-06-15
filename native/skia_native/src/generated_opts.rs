@@ -18,6 +18,7 @@ pub struct RectOpts<'a> {
     pub blend_mode: Option<Atom>,
     pub image_filter: Option<Term<'a>>,
     pub path_effect: Option<Term<'a>>,
+    pub color_filter: Option<Term<'a>>,
     _phantom: std::marker::PhantomData<&'a ()>,
 }
 pub fn decode_rect_opts<'a>(opts: &[(Atom, Term<'a>)]) -> NifResult<RectOpts<'a>> {
@@ -36,6 +37,7 @@ pub fn decode_rect_opts<'a>(opts: &[(Atom, Term<'a>)]) -> NifResult<RectOpts<'a>
         blend_mode: opt_atom_option(opts, atoms::blend_mode())?,
         image_filter: opt_term(opts, atoms::image_filter()),
         path_effect: opt_term(opts, atoms::path_effect()),
+        color_filter: opt_term(opts, atoms::color_filter()),
         _phantom: std::marker::PhantomData,
     })
 }
@@ -53,6 +55,7 @@ pub struct OvalOpts<'a> {
     pub blend_mode: Option<Atom>,
     pub image_filter: Option<Term<'a>>,
     pub path_effect: Option<Term<'a>>,
+    pub color_filter: Option<Term<'a>>,
     _phantom: std::marker::PhantomData<&'a ()>,
 }
 pub fn decode_oval_opts<'a>(opts: &[(Atom, Term<'a>)]) -> NifResult<OvalOpts<'a>> {
@@ -70,6 +73,7 @@ pub fn decode_oval_opts<'a>(opts: &[(Atom, Term<'a>)]) -> NifResult<OvalOpts<'a>
         blend_mode: opt_atom_option(opts, atoms::blend_mode())?,
         image_filter: opt_term(opts, atoms::image_filter()),
         path_effect: opt_term(opts, atoms::path_effect()),
+        color_filter: opt_term(opts, atoms::color_filter()),
         _phantom: std::marker::PhantomData,
     })
 }
@@ -90,6 +94,7 @@ pub struct ArcOpts<'a> {
     pub blend_mode: Option<Atom>,
     pub image_filter: Option<Term<'a>>,
     pub path_effect: Option<Term<'a>>,
+    pub color_filter: Option<Term<'a>>,
     _phantom: std::marker::PhantomData<&'a ()>,
 }
 pub fn decode_arc_opts<'a>(opts: &[(Atom, Term<'a>)]) -> NifResult<ArcOpts<'a>> {
@@ -110,6 +115,7 @@ pub fn decode_arc_opts<'a>(opts: &[(Atom, Term<'a>)]) -> NifResult<ArcOpts<'a>> 
         blend_mode: opt_atom_option(opts, atoms::blend_mode())?,
         image_filter: opt_term(opts, atoms::image_filter()),
         path_effect: opt_term(opts, atoms::path_effect()),
+        color_filter: opt_term(opts, atoms::color_filter()),
         _phantom: std::marker::PhantomData,
     })
 }
@@ -126,6 +132,7 @@ pub struct CircleOpts<'a> {
     pub blend_mode: Option<Atom>,
     pub image_filter: Option<Term<'a>>,
     pub path_effect: Option<Term<'a>>,
+    pub color_filter: Option<Term<'a>>,
     _phantom: std::marker::PhantomData<&'a ()>,
 }
 pub fn decode_circle_opts<'a>(opts: &[(Atom, Term<'a>)]) -> NifResult<CircleOpts<'a>> {
@@ -142,6 +149,7 @@ pub fn decode_circle_opts<'a>(opts: &[(Atom, Term<'a>)]) -> NifResult<CircleOpts
         blend_mode: opt_atom_option(opts, atoms::blend_mode())?,
         image_filter: opt_term(opts, atoms::image_filter()),
         path_effect: opt_term(opts, atoms::path_effect()),
+        color_filter: opt_term(opts, atoms::color_filter()),
         _phantom: std::marker::PhantomData,
     })
 }
@@ -333,6 +341,7 @@ pub struct PathOpts<'a> {
     pub blend_mode: Option<Atom>,
     pub image_filter: Option<Term<'a>>,
     pub path_effect: Option<Term<'a>>,
+    pub color_filter: Option<Term<'a>>,
     pub fill_rule: Option<Atom>,
     _phantom: std::marker::PhantomData<&'a ()>,
 }
@@ -347,6 +356,7 @@ pub fn decode_path_opts<'a>(opts: &[(Atom, Term<'a>)]) -> NifResult<PathOpts<'a>
         blend_mode: opt_atom_option(opts, atoms::blend_mode())?,
         image_filter: opt_term(opts, atoms::image_filter()),
         path_effect: opt_term(opts, atoms::path_effect()),
+        color_filter: opt_term(opts, atoms::color_filter()),
         fill_rule: opt_atom_option(opts, atoms::fill_rule())?,
         _phantom: std::marker::PhantomData,
     })
@@ -361,6 +371,7 @@ pub struct PathOpOpts<'a> {
     pub blend_mode: Option<Atom>,
     pub image_filter: Option<Term<'a>>,
     pub path_effect: Option<Term<'a>>,
+    pub color_filter: Option<Term<'a>>,
     pub path_op: Atom,
     pub fill_rule: Option<Atom>,
     _phantom: std::marker::PhantomData<&'a ()>,
@@ -376,6 +387,7 @@ pub fn decode_path_op_opts<'a>(opts: &[(Atom, Term<'a>)]) -> NifResult<PathOpOpt
         blend_mode: opt_atom_option(opts, atoms::blend_mode())?,
         image_filter: opt_term(opts, atoms::image_filter()),
         path_effect: opt_term(opts, atoms::path_effect()),
+        color_filter: opt_term(opts, atoms::color_filter()),
         path_op: opt_atom_option(opts, atoms::path_op())?.ok_or(rustler::Error::BadArg)?,
         fill_rule: opt_atom_option(opts, atoms::fill_rule())?,
         _phantom: std::marker::PhantomData,
@@ -391,6 +403,7 @@ pub struct PathOutlineOpts<'a> {
     pub blend_mode: Option<Atom>,
     pub image_filter: Option<Term<'a>>,
     pub path_effect: Option<Term<'a>>,
+    pub color_filter: Option<Term<'a>>,
     pub outline_width: f32,
     pub fill_rule: Option<Atom>,
     _phantom: std::marker::PhantomData<&'a ()>,
@@ -408,6 +421,7 @@ pub fn decode_path_outline_opts<'a>(
         blend_mode: opt_atom_option(opts, atoms::blend_mode())?,
         image_filter: opt_term(opts, atoms::image_filter()),
         path_effect: opt_term(opts, atoms::path_effect()),
+        color_filter: opt_term(opts, atoms::color_filter()),
         outline_width: opt_f32(opts, atoms::outline_width())?,
         fill_rule: opt_atom_option(opts, atoms::fill_rule())?,
         _phantom: std::marker::PhantomData,

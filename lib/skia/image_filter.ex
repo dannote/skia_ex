@@ -33,6 +33,18 @@ defmodule Skia.ImageFilter do
     defstruct [:dx, :dy, :sigma_x, :sigma_y, :color, :input, shadow_only: false]
   end
 
+  defmodule ColorFilter do
+    @moduledoc "Image filter that applies a color filter to its input."
+    @type t :: %__MODULE__{color_filter: Skia.ColorFilter.t(), input: Skia.ImageFilter.t() | nil}
+    defstruct [:color_filter, :input]
+  end
+
+  defmodule Shader do
+    @moduledoc "Image filter that fills with a shader."
+    @type t :: %__MODULE__{shader: term()}
+    defstruct [:shader]
+  end
+
   defmodule Morphology do
     @moduledoc "Dilate/erode morphology image filter."
     @type t :: %__MODULE__{
@@ -44,7 +56,14 @@ defmodule Skia.ImageFilter do
     defstruct [:op, :radius_x, :radius_y, :input]
   end
 
-  @type t :: Blur.t() | Compose.t() | Offset.t() | DropShadow.t() | Morphology.t()
+  @type t ::
+          Blur.t()
+          | Compose.t()
+          | Offset.t()
+          | DropShadow.t()
+          | ColorFilter.t()
+          | Shader.t()
+          | Morphology.t()
 
   @doc "Creates a Gaussian blur image filter."
   @spec blur(number(), keyword()) :: Blur.t()
@@ -86,6 +105,16 @@ defmodule Skia.ImageFilter do
       shadow_only: Keyword.get(opts, :shadow_only, false)
     }
   end
+
+  @doc "Creates an image filter that applies a color filter."
+  @spec color_filter(Skia.ColorFilter.t(), keyword()) :: ColorFilter.t()
+  def color_filter(color_filter, opts \\ []) do
+    %ColorFilter{color_filter: color_filter, input: Keyword.get(opts, :input)}
+  end
+
+  @doc "Creates an image filter from a shader/paint source."
+  @spec shader(term()) :: Shader.t()
+  def shader(shader), do: %Shader{shader: shader}
 
   @doc "Creates a dilate image filter."
   @spec dilate(number() | {number(), number()}, keyword()) :: Morphology.t()
