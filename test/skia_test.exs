@@ -126,6 +126,37 @@ defmodule SkiaTest do
     assert %{width: 8, height: 8, commands: [%Skia.Command{op: :clear}]} = batch
   end
 
+  test "renders layers with composed generic image filters" do
+    filter =
+      Skia.ImageFilter.blur(1.0, tile: :decal)
+      |> Skia.ImageFilter.compose(Skia.ImageFilter.offset(1, 0))
+
+    document =
+      Skia.canvas(4, 4)
+      |> Skia.background(:transparent)
+      |> Skia.layer([image_filter: filter], fn doc ->
+        Skia.circle(doc, x: 2, y: 2, radius: 1, fill: :red)
+      end)
+
+    assert {:ok, raw} = Skia.to_raw(document)
+    assert byte_size(raw.data) == 64
+  end
+
+  test "renders layers with shadow and morphology image filters" do
+    filter =
+      Skia.ImageFilter.drop_shadow({1, 1}, {1, 1}, :blue, input: Skia.ImageFilter.dilate({1, 1}))
+
+    document =
+      Skia.canvas(4, 4)
+      |> Skia.background(:transparent)
+      |> Skia.layer([image_filter: filter], fn doc ->
+        Skia.rect(doc, x: 1, y: 1, width: 2, height: 2, fill: :red)
+      end)
+
+    assert {:ok, raw} = Skia.to_raw(document)
+    assert byte_size(raw.data) == 64
+  end
+
   test "renders layers with generic image filters" do
     document =
       Skia.canvas(4, 4)

@@ -104,7 +104,79 @@ fn decode_image_filter(term: Term) -> NifResult<skia_safe::ImageFilter> {
         }
     }
 
+    if let Ok((tag, outer, inner)) = term.decode::<(Atom, Term, Term)>() {
+        if tag == atoms::compose_filter() {
+            return image_filters::compose(decode_image_filter(outer)?, decode_image_filter(inner)?)
+                .ok_or(rustler::Error::BadArg);
+        }
+    }
+
+    if let Ok((tag, x, y, input_term)) = term.decode::<(Atom, f64, f64, Term)>() {
+        if tag == atoms::offset_filter() {
+            return image_filters::offset(
+                (x as f32, y as f32),
+                optional_image_filter_from_term(input_term)?,
+                None,
+            )
+            .ok_or(rustler::Error::BadArg);
+        }
+    }
+
+    if let Ok((tag, dx, dy, sigma_x, sigma_y, color_term, shadow_opts)) =
+        term.decode::<(Atom, f64, f64, f64, f64, Term, Term)>()
+    {
+        if tag == atoms::drop_shadow_filter() {
+            let (input_term, shadow_only) = shadow_opts.decode::<(Term, bool)>()?;
+            let color = decode_color(color_term)?;
+            let input = optional_image_filter_from_term(input_term)?;
+            let filter = if shadow_only {
+                image_filters::drop_shadow_only(
+                    (dx as f32, dy as f32),
+                    (sigma_x as f32, sigma_y as f32),
+                    color,
+                    None,
+                    input,
+                    None,
+                )
+            } else {
+                image_filters::drop_shadow(
+                    (dx as f32, dy as f32),
+                    (sigma_x as f32, sigma_y as f32),
+                    color,
+                    None,
+                    input,
+                    None,
+                )
+            };
+            return filter.ok_or(rustler::Error::BadArg);
+        }
+    }
+
+    if let Ok((tag, op, radius_x, radius_y, input_term)) =
+        term.decode::<(Atom, Atom, f64, f64, Term)>()
+    {
+        if tag == atoms::morphology_filter() {
+            let input = optional_image_filter_from_term(input_term)?;
+            let filter = if op == atoms::dilate() {
+                image_filters::dilate((radius_x as f32, radius_y as f32), input, None)
+            } else if op == atoms::erode() {
+                image_filters::erode((radius_x as f32, radius_y as f32), input, None)
+            } else {
+                return Err(rustler::Error::BadArg);
+            };
+            return filter.ok_or(rustler::Error::BadArg);
+        }
+    }
+
     Err(rustler::Error::BadArg)
+}
+
+fn optional_image_filter_from_term(term: Term) -> NifResult<Option<skia_safe::ImageFilter>> {
+    if term.decode::<Atom>().is_ok_and(|atom| atom == atoms::nil()) {
+        Ok(None)
+    } else {
+        Ok(Some(decode_image_filter(term)?))
+    }
 }
 
 fn optional_matrix_from_term(matrix_term: Term) -> NifResult<Option<Matrix>> {

@@ -111,6 +111,33 @@ defmodule Skia.Command do
     {:blur_filter, normalize_number!(sigma_x), normalize_number!(sigma_y), tile_mode}
   end
 
+  defp normalize_image_filter!(%Skia.ImageFilter.Compose{outer: outer, inner: inner}) do
+    {:compose_filter, normalize_image_filter!(outer), normalize_image_filter!(inner)}
+  end
+
+  defp normalize_image_filter!(%Skia.ImageFilter.Offset{x: x, y: y, input: input}) do
+    {:offset_filter, normalize_number!(x), normalize_number!(y),
+     normalize_optional_filter!(input)}
+  end
+
+  defp normalize_image_filter!(%Skia.ImageFilter.DropShadow{} = shadow) do
+    {:drop_shadow_filter, normalize_number!(shadow.dx), normalize_number!(shadow.dy),
+     normalize_number!(shadow.sigma_x), normalize_number!(shadow.sigma_y),
+     normalize_color!(shadow.color),
+     {normalize_optional_filter!(shadow.input), shadow.shadow_only}}
+  end
+
+  defp normalize_image_filter!(%Skia.ImageFilter.Morphology{
+         op: op,
+         radius_x: x,
+         radius_y: y,
+         input: input
+       })
+       when op in [:dilate, :erode] do
+    {:morphology_filter, op, normalize_number!(x), normalize_number!(y),
+     normalize_optional_filter!(input)}
+  end
+
   defp normalize_image_filter!({:blur, sigma}) do
     normalize_image_filter!(Skia.ImageFilter.blur(sigma))
   end
@@ -121,6 +148,9 @@ defmodule Skia.Command do
 
   defp normalize_image_filter!(value),
     do: raise(ArgumentError, "invalid image filter #{inspect(value)}")
+
+  defp normalize_optional_filter!(nil), do: nil
+  defp normalize_optional_filter!(filter), do: normalize_image_filter!(filter)
 
   defp normalize_color!(%Skia.Shader.LinearGradient{
          from: from,
