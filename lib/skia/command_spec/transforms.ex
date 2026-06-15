@@ -10,7 +10,7 @@ defmodule Skia.CommandSpec.Transforms do
           [name: :x, type: :number, required: true],
           [name: :y, type: :number, required: true]
         ],
-        native_call: [receiver: :canvas, method: :translate, args: ["(opts.x, opts.y)"]],
+        transform: [body: ["surface.canvas().translate((opts.x, opts.y));"]],
         native_refs: ["skia_safe::Canvas::translate"]
       ],
       scale: [
@@ -20,14 +20,14 @@ defmodule Skia.CommandSpec.Transforms do
           [name: :x, type: :number, required: true],
           [name: :y, type: :number, required: true]
         ],
-        native_call: [receiver: :canvas, method: :scale, args: ["(opts.x, opts.y)"]],
+        transform: [body: ["surface.canvas().scale((opts.x, opts.y));"]],
         native_refs: ["skia_safe::Canvas::scale"]
       ],
       rotate: [
         handler: :draw_rotate,
         args: [],
         opts: [[name: :degrees, type: :number, required: true]],
-        native_call: [receiver: :canvas, method: :rotate, args: ["opts.degrees", "None"]],
+        transform: [body: ["surface.canvas().rotate(opts.degrees, None);"]],
         native_refs: ["skia_safe::Canvas::rotate"]
       ],
       rotate_at: [
@@ -38,10 +38,8 @@ defmodule Skia.CommandSpec.Transforms do
           [name: :x, type: :number, required: true],
           [name: :y, type: :number, required: true]
         ],
-        native_call: [
-          receiver: :canvas,
-          method: :rotate,
-          args: ["opts.degrees", "Some(Point::new(opts.x, opts.y))"]
+        transform: [
+          body: ["surface.canvas().rotate(opts.degrees, Some(Point::new(opts.x, opts.y)));"]
         ],
         native_refs: ["skia_safe::Canvas::rotate"]
       ],
@@ -55,11 +53,9 @@ defmodule Skia.CommandSpec.Transforms do
             required: true
           ]
         ],
-        native_call: [
-          receiver: :canvas,
-          method: :concat,
+        transform: [
           setup: ["let matrix = matrix_from_term(opts.matrix)?;"],
-          args: ["&matrix"]
+          body: ["surface.canvas().concat(&matrix);"]
         ],
         native_refs: ["skia_safe::Canvas::concat"]
       ]

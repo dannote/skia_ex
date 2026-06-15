@@ -10,7 +10,13 @@ defmodule Skia.CommandSpec.Shapes do
         handler: :draw_clear,
         args: [color: T.color()],
         opts: [],
-        shape: :clear,
+        shape_draw: [
+          body: [
+            "if let Some(color) = args.first().and_then(|term| decode_color(*term).ok()) {",
+            "    surface.canvas().clear(color);",
+            "}"
+          ]
+        ],
         native_refs: ["skia_safe::Canvas::clear"]
       ],
       rect: [
@@ -18,13 +24,12 @@ defmodule Skia.CommandSpec.Shapes do
         args: [],
         defaults: [radius: 0],
         opts: T.rect_opts() ++ [[name: :radius, type: :number]] ++ T.paint_opts(),
-        shape: [
+        shape_draw: [
           setup: [
             "let rect = Rect::from_xywh(opts.x, opts.y, opts.width, opts.height);",
             "let radius = opts.radius.unwrap_or(0.0);"
           ],
-          fill: "draw_rect_shape(surface, rect, radius, &paint);",
-          stroke: "draw_rect_shape(surface, rect, radius, &paint);"
+          body: paint_shape_body("draw_rect_shape(surface, rect, radius, &paint);")
         ],
         native_refs: ["skia_safe::Canvas::draw_rect", "skia_safe::Canvas::draw_rrect"]
       ],
@@ -32,10 +37,9 @@ defmodule Skia.CommandSpec.Shapes do
         handler: :draw_oval,
         args: [],
         opts: T.rect_opts() ++ T.paint_opts(),
-        shape: [
+        shape_draw: [
           setup: ["let rect = Rect::from_xywh(opts.x, opts.y, opts.width, opts.height);"],
-          fill: "surface.canvas().draw_oval(rect, &paint);",
-          stroke: "surface.canvas().draw_oval(rect, &paint);"
+          body: paint_shape_body("surface.canvas().draw_oval(rect, &paint);")
         ],
         native_refs: ["skia_safe::Canvas::draw_oval"]
       ],
@@ -50,15 +54,15 @@ defmodule Skia.CommandSpec.Shapes do
               [name: :sweep_degrees, type: :number, required: true],
               [name: :use_center, type: :boolean]
             ] ++ T.paint_opts(),
-        shape: [
+        shape_draw: [
           setup: [
             "let rect = Rect::from_xywh(opts.x, opts.y, opts.width, opts.height);",
             "let use_center = opts.use_center.unwrap_or(false);"
           ],
-          fill:
-            "surface.canvas().draw_arc(rect, opts.start_degrees, opts.sweep_degrees, use_center, &paint);",
-          stroke:
-            "surface.canvas().draw_arc(rect, opts.start_degrees, opts.sweep_degrees, use_center, &paint);"
+          body:
+            paint_shape_body(
+              "surface.canvas().draw_arc(rect, opts.start_degrees, opts.sweep_degrees, use_center, &paint);"
+            )
         ],
         native_refs: ["skia_safe::Canvas::draw_arc"]
       ],
@@ -71,10 +75,9 @@ defmodule Skia.CommandSpec.Shapes do
             [name: :y, type: :number, required: true],
             [name: :radius, type: :number, required: true]
           ] ++ T.paint_opts(),
-        shape: [
+        shape_draw: [
           setup: ["let center = Point::new(opts.x, opts.y);"],
-          fill: "surface.canvas().draw_circle(center, opts.radius, &paint);",
-          stroke: "surface.canvas().draw_circle(center, opts.radius, &paint);"
+          body: paint_shape_body("surface.canvas().draw_circle(center, opts.radius, &paint);")
         ],
         native_refs: ["skia_safe::Canvas::draw_circle"]
       ],
@@ -91,13 +94,28 @@ defmodule Skia.CommandSpec.Shapes do
           [name: :stroke_miter, type: :number],
           [name: :blend_mode, type: T.blend_mode()]
         ],
-        shape: [
-          required_stroke: true,
-          stroke:
+        shape_draw: [
+          body: [
+            "let color = decode_color(opts.stroke)?;",
+            "let paint = stroke_paint(color, opts.stroke_width.unwrap_or(1.0), raw_opts)?;",
             "surface.canvas().draw_line(point_from_term(opts.from)?, point_from_term(opts.to)?, &paint);"
+          ]
         ],
         native_refs: ["skia_safe::Canvas::draw_line"]
       ]
+    ]
+  end
+
+  defp paint_shape_body(draw_call) do
+    [
+      "if let Some(mut paint) = opt_fill_paint(raw_opts, atoms::fill())? {",
+      "    apply_blend_mode(&mut paint, raw_opts)?;",
+      "    #{draw_call}",
+      "}",
+      "if let Some(color) = opt_color(raw_opts, atoms::stroke())? {",
+      "    let paint = stroke_paint(color, opts.stroke_width.unwrap_or(1.0), raw_opts)?;",
+      "    #{draw_call}",
+      "}"
     ]
   end
 end

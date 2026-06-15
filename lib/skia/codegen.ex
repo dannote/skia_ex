@@ -516,54 +516,14 @@ defmodule Skia.Codegen do
   @spec generated_transforms() :: String.t()
   def generated_transforms do
     Transforms.commands()
-    |> generated_native_call_impls()
+    |> generated_body_impls(:transform)
     |> render_items("generated_transforms.rs")
   end
 
-  defp generated_native_call_impls(commands) do
-    commands
-    |> Enum.filter(fn {_name, spec} -> Keyword.has_key?(spec, :native_call) end)
-    |> Enum.map(fn {name, spec} -> native_call_impl(name, spec) end)
-  end
-
-  defp native_call_impl(name, spec) do
-    call = Keyword.fetch!(spec, :native_call)
-    handler = Keyword.fetch!(spec, :handler)
-    opts_type = name |> Atom.to_string() |> Macro.camelize() |> Kernel.<>("Opts")
-    setup = call |> Keyword.get(:setup, []) |> Enum.join("\n    ")
-    setup = if setup == "", do: "", else: setup <> "\n    "
-    receiver = native_call_receiver(Keyword.fetch!(call, :receiver))
-    method = Keyword.fetch!(call, :method)
-    args = call |> Keyword.get(:args, []) |> Enum.join(", ")
-
-    Rust.item("""
-    fn #{handler}_impl<'a>(
-        surface: &mut skia_safe::Surface,
-        opts: generated_opts::#{opts_type}<'a>,
-        _raw_opts: &[(Atom, Term<'a>)],
-    ) -> NifResult<()> {
-        #{setup}#{receiver}.#{method}(#{args});
-        Ok(())
-    }
-    """)
-  end
-
-  defp native_call_receiver(:canvas), do: "surface.canvas()"
-
   @spec generated_shapes() :: String.t()
   def generated_shapes do
-    Shapes.commands()
-    |> generated_shape_impls()
-    |> render_items("generated_shapes.rs")
-  end
-
-  defp generated_shape_impls(commands) do
-    command_impls =
-      commands
-      |> Enum.filter(fn {_name, spec} -> Keyword.has_key?(spec, :shape) end)
-      |> Enum.map(fn {name, spec} -> shape_impl(name, spec) end)
-
-    command_impls ++ [rect_shape_helper()]
+    items = generated_body_impls(Shapes.commands(), :shape_draw) ++ [rect_shape_helper()]
+    render_items(items, "generated_shapes.rs")
   end
 
   defp rect_shape_helper do
@@ -578,91 +538,6 @@ defmodule Skia.Codegen do
         }
     }
     """)
-  end
-
-  defp shape_impl(name, spec) do
-    case Keyword.fetch!(spec, :shape) do
-      :clear -> clear_shape_impl(spec)
-      shape -> painted_shape_impl(name, spec, shape)
-    end
-  end
-
-  defp clear_shape_impl(spec) do
-    handler = Keyword.fetch!(spec, :handler)
-
-    Rust.item("""
-    fn #{handler}_impl<'a>(surface: &mut skia_safe::Surface, args: Vec<Term<'a>>) -> NifResult<()> {
-        if let Some(color) = args.first().and_then(|term| decode_color(*term).ok()) {
-            surface.canvas().clear(color);
-        }
-
-        Ok(())
-    }
-    """)
-  end
-
-  defp painted_shape_impl(name, spec, shape) do
-    handler = Keyword.fetch!(spec, :handler)
-    opts_type = name |> Atom.to_string() |> Macro.camelize() |> Kernel.<>("Opts")
-    opts_name = "opts"
-    setup = shape |> Keyword.get(:setup, []) |> Enum.join("\n    ")
-    setup = if setup == "", do: "", else: setup <> "\n\n    "
-    fill = shape_paint_pass(shape, :fill)
-    stroke = shape_paint_pass(shape, :stroke)
-
-    Rust.item("""
-    fn #{handler}_impl<'a>(
-        surface: &mut skia_safe::Surface,
-        #{opts_name}: generated_opts::#{opts_type}<'a>,
-        raw_opts: &[(Atom, Term<'a>)],
-    ) -> NifResult<()> {
-        #{setup}#{fill}#{stroke}Ok(())
-    }
-    """)
-  end
-
-  defp shape_paint_pass(shape, :fill) do
-    case Keyword.get(shape, :fill) do
-      nil ->
-        ""
-
-      call ->
-        """
-        if let Some(mut paint) = opt_fill_paint(raw_opts, atoms::fill())? {
-            apply_blend_mode(&mut paint, raw_opts)?;
-            #{call}
-        }
-
-        """
-    end
-  end
-
-  defp shape_paint_pass(shape, :stroke) do
-    case Keyword.get(shape, :stroke) do
-      nil ->
-        ""
-
-      call ->
-        stroke_width = Keyword.get(shape, :stroke_width, "opts.stroke_width.unwrap_or(1.0)")
-        stroke_color = Keyword.get(shape, :stroke_color, "opt_color(raw_opts, atoms::stroke())?")
-
-        if Keyword.get(shape, :required_stroke, false) do
-          """
-          let color = decode_color(opts.stroke)?;
-          let paint = stroke_paint(color, #{stroke_width}, raw_opts)?;
-          #{call}
-
-          """
-        else
-          """
-          if let Some(color) = #{stroke_color} {
-              let paint = stroke_paint(color, #{stroke_width}, raw_opts)?;
-              #{call}
-          }
-
-          """
-        end
-    end
   end
 
   @spec generated_text() :: String.t()
