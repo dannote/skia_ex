@@ -72,6 +72,22 @@ fn match_font<'a>(
     match_font_impl(env, family, weight, slant)
 }
 #[rustler::nif(schedule = "DirtyCpu")]
+fn typeface_info<'a>(env: Env<'a>, typeface_term: Term<'a>) -> NifResult<Term<'a>> {
+    typeface_info_impl(env, typeface_term)
+}
+#[rustler::nif(schedule = "DirtyCpu")]
+fn font_metrics<'a>(env: Env<'a>, font_term: Term<'a>) -> NifResult<Term<'a>> {
+    font_metrics_impl(env, font_term)
+}
+#[rustler::nif(schedule = "DirtyCpu")]
+fn font_glyph_ids<'a>(
+    env: Env<'a>,
+    font_term: Term<'a>,
+    text: String,
+) -> NifResult<Term<'a>> {
+    font_glyph_ids_impl(env, font_term, text)
+}
+#[rustler::nif(schedule = "DirtyCpu")]
 fn measure_text<'a>(
     env: Env<'a>,
     text: String,

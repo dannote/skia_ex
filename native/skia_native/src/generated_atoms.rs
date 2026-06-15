@@ -28,7 +28,8 @@ rustler::atoms! {
     segments, shader_image_filter, size, soft_light, solid, source, spans, square, src,
     src_a_top, src_in, src_out, src_over, start_degrees, stroke, stroke_cap, stroke_join,
     stroke_miter, stroke_width, style, sum_path_effect, svg, sweep_degrees,
-    sweep_gradient, text, text_blob, tile_filter, to, translate, trim_path_effect,
-    two_point_conical_gradient, typeface, union, unsupported_format, use_center, wbmp,
-    webp, weight, width, winding, x, xor, y,
+    sweep_gradient, text, text_blob, tile_filter, to, translate, triangle_fan,
+    triangle_strip, trim_path_effect, two_point_conical_gradient, typeface, union,
+    unsupported_format, use_center, vertices, wbmp, webp, weight, width, winding, x, xor,
+    y,
 }

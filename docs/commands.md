@@ -9,6 +9,7 @@
 | `oval` | — | `x: number` required<br>`y: number` required<br>`width: number` required<br>`height: number` required<br>`paint: paint`<br>`fill: color`<br>`stroke: color`<br>`stroke_width: number`<br>`stroke_cap: stroke_cap`<br>`stroke_join: stroke_join`<br>`stroke_miter: number`<br>`blend_mode: blend_mode`<br>`image_filter: image_filter`<br>`path_effect: path_effect`<br>`color_filter: color_filter`<br>`mask_filter: mask_filter` | — | `skia_safe::Canvas::draw_oval` |
 | `arc` | — | `x: number` required<br>`y: number` required<br>`width: number` required<br>`height: number` required<br>`start_degrees: number` required<br>`sweep_degrees: number` required<br>`use_center: boolean`<br>`paint: paint`<br>`fill: color`<br>`stroke: color`<br>`stroke_width: number`<br>`stroke_cap: stroke_cap`<br>`stroke_join: stroke_join`<br>`stroke_miter: number`<br>`blend_mode: blend_mode`<br>`image_filter: image_filter`<br>`path_effect: path_effect`<br>`color_filter: color_filter`<br>`mask_filter: mask_filter` | `use_center: false` | `skia_safe::Canvas::draw_arc` |
 | `circle` | — | `x: number` required<br>`y: number` required<br>`radius: number` required<br>`paint: paint`<br>`fill: color`<br>`stroke: color`<br>`stroke_width: number`<br>`stroke_cap: stroke_cap`<br>`stroke_join: stroke_join`<br>`stroke_miter: number`<br>`blend_mode: blend_mode`<br>`image_filter: image_filter`<br>`path_effect: path_effect`<br>`color_filter: color_filter`<br>`mask_filter: mask_filter` | — | `skia_safe::Canvas::draw_circle` |
+| `vertices` | `vertices: vertices` | `paint: paint`<br>`fill: color`<br>`stroke: color`<br>`stroke_width: number`<br>`stroke_cap: stroke_cap`<br>`stroke_join: stroke_join`<br>`stroke_miter: number`<br>`blend_mode: blend_mode`<br>`image_filter: image_filter`<br>`path_effect: path_effect`<br>`color_filter: color_filter`<br>`mask_filter: mask_filter` | `blend_mode: :src_over` | `skia_safe::Canvas::draw_vertices` |
 | `line` | — | `from: {number, number}` required<br>`to: {number, number}` required<br>`stroke: color` required<br>`stroke_width: number`<br>`stroke_cap: stroke_cap`<br>`stroke_join: stroke_join`<br>`stroke_miter: number`<br>`blend_mode: blend_mode` | — | `skia_safe::Canvas::draw_line` |
 | `text_blob` | `blob: text_blob` | `x: number` required<br>`y: number` required<br>`paint: paint`<br>`fill: color`<br>`stroke: color`<br>`stroke_width: number`<br>`stroke_cap: stroke_cap`<br>`stroke_join: stroke_join`<br>`stroke_miter: number`<br>`blend_mode: blend_mode`<br>`image_filter: image_filter`<br>`path_effect: path_effect`<br>`color_filter: color_filter`<br>`mask_filter: mask_filter` | `fill: :black` | `skia_safe::Canvas::draw_text_blob` |
 | `text` | `text: string` | `x: number` required<br>`y: number` required<br>`width: number`<br>`size: number`<br>`fill: color`<br>`font: font`<br>`weight: integer`<br>`align: atom`<br>`direction: atom`<br>`font_family: string`<br>`line_height: number`<br>`spans: term` | `size: 16`<br>`fill: :black` | `skia_safe::Canvas::draw_str`<br>`skia_safe::Font::measure_str` |
@@ -150,6 +151,13 @@
 > paint.
 > `blob` contains glyphs, their positions, and paint attributes specific to text:
 > [`crate::Typeface`], [`Paint`] text size, [`Paint`] text scale x, [`Paint`] text skew x,
+
+### `skia_safe::Canvas::draw_vertices`
+
+> - `vertices` triangle mesh to draw
+> - `mode` combines vertices' colors with [`Shader`] if present or [`Paint`] opaque color if
+> not. Ignored if the vertices do not contain color.
+> - `paint` specifies the [`Shader`], used as [`Vertices`] texture, and
 
 ### `skia_safe::Canvas::restore`
 

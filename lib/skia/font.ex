@@ -21,6 +21,49 @@ defmodule Skia.Font do
   defp normalize_size(nil), do: nil
   defp normalize_size(size) when is_number(size), do: :erlang.float(size)
 
+  @spec metrics(t()) :: {:ok, map()} | {:error, atom()}
+  def metrics(%__MODULE__{} = font) do
+    case Skia.Native.font_metrics(font) do
+      {:ok,
+       [
+         line_spacing,
+         top,
+         ascent,
+         descent,
+         bottom,
+         leading,
+         avg_char_width,
+         max_char_width,
+         x_min,
+         x_max,
+         x_height,
+         cap_height
+       ]} ->
+        {:ok,
+         %{
+           line_spacing: line_spacing,
+           top: top,
+           ascent: ascent,
+           descent: descent,
+           bottom: bottom,
+           leading: leading,
+           avg_char_width: avg_char_width,
+           max_char_width: max_char_width,
+           x_min: x_min,
+           x_max: x_max,
+           x_height: x_height,
+           cap_height: cap_height
+         }}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @spec glyph_ids(t(), String.t()) :: {:ok, [non_neg_integer()]} | {:error, atom()}
+  def glyph_ids(%__MODULE__{} = font, text) when is_binary(text),
+    do: Skia.Native.font_glyph_ids(font, text)
+
   defimpl Inspect do
     import Inspect.Algebra
 

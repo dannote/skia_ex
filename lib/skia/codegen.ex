@@ -144,6 +144,8 @@ defmodule Skia.Codegen do
     :catmull_rom,
     :matrix,
     :typeface,
+    :triangle_strip,
+    :triangle_fan,
     :left,
     :center,
     :right,
@@ -233,6 +235,21 @@ defmodule Skia.Codegen do
     ],
     match_font: [
       args: [env: "Env<'a>", family: :String, weight: :i32, slant: :Atom],
+      returns: "NifResult<Term<'a>>",
+      lifetime: :a
+    ],
+    typeface_info: [
+      args: [env: "Env<'a>", typeface_term: "Term<'a>"],
+      returns: "NifResult<Term<'a>>",
+      lifetime: :a
+    ],
+    font_metrics: [
+      args: [env: "Env<'a>", font_term: "Term<'a>"],
+      returns: "NifResult<Term<'a>>",
+      lifetime: :a
+    ],
+    font_glyph_ids: [
+      args: [env: "Env<'a>", font_term: "Term<'a>", text: :String],
       returns: "NifResult<Term<'a>>",
       lifetime: :a
     ],
@@ -348,6 +365,7 @@ defmodule Skia.Codegen do
   defp elixir_arg_name(:env), do: :env
   defp elixir_arg_name(:image_term), do: :image
   defp elixir_arg_name(:font_term), do: :font
+  defp elixir_arg_name(:typeface_term), do: :typeface
   defp elixir_arg_name(:picture_term), do: :picture
   defp elixir_arg_name(name), do: name
 
@@ -1095,6 +1113,7 @@ defmodule Skia.Codegen do
               :image,
               :font,
               :text_blob,
+              :vertices,
               :image_filter,
               :color_filter,
               :mask_filter,
@@ -1121,6 +1140,7 @@ defmodule Skia.Codegen do
               :image,
               :font,
               :text_blob,
+              :vertices,
               :image_filter,
               :color_filter,
               :mask_filter,
@@ -1169,6 +1189,7 @@ defmodule Skia.Codegen do
               :image,
               :font,
               :text_blob,
+              :vertices,
               :image_filter,
               :color_filter,
               :mask_filter,
@@ -1202,6 +1223,7 @@ defmodule Skia.Codegen do
               :image,
               :font,
               :text_blob,
+              :vertices,
               :image_filter,
               :color_filter,
               :mask_filter,

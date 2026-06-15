@@ -141,6 +141,21 @@ defmodule SkiaTest do
     assert %{width: 8, height: 8, commands: [%Skia.Command{op: :clear}]} = batch
   end
 
+  test "renders vertices meshes" do
+    vertices =
+      Skia.Vertices.new([{1, 1}, {7, 1}, {4, 7}],
+        colors: [:red, :green, :blue]
+      )
+
+    document =
+      Skia.canvas(8, 8)
+      |> Skia.clear(:transparent)
+      |> Skia.vertices(vertices)
+
+    assert {:ok, raw} = Skia.to_raw(document)
+    assert byte_size(raw.data) == 8 * 8 * 4
+  end
+
   test "renders paint with mask filters" do
     document =
       Skia.canvas(8, 8)
@@ -803,8 +818,15 @@ defmodule SkiaTest do
       [family | _] ->
         assert {:ok, typeface} = Skia.Typeface.match_family(family, weight: 400)
         assert inspect(typeface) =~ "#Skia.Typeface<family="
+        assert {:ok, typeface_info} = Skia.Typeface.info(typeface)
+        assert typeface_info.weight > 0
+
         font = Skia.Font.new(typeface, size: 12)
         assert inspect(font) =~ "#Skia.Font<typeface="
+        assert {:ok, metrics} = Skia.Font.metrics(font)
+        assert metrics.line_spacing >= 0
+        assert {:ok, glyph_ids} = Skia.Font.glyph_ids(font, "A")
+        assert is_list(glyph_ids)
         assert {:ok, measurement} = Skia.measure_text("A", font: font)
         assert measurement.width >= 0
 

@@ -34,6 +34,26 @@ defmodule Skia.Typeface do
   @spec families() :: {:ok, [String.t()]} | {:error, atom()}
   def families, do: Skia.Native.font_families()
 
+  @spec info(t()) :: {:ok, map()} | {:error, atom()}
+  def info(%__MODULE__{} = typeface) do
+    case Skia.Native.typeface_info(typeface) do
+      {:ok, {id, weight, width, slant, bold?, italic?, fixed_pitch?}} ->
+        {:ok,
+         %{
+           id: id,
+           weight: weight,
+           width: width,
+           slant: slant,
+           bold?: bold?,
+           italic?: italic?,
+           fixed_pitch?: fixed_pitch?
+         }}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
   @spec match_family(String.t(), keyword()) :: {:ok, t()} | {:error, atom()}
   def match_family(family, opts \\ []) when is_binary(family) do
     weight = Keyword.get(opts, :weight, 400)

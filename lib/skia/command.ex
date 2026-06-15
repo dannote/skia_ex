@@ -84,6 +84,10 @@ defmodule Skia.Command do
   defp normalize_value!(_name, _key, :image, %Skia.Image{} = value), do: value
   defp normalize_value!(_name, _key, :picture, %Skia.Picture{} = value), do: value
   defp normalize_value!(_name, _key, :text_blob, %Skia.TextBlob{} = value), do: value
+
+  defp normalize_value!(_name, _key, :vertices, %Skia.Vertices{} = value),
+    do: normalize_vertices!(value)
+
   defp normalize_value!(_name, _key, :font, %Skia.Font{} = value), do: value
   defp normalize_value!(_name, _key, :image_filter, value), do: normalize_image_filter!(value)
   defp normalize_value!(_name, _key, :color_filter, value), do: normalize_color_filter!(value)
@@ -430,6 +434,19 @@ defmodule Skia.Command do
 
   defp normalize_mask_filter!(value),
     do: raise(ArgumentError, "invalid mask filter #{inspect(value)}")
+
+  defp normalize_vertices!(%Skia.Vertices{
+         mode: mode,
+         positions: positions,
+         colors: colors,
+         indices: indices
+       })
+       when is_atom(mode) and is_list(positions) and is_list(colors) do
+    {mode, Enum.map(positions, &normalize_point!/1), Enum.map(colors, &normalize_color!/1),
+     indices}
+  end
+
+  defp normalize_vertices!(value), do: raise(ArgumentError, "invalid vertices #{inspect(value)}")
 
   defp normalize_path_effect!(%Skia.PathEffect.Dash{intervals: intervals, phase: phase}) do
     {:dash_path_effect, Enum.map(intervals, &normalize_number!/1), normalize_number!(phase)}

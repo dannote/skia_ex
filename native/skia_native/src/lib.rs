@@ -5,12 +5,13 @@ use rustler::types::map::map_new;
 use skia_safe::{
     canvas::SaveLayerRec,
     font_style::{Slant, Weight, Width},
+    vertices::VertexMode,
     image_filters, path_utils, surfaces,
     textlayout::{FontCollection, ParagraphBuilder, ParagraphStyle, TextAlign, TextDirection, TextStyle},
     color_filters, AlphaType, Color, ColorFilter, ColorType, CubicResampler, Data,
     ClipOp, EncodedImageFormat, FilterMode, Font, FontMgr, FontStyle, IPoint, Image, ImageInfo, MaskFilter, Matrix,
     Paint, PaintStyle, PathBuilder, PathDirection, PathEffect, Picture, PictureRecorder, Point, RRect,
-    Rect, SamplingOptions, Shader, TextBlob, TileMode,
+    Rect, SamplingOptions, Shader, TextBlob, TileMode, Vertices,
 };
 
 include!("generated_resources.rs");
@@ -220,6 +221,70 @@ fn match_font_impl<'a>(env: Env<'a>, family: String, weight: i32, slant: Atom) -
         .encode(env))
 }
 
+fn typeface_info_impl<'a>(env: Env<'a>, typeface_term: Term<'a>) -> NifResult<Term<'a>> {
+    let typeface_ref = match decode_encoded_font_ref(typeface_term) {
+        Ok(typeface_ref) => typeface_ref,
+        Err(_) => return Ok((atoms::error(), atoms::invalid_font()).encode(env)),
+    };
+    let typeface = &typeface_ref.typeface;
+    let style = typeface.font_style();
+    let slant = match style.slant() {
+        Slant::Italic => atoms::italic(),
+        Slant::Oblique => atoms::oblique(),
+        _ => atoms::normal(),
+    };
+
+    Ok((
+        atoms::ok(),
+        (
+            typeface.unique_id() as i64,
+            *style.weight() as i64,
+            *style.width() as i64,
+            slant,
+            typeface.is_bold(),
+            typeface.is_italic(),
+            typeface.is_fixed_pitch(),
+        ),
+    )
+        .encode(env))
+}
+
+fn font_metrics_impl<'a>(env: Env<'a>, font_term: Term<'a>) -> NifResult<Term<'a>> {
+    let font = match font_from_term(font_term, 16.0) {
+        Ok(font) => font,
+        Err(_) => return Ok((atoms::error(), atoms::invalid_font()).encode(env)),
+    };
+    let (line_spacing, metrics) = font.metrics();
+
+    Ok((
+        atoms::ok(),
+        vec![
+            line_spacing,
+            metrics.top,
+            metrics.ascent,
+            metrics.descent,
+            metrics.bottom,
+            metrics.leading,
+            metrics.avg_char_width,
+            metrics.max_char_width,
+            metrics.x_min,
+            metrics.x_max,
+            metrics.x_height,
+            metrics.cap_height,
+        ],
+    )
+        .encode(env))
+}
+
+fn font_glyph_ids_impl<'a>(env: Env<'a>, font_term: Term<'a>, text: String) -> NifResult<Term<'a>> {
+    let font = match font_from_term(font_term, 16.0) {
+        Ok(font) => font,
+        Err(_) => return Ok((atoms::error(), atoms::invalid_font()).encode(env)),
+    };
+    let glyphs: Vec<u16> = font.str_to_glyphs_vec(text).into_iter().collect();
+    Ok((atoms::ok(), glyphs).encode(env))
+}
+
 fn measure_text_impl<'a>(
     env: Env<'a>,
     text: String,
@@ -369,6 +434,33 @@ fn picture_from_term(picture_term: Term) -> NifResult<Picture> {
 fn text_blob_from_term(blob_term: Term) -> NifResult<TextBlob> {
     let blob_ref = decode_encoded_text_blob_ref(blob_term)?;
     Ok(blob_ref.blob.clone())
+}
+
+fn vertices_from_term(term: Term) -> NifResult<Vertices> {
+    let (mode, positions, colors, indices_term) = term.decode::<(Atom, Vec<(f64, f64)>, Vec<Term>, Term)>()?;
+    let mode = if mode == atoms::triangle_strip() {
+        VertexMode::TriangleStrip
+    } else if mode == atoms::triangle_fan() {
+        VertexMode::TriangleFan
+    } else {
+        VertexMode::Triangles
+    };
+    let positions: Vec<Point> = positions
+        .into_iter()
+        .map(|(x, y)| Point::new(x as f32, y as f32))
+        .collect();
+    let colors: Vec<Color> = colors
+        .into_iter()
+        .map(decode_color)
+        .collect::<NifResult<Vec<Color>>>()?;
+    let texs = positions.clone();
+    let indices = if indices_term.decode::<Atom>().is_ok_and(|atom| atom == atoms::nil()) {
+        None
+    } else {
+        Some(indices_term.decode::<Vec<u16>>()?)
+    };
+
+    Ok(Vertices::new_copy(mode, &positions, &texs, &colors, indices.as_deref()))
 }
 
 fn render_image_resource(image: &Image, src: Option<Rect>, dst: Rect) -> NifResult<Vec<u8>> {

@@ -148,6 +148,9 @@ Skia.rect(doc, x: 0, y: 0, width: 128, height: 128, fill: Skia.Shader.picture(pi
 {:ok, families} = Skia.Typeface.families()
 {:ok, typeface} = Skia.Typeface.match_family("Inter", weight: 700, slant: :upright)
 font = Skia.Font.new(typeface, size: 24)
+{:ok, info} = Skia.Typeface.info(typeface)
+{:ok, metrics} = Skia.Font.metrics(font)
+{:ok, glyphs} = Skia.Font.glyph_ids(font, "Hello")
 {:ok, measurement} = Skia.measure_text("Hello", font: font)
 ```
 
@@ -174,6 +177,15 @@ Skia.text(doc, "", x: 0, y: 32, paragraph_style: paragraph, spans: spans)
 {:ok, blob} = Skia.TextBlob.new("Cached", font: font)
 {:ok, bounds} = Skia.TextBlob.bounds(blob)
 Skia.text_blob(doc, blob, x: 0, y: 64, fill: :black)
+```
+
+## Vertices
+
+Draw triangle meshes with per-vertex colors:
+
+```elixir
+vertices = Skia.Vertices.new([{0, 0}, {100, 0}, {50, 100}], colors: [:red, :green, :blue])
+Skia.vertices(doc, vertices)
 ```
 
 ## Compact batches and benchmarking

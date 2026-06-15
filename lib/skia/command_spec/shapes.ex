@@ -81,6 +81,28 @@ defmodule Skia.CommandSpec.Shapes do
         ],
         native_refs: ["skia_safe::Canvas::draw_circle"]
       ],
+      vertices: [
+        handler: :draw_vertices,
+        args: [vertices: T.vertices()],
+        defaults: [blend_mode: :src_over],
+        opts: T.paint_opts(),
+        shape_draw: [
+          setup: [
+            {:let, "vertices",
+             "vertices_from_term(*args.first().ok_or(rustler::Error::BadArg)?)?"},
+            {:let, "blend_mode",
+             "generated_enums::decode_blend_mode(opts.blend_mode.unwrap_or(atoms::src_over()))?"},
+            {:let, "paint",
+             "match opts.fill { Some(term) => decode_paint(term)?, None => fill_paint(Color::WHITE) }"},
+            {:let_mut, "paint", "paint"},
+            {:stmt, "apply_paint_effects(&mut paint, raw_opts)?"}
+          ],
+          body: [
+            {:call, "canvas", :draw_vertices, [{:ref, "vertices"}, "blend_mode", {:ref, "paint"}]}
+          ]
+        ],
+        native_refs: ["skia_safe::Canvas::draw_vertices"]
+      ],
       line: [
         handler: :draw_line,
         args: [],

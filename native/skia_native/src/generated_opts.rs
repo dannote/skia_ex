@@ -169,6 +169,40 @@ pub fn decode_circle_opts<'a>(opts: &[(Atom, Term<'a>)]) -> NifResult<CircleOpts
         _phantom: std::marker::PhantomData,
     })
 }
+pub struct VerticesOpts<'a> {
+    pub paint: Option<Term<'a>>,
+    pub fill: Option<Term<'a>>,
+    pub stroke: Option<Term<'a>>,
+    pub stroke_width: Option<f32>,
+    pub stroke_cap: Option<Atom>,
+    pub stroke_join: Option<Atom>,
+    pub stroke_miter: Option<f32>,
+    pub blend_mode: Option<Atom>,
+    pub image_filter: Option<Term<'a>>,
+    pub path_effect: Option<Term<'a>>,
+    pub color_filter: Option<Term<'a>>,
+    pub mask_filter: Option<Term<'a>>,
+    _phantom: std::marker::PhantomData<&'a ()>,
+}
+pub fn decode_vertices_opts<'a>(
+    opts: &[(Atom, Term<'a>)],
+) -> NifResult<VerticesOpts<'a>> {
+    Ok(VerticesOpts {
+        paint: opt_term(opts, atoms::paint()),
+        fill: opt_term(opts, atoms::fill()),
+        stroke: opt_term(opts, atoms::stroke()),
+        stroke_width: opt_f32_option(opts, atoms::stroke_width())?,
+        stroke_cap: opt_atom_option(opts, atoms::stroke_cap())?,
+        stroke_join: opt_atom_option(opts, atoms::stroke_join())?,
+        stroke_miter: opt_f32_option(opts, atoms::stroke_miter())?,
+        blend_mode: opt_atom_option(opts, atoms::blend_mode())?,
+        image_filter: opt_term(opts, atoms::image_filter()),
+        path_effect: opt_term(opts, atoms::path_effect()),
+        color_filter: opt_term(opts, atoms::color_filter()),
+        mask_filter: opt_term(opts, atoms::mask_filter()),
+        _phantom: std::marker::PhantomData,
+    })
+}
 pub struct LineOpts<'a> {
     pub from: Term<'a>,
     pub to: Term<'a>,
