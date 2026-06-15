@@ -509,50 +509,8 @@ defmodule Skia.Codegen do
   @spec generated_layers() :: String.t()
   def generated_layers do
     Layers.commands()
-    |> generated_layer_impls()
+    |> generated_body_impls(:layer)
     |> render_items("generated_layers.rs")
-  end
-
-  defp generated_layer_impls(commands) do
-    commands
-    |> Enum.filter(fn {_name, spec} -> Keyword.has_key?(spec, :layer) end)
-    |> Enum.map(fn {name, spec} -> layer_impl(name, spec) end)
-  end
-
-  defp layer_impl(name, spec) do
-    handler = Keyword.fetch!(spec, :handler)
-    layer = Keyword.fetch!(spec, :layer)
-    setup = layer |> Keyword.get(:setup, []) |> Enum.join("\n    ")
-    body = layer |> Keyword.fetch!(:body) |> Enum.join("\n    ")
-
-    case Keyword.get(spec, :opts, []) do
-      [] ->
-        Rust.item("""
-        fn #{handler}_impl(surface: &mut skia_safe::Surface) -> NifResult<()> {
-            #{body}
-            Ok(())
-        }
-        """)
-
-      _opts ->
-        opts_type = name |> Atom.to_string() |> Macro.camelize() |> Kernel.<>("Opts")
-
-        raw_opts_name =
-          if String.contains?(setup <> body, "raw_opts"), do: "raw_opts", else: "_raw_opts"
-
-        setup = if setup == "", do: "", else: setup <> "\n\n    "
-
-        Rust.item("""
-        fn #{handler}_impl<'a>(
-            surface: &mut skia_safe::Surface,
-            opts: generated_opts::#{opts_type}<'a>,
-            #{raw_opts_name}: &[(Atom, Term<'a>)],
-        ) -> NifResult<()> {
-            #{setup}#{body}
-            Ok(())
-        }
-        """)
-    end
   end
 
   @spec generated_transforms() :: String.t()
@@ -716,37 +674,8 @@ defmodule Skia.Codegen do
   @spec generated_images() :: String.t()
   def generated_images do
     Images.commands()
-    |> generated_image_impls()
+    |> generated_body_impls(:image_draw)
     |> render_items("generated_images.rs")
-  end
-
-  defp generated_image_impls(commands) do
-    commands
-    |> Enum.filter(fn {_name, spec} -> Keyword.has_key?(spec, :image_draw) end)
-    |> Enum.map(fn {name, spec} -> image_impl(name, spec) end)
-  end
-
-  defp image_impl(name, spec) do
-    handler = Keyword.fetch!(spec, :handler)
-    opts_type = name |> Atom.to_string() |> Macro.camelize() |> Kernel.<>("Opts")
-    draw = Keyword.fetch!(spec, :image_draw)
-    setup = draw |> Keyword.fetch!(:setup) |> Enum.join("\n    ")
-    body = draw |> Keyword.fetch!(:body) |> Enum.join("\n    ")
-
-    Rust.item("""
-    fn #{handler}_impl<'a>(
-        surface: &mut skia_safe::Surface,
-        args: Vec<Term<'a>>,
-        opts: generated_opts::#{opts_type}<'a>,
-        raw_opts: &[(Atom, Term<'a>)],
-    ) -> NifResult<()> {
-        #{setup}
-
-        #{body}
-
-        Ok(())
-    }
-    """)
   end
 
   @spec generated_draw_paths() :: String.t()
@@ -764,20 +693,17 @@ defmodule Skia.Codegen do
 
   defp body_impl(name, spec, key) do
     handler = Keyword.fetch!(spec, :handler)
-    opts_type = name |> Atom.to_string() |> Macro.camelize() |> Kernel.<>("Opts")
     command_body = Keyword.fetch!(spec, key)
     setup = command_body |> Keyword.get(:setup, []) |> Enum.join("\n    ")
-    body = command_body |> Keyword.fetch!(:body) |> Enum.join("\n    ")
+    body = command_body |> command_body_lines() |> Enum.join("\n    ")
     setup = if setup == "", do: "", else: setup <> "\n\n    "
-
-    raw_opts_name =
-      if String.contains?(setup <> body, "raw_opts"), do: "raw_opts", else: "_raw_opts"
+    params = body_impl_params(name, spec, setup <> body)
+    lifetime = if Enum.any?(params, &String.contains?(&1, "'a")), do: "<'a>", else: ""
+    params = Enum.join(params, ",\n    ")
 
     Rust.item("""
-    fn #{handler}_impl<'a>(
-        surface: &mut skia_safe::Surface,
-        #{body_args(spec)}opts: generated_opts::#{opts_type}<'a>,
-        #{raw_opts_name}: &[(Atom, Term<'a>)],
+    fn #{handler}_impl#{lifetime}(
+        #{params},
     ) -> NifResult<()> {
         #{setup}#{body}
         Ok(())
@@ -785,13 +711,26 @@ defmodule Skia.Codegen do
     """)
   end
 
-  defp body_args(spec) do
-    if Keyword.get(spec, :args, []) == [] do
-      ""
-    else
-      "args: Vec<Term<'a>>,\n    "
+  defp command_body_lines(command_body) do
+    cond do
+      Keyword.has_key?(command_body, :body) -> Keyword.fetch!(command_body, :body)
+      Keyword.has_key?(command_body, :call) -> [Keyword.fetch!(command_body, :call)]
     end
   end
+
+  defp body_impl_params(name, spec, source) do
+    opts = Keyword.get(spec, :opts, [])
+
+    ["surface: &mut skia_safe::Surface"]
+    |> append_if(Keyword.get(spec, :args, []) != [], "args: Vec<Term<'a>>")
+    |> append_if(opts != [], "opts: generated_opts::#{opts_type(name)}<'a>")
+    |> append_if(opts != [], "#{raw_opts_name(source)}: &[(Atom, Term<'a>)]")
+  end
+
+  defp opts_type(name), do: name |> Atom.to_string() |> Macro.camelize() |> Kernel.<>("Opts")
+
+  defp raw_opts_name(source),
+    do: if(String.contains?(source, "raw_opts"), do: "raw_opts", else: "_raw_opts")
 
   defp text_helper_impls do
     [
@@ -869,45 +808,8 @@ defmodule Skia.Codegen do
   @spec generated_clips() :: String.t()
   def generated_clips do
     Clips.commands()
-    |> generated_clip_impls()
+    |> generated_body_impls(:clip)
     |> render_items("generated_clips.rs")
-  end
-
-  defp generated_clip_impls(commands) do
-    commands
-    |> Enum.filter(fn {_name, spec} -> Keyword.has_key?(spec, :clip) end)
-    |> Enum.map(fn {name, spec} -> clip_impl(name, spec) end)
-  end
-
-  defp clip_impl(name, spec) do
-    handler = Keyword.fetch!(spec, :handler)
-    opts_type = name |> Atom.to_string() |> Macro.camelize() |> Kernel.<>("Opts")
-    clip = Keyword.fetch!(spec, :clip)
-    setup = clip |> Keyword.fetch!(:setup) |> Enum.join("\n    ")
-    call = Keyword.fetch!(clip, :call)
-
-    raw_opts_name =
-      if String.contains?(setup <> call, "raw_opts"), do: "raw_opts", else: "_raw_opts"
-
-    Rust.item("""
-    fn #{handler}_impl<'a>(
-        surface: &mut skia_safe::Surface,
-        #{clip_args(spec)}opts: generated_opts::#{opts_type}<'a>,
-        #{raw_opts_name}: &[(Atom, Term<'a>)],
-    ) -> NifResult<()> {
-        #{setup}
-        #{call}
-        Ok(())
-    }
-    """)
-  end
-
-  defp clip_args(spec) do
-    if Keyword.get(spec, :args, []) == [] do
-      ""
-    else
-      "args: Vec<Term<'a>>,\n    "
-    end
   end
 
   @spec generated_paint() :: String.t()
