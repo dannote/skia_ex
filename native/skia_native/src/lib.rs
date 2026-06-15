@@ -6,7 +6,7 @@ use skia_safe::{
     image_filters, path_utils, surfaces,
     textlayout::{FontCollection, ParagraphBuilder, ParagraphStyle, TextAlign, TextDirection, TextStyle},
     color_filters, AlphaType, Color, ColorFilter, ColorType, CubicResampler, Data,
-    EncodedImageFormat, FilterMode, Font, FontMgr, FontStyle, IPoint, Image, ImageInfo, Matrix,
+    ClipOp, EncodedImageFormat, FilterMode, Font, FontMgr, FontStyle, IPoint, Image, ImageInfo, Matrix,
     Paint, PaintStyle, PathBuilder, PathDirection, PathEffect, Point, RRect, Rect, SamplingOptions,
     Shader, TileMode,
 };

@@ -23,6 +23,9 @@ fn apply_paint_effects<'a>(
     }
     Ok(())
 }
+fn decode_clip_op(value: Atom) -> NifResult<Option<ClipOp>> {
+    Ok(Some(generated_enums::decode_clip_op(value)?))
+}
 fn apply_stroke_options<'a>(
     paint: &mut Paint,
     opts: &[(Atom, Term<'a>)],

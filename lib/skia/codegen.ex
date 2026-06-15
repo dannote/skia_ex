@@ -421,6 +421,7 @@ defmodule Skia.Codegen do
     helpers = [
       enum_option_applicator(:apply_blend_mode, :paint, "&mut Paint", @paint_enum_options),
       paint_effects_applicator(),
+      clip_op_decoder(),
       stroke_options_applicator(),
       enum_option_applicator(:apply_fill_rule, :path, "&mut skia_safe::Path", @path_enum_options)
     ]
@@ -471,6 +472,14 @@ defmodule Skia.Codegen do
             paint.set_color_filter(decode_color_filter(term)?);
         }
         Ok(())
+    }
+    """)
+  end
+
+  defp clip_op_decoder do
+    Rust.item("""
+    fn decode_clip_op(value: Atom) -> NifResult<Option<ClipOp>> {
+        Ok(Some(generated_enums::decode_clip_op(value)?))
     }
     """)
   end

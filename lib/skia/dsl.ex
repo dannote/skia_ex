@@ -90,7 +90,21 @@ defmodule Skia.DSL do
   end
 
   defp compile_path_statement({name, _meta, args}, acc)
-       when name in [:move_to, :line_to, :quad_to, :cubic_to] and is_list(args) do
+       when name in [
+              :move_to,
+              :line_to,
+              :quad_to,
+              :conic_to,
+              :cubic_to,
+              :r_move_to,
+              :r_line_to,
+              :r_quad_to,
+              :r_conic_to,
+              :r_cubic_to,
+              :arc_to,
+              :r_arc_to,
+              :rrect
+            ] and is_list(args) do
     quote do
       apply(Skia.Path, unquote(name), [unquote(acc) | unquote(args)])
     end

@@ -662,6 +662,20 @@ defmodule SkiaTest do
     assert byte_size(raw.data) == 64
   end
 
+  test "supports compact batches and clip operations" do
+    document =
+      Skia.canvas(4, 4)
+      |> Skia.clip_rect(x: 0, y: 0, width: 2, height: 2, clip_op: :intersect)
+      |> Skia.clip_circle(x: 1, y: 1, radius: 1, clip_op: :difference)
+      |> Skia.rect(x: 0, y: 0, width: 4, height: 4, fill: :red)
+
+    assert {4, 4, commands} = Skia.to_compact_batch(document)
+    assert is_binary(Skia.to_compact_binary(document))
+    assert [_, _, _] = commands
+    assert {:ok, raw} = Skia.to_raw(document)
+    assert byte_size(raw.data) == 64
+  end
+
   test "supports render options and preflight validation" do
     document = Skia.canvas(4, 4) |> Skia.rect(x: 0, y: 0, width: 4, height: 4, fill: :red)
     assert {:ok, png} = Skia.render(document, format: :png)

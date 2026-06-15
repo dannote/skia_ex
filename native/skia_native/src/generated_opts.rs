@@ -450,6 +450,7 @@ pub struct ClipRectOpts<'a> {
     pub height: f32,
     pub radius: Option<f32>,
     pub antialias: Option<bool>,
+    pub clip_op: Option<Atom>,
     _phantom: std::marker::PhantomData<&'a ()>,
 }
 pub fn decode_clip_rect_opts<'a>(
@@ -462,6 +463,7 @@ pub fn decode_clip_rect_opts<'a>(
         height: opt_f32(opts, atoms::height())?,
         radius: opt_f32_option(opts, atoms::radius())?,
         antialias: opt_bool_option(opts, atoms::antialias())?,
+        clip_op: opt_atom_option(opts, atoms::clip_op())?,
         _phantom: std::marker::PhantomData,
     })
 }
@@ -470,6 +472,7 @@ pub struct ClipCircleOpts<'a> {
     pub y: f32,
     pub radius: f32,
     pub antialias: Option<bool>,
+    pub clip_op: Option<Atom>,
     _phantom: std::marker::PhantomData<&'a ()>,
 }
 pub fn decode_clip_circle_opts<'a>(
@@ -480,12 +483,14 @@ pub fn decode_clip_circle_opts<'a>(
         y: opt_f32(opts, atoms::y())?,
         radius: opt_f32(opts, atoms::radius())?,
         antialias: opt_bool_option(opts, atoms::antialias())?,
+        clip_op: opt_atom_option(opts, atoms::clip_op())?,
         _phantom: std::marker::PhantomData,
     })
 }
 pub struct ClipPathOpts<'a> {
     pub antialias: Option<bool>,
     pub fill_rule: Option<Atom>,
+    pub clip_op: Option<Atom>,
     _phantom: std::marker::PhantomData<&'a ()>,
 }
 pub fn decode_clip_path_opts<'a>(
@@ -494,6 +499,7 @@ pub fn decode_clip_path_opts<'a>(
     Ok(ClipPathOpts {
         antialias: opt_bool_option(opts, atoms::antialias())?,
         fill_rule: opt_atom_option(opts, atoms::fill_rule())?,
+        clip_op: opt_atom_option(opts, atoms::clip_op())?,
         _phantom: std::marker::PhantomData,
     })
 }

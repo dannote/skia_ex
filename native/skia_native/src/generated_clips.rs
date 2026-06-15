@@ -8,12 +8,13 @@ fn clip_rect_impl<'a>(
     let rect = Rect::from_xywh(opts.x, opts.y, opts.width, opts.height);
     let radius = opts.radius.unwrap_or(0.0);
     let antialias = opts.antialias.unwrap_or(true);
+    let clip_op = decode_clip_op(opts.clip_op.unwrap_or(atoms::intersect()))?;
     if radius > 0.0 {
         surface
             .canvas()
-            .clip_rrect(RRect::new_rect_xy(rect, radius, radius), None, antialias);
+            .clip_rrect(RRect::new_rect_xy(rect, radius, radius), clip_op, antialias);
     } else {
-        surface.canvas().clip_rect(rect, None, antialias);
+        surface.canvas().clip_rect(rect, clip_op, antialias);
     }
     Ok(())
 }
@@ -25,7 +26,8 @@ fn clip_circle_impl<'a>(
     let mut builder = PathBuilder::new();
     builder.add_circle(Point::new(opts.x, opts.y), opts.radius, None);
     let path = builder.detach();
-    surface.canvas().clip_path(&path, None, opts.antialias.unwrap_or(true));
+    let clip_op = decode_clip_op(opts.clip_op.unwrap_or(atoms::intersect()))?;
+    surface.canvas().clip_path(&path, clip_op, opts.antialias.unwrap_or(true));
     Ok(())
 }
 fn clip_path_impl<'a>(
@@ -36,6 +38,7 @@ fn clip_path_impl<'a>(
 ) -> NifResult<()> {
     let mut path = build_path(*args.first().ok_or(rustler::Error::BadArg)?)?;
     apply_fill_rule(&mut path, raw_opts)?;
-    surface.canvas().clip_path(&path, None, opts.antialias.unwrap_or(true));
+    let clip_op = decode_clip_op(opts.clip_op.unwrap_or(atoms::intersect()))?;
+    surface.canvas().clip_path(&path, clip_op, opts.antialias.unwrap_or(true));
     Ok(())
 }

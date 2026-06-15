@@ -8,6 +8,7 @@ defmodule Skia.CommandSpec.Types do
   def sampling_options, do: :sampling_options
   def paint, do: :paint
   def blend_mode, do: {:enum, :blend_mode, skia: "SkBlendMode", rust: :BlendMode}
+  def clip_op, do: {:enum, :clip_op, skia: "SkClipOp", rust: :ClipOp}
   def sampling, do: {:enum, :sampling, skia: "SkFilterMode", rust: :FilterMode}
   def tile_mode, do: {:enum, :tile_mode, skia: "SkTileMode", rust: :TileMode}
   def stroke_cap, do: {:enum, :stroke_cap, skia: "SkPaint_Cap", rust: "paint::Cap"}

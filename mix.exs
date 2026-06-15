@@ -52,7 +52,16 @@ defmodule Skia.MixProject do
     [
       licenses: ["MIT"],
       links: %{"GitHub" => @source_url},
-      files: ["lib", "native", "examples", "mix.exs", "README.md", "LICENSE*"]
+      files: [
+        "lib",
+        "native/skia_native/src",
+        "native/skia_native/Cargo.toml",
+        "native/skia_native/Cargo.lock",
+        "examples",
+        "mix.exs",
+        "README.md",
+        "LICENSE"
+      ]
     ]
   end
 

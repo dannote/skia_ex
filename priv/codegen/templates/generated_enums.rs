@@ -2,7 +2,8 @@
 
 use rustler::{Atom, NifResult};
 use skia_safe::{
-    paint, BlendMode, EncodedImageFormat, FilterMode, MipmapMode, PathFillType, PathOp, TileMode,
+    paint, BlendMode, ClipOp, EncodedImageFormat, FilterMode, MipmapMode, PathFillType, PathOp,
+    TileMode,
 };
 
 use super::atoms;

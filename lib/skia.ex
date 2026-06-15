@@ -255,10 +255,18 @@ defmodule Skia do
          do: render_native(document, &Skia.Native.render_webp(&1, quality))
   end
 
+  @doc "Returns a compact term representation `{width, height, commands}`."
+  @spec to_compact_batch(Document.t()) :: Skia.Compact.compact_batch()
+  def to_compact_batch(%Document{} = document), do: Skia.Compact.from_document(document)
+
   @doc "Encodes the normalized command batch as an Erlang external term binary."
   @spec to_binary_batch(Document.t()) :: binary()
   def to_binary_batch(%Document{} = document),
     do: document |> to_batch() |> :erlang.term_to_binary()
+
+  @doc "Encodes the compact command batch as an Erlang external term binary."
+  @spec to_compact_binary(Document.t()) :: binary()
+  def to_compact_binary(%Document{} = document), do: Skia.Compact.to_binary(document)
 
   @doc "Renders the document to a raw RGBA buffer."
   @spec to_raw(Document.t()) ::

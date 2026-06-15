@@ -3,8 +3,8 @@
 #![allow(dead_code)]
 use rustler::{Atom, NifResult};
 use skia_safe::{
-    paint, BlendMode, EncodedImageFormat, FilterMode, MipmapMode, PathFillType, PathOp,
-    TileMode,
+    paint, BlendMode, ClipOp, EncodedImageFormat, FilterMode, MipmapMode, PathFillType,
+    PathOp, TileMode,
 };
 use super::atoms;
 pub const BLEND_MODES: &[&str] = &[
@@ -38,6 +38,7 @@ pub const BLEND_MODES: &[&str] = &[
     "color",
     "luminosity",
 ];
+pub const CLIP_OPS: &[&str] = &["difference", "intersect"];
 pub const ENCODED_IMAGE_FORMATS: &[&str] = &[
     "bmp",
     "gif",
@@ -103,6 +104,13 @@ pub fn decode_blend_mode(value: Atom) -> NifResult<BlendMode> {
         value if value == atoms::saturation() => Ok(BlendMode::Saturation),
         value if value == atoms::color() => Ok(BlendMode::Color),
         value if value == atoms::luminosity() => Ok(BlendMode::Luminosity),
+        _ => Err(rustler::Error::BadArg),
+    }
+}
+pub fn decode_clip_op(value: Atom) -> NifResult<ClipOp> {
+    match value {
+        value if value == atoms::difference() => Ok(ClipOp::Difference),
+        value if value == atoms::intersect() => Ok(ClipOp::Intersect),
         _ => Err(rustler::Error::BadArg),
     }
 }

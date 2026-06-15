@@ -25,13 +25,14 @@
 | `path` | `path: path` | `paint: paint`<br>`fill: color`<br>`stroke: color`<br>`stroke_width: number`<br>`stroke_cap: stroke_cap`<br>`stroke_join: stroke_join`<br>`stroke_miter: number`<br>`blend_mode: blend_mode`<br>`image_filter: image_filter`<br>`path_effect: path_effect`<br>`color_filter: color_filter`<br>`fill_rule: fill_rule` | — | `skia_safe::Canvas::draw_path` |
 | `path_op` | `a: path`<br>`b: path` | `paint: paint`<br>`fill: color`<br>`stroke: color`<br>`stroke_width: number`<br>`stroke_cap: stroke_cap`<br>`stroke_join: stroke_join`<br>`stroke_miter: number`<br>`blend_mode: blend_mode`<br>`image_filter: image_filter`<br>`path_effect: path_effect`<br>`color_filter: color_filter`<br>`path_op: path_op` required<br>`fill_rule: fill_rule` | — | `skia_safe::Path::op`<br>`skia_safe::Canvas::draw_path` |
 | `path_outline` | `path: path` | `paint: paint`<br>`fill: color`<br>`stroke: color`<br>`stroke_width: number`<br>`stroke_cap: stroke_cap`<br>`stroke_join: stroke_join`<br>`stroke_miter: number`<br>`blend_mode: blend_mode`<br>`image_filter: image_filter`<br>`path_effect: path_effect`<br>`color_filter: color_filter`<br>`outline_width: number` required<br>`fill_rule: fill_rule` | — | `skia_safe::path_utils::fill_path_with_paint`<br>`skia_safe::Canvas::draw_path` |
-| `clip_rect` | — | `x: number` required<br>`y: number` required<br>`width: number` required<br>`height: number` required<br>`radius: number`<br>`antialias: boolean` | `radius: 0`<br>`antialias: true` | `skia_safe::Canvas::clip_rect`<br>`skia_safe::Canvas::clip_rrect` |
-| `clip_circle` | — | `x: number` required<br>`y: number` required<br>`radius: number` required<br>`antialias: boolean` | `antialias: true` | `skia_safe::Canvas::clip_path` |
-| `clip_path` | `path: path` | `antialias: boolean`<br>`fill_rule: fill_rule` | `antialias: true`<br>`fill_rule: :winding` | `skia_safe::Canvas::clip_path` |
+| `clip_rect` | — | `x: number` required<br>`y: number` required<br>`width: number` required<br>`height: number` required<br>`radius: number`<br>`antialias: boolean`<br>`clip_op: clip_op` | `radius: 0`<br>`antialias: true`<br>`clip_op: :intersect` | `skia_safe::Canvas::clip_rect`<br>`skia_safe::Canvas::clip_rrect` |
+| `clip_circle` | — | `x: number` required<br>`y: number` required<br>`radius: number` required<br>`antialias: boolean`<br>`clip_op: clip_op` | `antialias: true`<br>`clip_op: :intersect` | `skia_safe::Canvas::clip_path` |
+| `clip_path` | `path: path` | `antialias: boolean`<br>`fill_rule: fill_rule`<br>`clip_op: clip_op` | `antialias: true`<br>`fill_rule: :winding`<br>`clip_op: :intersect` | `skia_safe::Canvas::clip_path` |
 
 ## Enums
 
 - `blend_mode`: `:clear`, `:src`, `:dst`, `:src_over`, `:dst_over`, `:src_in`, `:dst_in`, `:src_out`, `:dst_out`, `:src_a_top`, `:dst_a_top`, `:xor`, `:plus`, `:modulate`, `:screen`, `:overlay`, `:darken`, `:lighten`, `:color_dodge`, `:color_burn`, `:hard_light`, `:soft_light`, `:difference`, `:exclusion`, `:multiply`, `:hue`, `:saturation`, `:color`, `:luminosity`
+- `clip_op`: `:difference`, `:intersect`
 - `encoded_image_format`: `:bmp`, `:gif`, `:ico`, `:jpeg`, `:png`, `:wbmp`, `:webp`, `:pkm`, `:ktx`, `:astc`, `:dng`, `:heif`, `:avif`, `:jpegxl`
 - `fill_rule`: `:winding`, `:even_odd`, `:inverse_winding`, `:inverse_even_odd`
 - `mipmap_mode`: `:none`, `:nearest`, `:linear`
