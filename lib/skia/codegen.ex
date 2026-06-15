@@ -355,10 +355,8 @@ defmodule Skia.Codegen do
         force_build: Mix.env() in [:dev, :test] or System.get_env("SKIA_EX_BUILD") in ["1", "true"],
         targets: ~w(
           aarch64-apple-darwin
-          aarch64-unknown-linux-gnu
           x86_64-apple-darwin
           x86_64-unknown-linux-gnu
-          x86_64-unknown-linux-musl
         ),
         version: version
 
