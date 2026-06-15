@@ -44,6 +44,34 @@ generate :generated_style_helpers, "native/skia_native/src/generated_style_helpe
   build(&Skia.Codegen.generated_style_helpers/0)
 end
 
+generate :generated_layers, "native/skia_native/src/generated_layers.rs" do
+  build(&Skia.Codegen.generated_layers/0)
+end
+
+generate :generated_transforms, "native/skia_native/src/generated_transforms.rs" do
+  build(&Skia.Codegen.generated_transforms/0)
+end
+
+generate :generated_shapes, "native/skia_native/src/generated_shapes.rs" do
+  build(&Skia.Codegen.generated_shapes/0)
+end
+
+generate :generated_text, "native/skia_native/src/generated_text.rs" do
+  build(&Skia.Codegen.generated_text/0)
+end
+
+generate :generated_images, "native/skia_native/src/generated_images.rs" do
+  build(&Skia.Codegen.generated_images/0)
+end
+
+generate :generated_draw_paths, "native/skia_native/src/generated_draw_paths.rs" do
+  build(&Skia.Codegen.generated_draw_paths/0)
+end
+
+generate :generated_clips, "native/skia_native/src/generated_clips.rs" do
+  build(&Skia.Codegen.generated_clips/0)
+end
+
 generate :generated_paint, "native/skia_native/src/generated_paint.rs" do
   build(&Skia.Codegen.generated_paint/0)
 end

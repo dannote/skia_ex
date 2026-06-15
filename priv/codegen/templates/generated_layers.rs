@@ -1,0 +1,35 @@
+fn draw_save_impl(surface: &mut skia_safe::Surface) -> NifResult<()> {
+    surface.canvas().save();
+    Ok(())
+}
+
+fn draw_save_layer_impl<'a>(
+    surface: &mut skia_safe::Surface,
+    layer_opts: generated_opts::SaveLayerOpts<'a>,
+    opts: &[(Atom, Term<'a>)],
+) -> NifResult<()> {
+    let bounds = match layer_opts.bounds {
+        Some(term) => Some(rect_from_term(term)?),
+        None => None,
+    };
+    let mut paint = Paint::default();
+    paint.set_alpha((layer_opts.opacity.unwrap_or(1.0).clamp(0.0, 1.0) * 255.0).round() as u8);
+    apply_blend_mode(&mut paint, opts)?;
+    if let Some(sigma) = layer_opts.blur {
+        if let Some(filter) = image_filters::blur((sigma, sigma), TileMode::Decal, None, None) {
+            paint.set_image_filter(filter);
+        }
+    }
+
+    let mut rec = SaveLayerRec::default().paint(&paint);
+    if let Some(ref bounds) = bounds {
+        rec = rec.bounds(bounds);
+    }
+    surface.canvas().save_layer(&rec);
+    Ok(())
+}
+
+fn draw_restore_impl(surface: &mut skia_safe::Surface) -> NifResult<()> {
+    surface.canvas().restore();
+    Ok(())
+}

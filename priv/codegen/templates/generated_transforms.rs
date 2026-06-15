@@ -1,0 +1,49 @@
+fn draw_translate_impl<'a>(
+    surface: &mut skia_safe::Surface,
+    translate_opts: generated_opts::TranslateOpts<'a>,
+    _opts: &[(Atom, Term<'a>)],
+) -> NifResult<()> {
+    surface
+        .canvas()
+        .translate((translate_opts.x, translate_opts.y));
+    Ok(())
+}
+
+fn draw_rotate_impl<'a>(
+    surface: &mut skia_safe::Surface,
+    rotate_opts: generated_opts::RotateOpts<'a>,
+    _opts: &[(Atom, Term<'a>)],
+) -> NifResult<()> {
+    surface.canvas().rotate(rotate_opts.degrees, None);
+    Ok(())
+}
+
+fn draw_rotate_at_impl<'a>(
+    surface: &mut skia_safe::Surface,
+    rotate_opts: generated_opts::RotateAtOpts<'a>,
+    _opts: &[(Atom, Term<'a>)],
+) -> NifResult<()> {
+    surface
+        .canvas()
+        .rotate(rotate_opts.degrees, Some(Point::new(rotate_opts.x, rotate_opts.y)));
+    Ok(())
+}
+
+fn draw_scale_impl<'a>(
+    surface: &mut skia_safe::Surface,
+    scale_opts: generated_opts::ScaleOpts<'a>,
+    _opts: &[(Atom, Term<'a>)],
+) -> NifResult<()> {
+    surface.canvas().scale((scale_opts.x, scale_opts.y));
+    Ok(())
+}
+
+fn draw_concat_impl<'a>(
+    surface: &mut skia_safe::Surface,
+    concat_opts: generated_opts::ConcatOpts<'a>,
+    _opts: &[(Atom, Term<'a>)],
+) -> NifResult<()> {
+    let matrix = matrix_from_term(concat_opts.matrix)?;
+    surface.canvas().concat(&matrix);
+    Ok(())
+}

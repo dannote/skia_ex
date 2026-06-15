@@ -24,6 +24,31 @@ defmodule Skia.Codegen do
         path: "native/skia_native/src/generated_resources.rs",
         build: &generated_resources/0
       ],
+      generated_layers: [
+        path: "native/skia_native/src/generated_layers.rs",
+        build: &generated_layers/0
+      ],
+      generated_transforms: [
+        path: "native/skia_native/src/generated_transforms.rs",
+        build: &generated_transforms/0
+      ],
+      generated_shapes: [
+        path: "native/skia_native/src/generated_shapes.rs",
+        build: &generated_shapes/0
+      ],
+      generated_text: [path: "native/skia_native/src/generated_text.rs", build: &generated_text/0],
+      generated_images: [
+        path: "native/skia_native/src/generated_images.rs",
+        build: &generated_images/0
+      ],
+      generated_draw_paths: [
+        path: "native/skia_native/src/generated_draw_paths.rs",
+        build: &generated_draw_paths/0
+      ],
+      generated_clips: [
+        path: "native/skia_native/src/generated_clips.rs",
+        build: &generated_clips/0
+      ],
       generated_paint: [
         path: "native/skia_native/src/generated_paint.rs",
         build: &generated_paint/0
@@ -471,6 +496,33 @@ defmodule Skia.Codegen do
     |> template_path()
     |> RustQ.render_file!(preamble: generated_rust_preamble(), splice: [items: resources])
   end
+
+  defp render_template_file(name) do
+    name
+    |> template_path()
+    |> RustQ.render_file!(preamble: generated_rust_preamble())
+  end
+
+  @spec generated_layers() :: String.t()
+  def generated_layers, do: render_template_file("generated_layers.rs")
+
+  @spec generated_transforms() :: String.t()
+  def generated_transforms, do: render_template_file("generated_transforms.rs")
+
+  @spec generated_shapes() :: String.t()
+  def generated_shapes, do: render_template_file("generated_shapes.rs")
+
+  @spec generated_text() :: String.t()
+  def generated_text, do: render_template_file("generated_text.rs")
+
+  @spec generated_images() :: String.t()
+  def generated_images, do: render_template_file("generated_images.rs")
+
+  @spec generated_draw_paths() :: String.t()
+  def generated_draw_paths, do: render_template_file("generated_draw_paths.rs")
+
+  @spec generated_clips() :: String.t()
+  def generated_clips, do: render_template_file("generated_clips.rs")
 
   @spec generated_paint() :: String.t()
   def generated_paint do

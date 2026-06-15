@@ -1,0 +1,46 @@
+fn clip_rect_impl<'a>(
+    surface: &mut skia_safe::Surface,
+    clip_opts: generated_opts::ClipRectOpts<'a>,
+    _opts: &[(Atom, Term<'a>)],
+) -> NifResult<()> {
+    let rect = Rect::from_xywh(clip_opts.x, clip_opts.y, clip_opts.width, clip_opts.height);
+    let radius = clip_opts.radius.unwrap_or(0.0);
+    let antialias = clip_opts.antialias.unwrap_or(true);
+
+    if radius > 0.0 {
+        surface
+            .canvas()
+            .clip_rrect(RRect::new_rect_xy(rect, radius, radius), None, antialias);
+    } else {
+        surface.canvas().clip_rect(rect, None, antialias);
+    }
+
+    Ok(())
+}
+
+fn clip_circle_impl<'a>(
+    surface: &mut skia_safe::Surface,
+    clip_opts: generated_opts::ClipCircleOpts<'a>,
+    _opts: &[(Atom, Term<'a>)],
+) -> NifResult<()> {
+    let mut builder = PathBuilder::new();
+    builder.add_circle(Point::new(clip_opts.x, clip_opts.y), clip_opts.radius, None);
+    surface
+        .canvas()
+        .clip_path(&builder.detach(), None, clip_opts.antialias.unwrap_or(true));
+    Ok(())
+}
+
+fn clip_path_impl<'a>(
+    surface: &mut skia_safe::Surface,
+    args: Vec<Term<'a>>,
+    clip_opts: generated_opts::ClipPathOpts<'a>,
+    opts: &[(Atom, Term<'a>)],
+) -> NifResult<()> {
+    let mut path = build_path(*args.first().ok_or(rustler::Error::BadArg)?)?;
+    apply_fill_rule(&mut path, &opts)?;
+    surface
+        .canvas()
+        .clip_path(&path, None, clip_opts.antialias.unwrap_or(true));
+    Ok(())
+}
