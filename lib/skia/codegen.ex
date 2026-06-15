@@ -59,7 +59,8 @@ defmodule Skia.Codegen do
   end
 
   @extra_enum_specs %{
-    encoded_image_format: [skia: "SkEncodedImageFormat", rust: :EncodedImageFormat]
+    encoded_image_format: [skia: "SkEncodedImageFormat", rust: :EncodedImageFormat],
+    tile_mode: [skia: "SkTileMode", rust: :TileMode]
   }
 
   @native_atoms [
@@ -83,6 +84,7 @@ defmodule Skia.Codegen do
     :radial_gradient,
     :sweep_gradient,
     :gradient_stop,
+    :image_shader,
     :matrix,
     :left,
     :center,

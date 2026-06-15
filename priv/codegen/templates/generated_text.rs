@@ -42,6 +42,13 @@ fn draw_paragraph_text<'a>(
     let mut text_style = TextStyle::new();
     text_style.set_font_size(size);
     text_style.set_color(paint.color());
+    if let Some(ref family) = text_opts.font_family {
+        text_style.set_font_families(&[family]);
+    }
+    if let Some(line_height) = text_opts.line_height {
+        text_style.set_height(line_height / size);
+        text_style.set_height_override(true);
+    }
 
     let mut paragraph_style = ParagraphStyle::new();
     paragraph_style.set_text_style(&text_style);

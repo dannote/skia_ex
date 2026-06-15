@@ -316,6 +316,29 @@ defmodule SkiaTest do
     assert byte_size(raw.data) == 64
   end
 
+  test "supports image shader fills" do
+    source =
+      Skia.canvas(2, 1)
+      |> Skia.rect(x: 0, y: 0, width: 1, height: 1, fill: :red)
+      |> Skia.rect(x: 1, y: 0, width: 1, height: 1, fill: :blue)
+
+    assert {:ok, png} = Skia.to_png(source)
+    assert {:ok, image} = Skia.Image.decode(png)
+
+    document =
+      Skia.canvas(2, 1)
+      |> Skia.rect(
+        x: 0,
+        y: 0,
+        width: 2,
+        height: 1,
+        fill: Skia.image_shader(image, tile_x: :clamp, tile_y: :clamp, sampling: :nearest)
+      )
+
+    assert {:ok, raw} = Skia.to_raw(document)
+    assert raw.data == <<255, 0, 0, 255, 0, 0, 255, 255>>
+  end
+
   test "supports path boolean operations" do
     a =
       Skia.Path.new()
@@ -341,6 +364,20 @@ defmodule SkiaTest do
     assert byte_size(raw.data) == 64
   end
 
+  test "supports path outline drawing" do
+    path =
+      Skia.Path.new()
+      |> Skia.Path.move_to(0, 0)
+      |> Skia.Path.line_to(4, 0)
+
+    document =
+      Skia.canvas(4, 2)
+      |> Skia.path_outline(path, outline_width: 1, stroke: :red)
+
+    assert {:ok, raw} = Skia.to_raw(document)
+    assert byte_size(raw.data) == 32
+  end
+
   test "supports paragraph text layout options" do
     document =
       Skia.canvas(96, 48)
@@ -350,11 +387,62 @@ defmodule SkiaTest do
         width: 48,
         size: 12,
         align: :center,
-        direction: :ltr
+        direction: :ltr,
+        font_family: "Arial",
+        line_height: 14
       )
 
     assert {:ok, png} = Skia.to_png(document)
     assert <<137, 80, 78, 71, 13, 10, 26, 10, _rest::binary>> = png
+  end
+
+  test "matches golden PNG hashes for core renderer features" do
+    fixtures = [
+      gradient:
+        Skia.canvas(8, 8)
+        |> Skia.rect(
+          x: 0,
+          y: 0,
+          width: 8,
+          height: 8,
+          fill:
+            Skia.linear_gradient({0, 0}, {8, 0}, [
+              Skia.gradient_stop(:red, 0),
+              Skia.gradient_stop(:blue, 1)
+            ])
+        ),
+      blend:
+        Skia.canvas(4, 4)
+        |> Skia.background(:blue)
+        |> Skia.rect(x: 0, y: 0, width: 4, height: 4, fill: :red, blend_mode: :multiply),
+      path:
+        (fn ->
+           a =
+             Skia.Path.new()
+             |> Skia.Path.move_to(0, 0)
+             |> Skia.Path.line_to(4, 0)
+             |> Skia.Path.line_to(4, 4)
+             |> Skia.Path.close()
+
+           b =
+             Skia.Path.new()
+             |> Skia.Path.move_to(2, 0)
+             |> Skia.Path.line_to(4, 4)
+             |> Skia.Path.line_to(0, 4)
+             |> Skia.Path.close()
+
+           Skia.canvas(4, 4) |> Skia.path_op(a, b, path_op: :intersect, fill: :red)
+         end).()
+    ]
+
+    assert Enum.map(fixtures, fn {name, document} ->
+             {:ok, png} = Skia.to_png(document)
+             {name, Base.encode16(:crypto.hash(:sha256, png), case: :lower), byte_size(png)}
+           end) == [
+             {:gradient, "98dc2822a91ef3fc07e391c8cb9b3dc779d15c2fe29b0e3128a1dad6ace8d5d2", 104},
+             {:blend, "40bdcc3e40d653dad2eab473b717d3f7af8ed892c2c6a168fe5c5d825ccb2d5a", 94},
+             {:path, "7f93fafd0941b69a1afd002fc3b258a3551b57e18b6062eb9b0b034ac877ccdc", 115}
+           ]
   end
 
   test "renders a PNG through the native batch boundary" do

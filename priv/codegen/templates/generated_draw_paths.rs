@@ -27,6 +27,40 @@ fn draw_path_impl<'a>(
     Ok(())
 }
 
+fn draw_path_outline_impl<'a>(
+    surface: &mut skia_safe::Surface,
+    args: Vec<Term<'a>>,
+    path_opts: generated_opts::PathOutlineOpts<'a>,
+    opts: &[(Atom, Term<'a>)],
+) -> NifResult<()> {
+    let path = build_path(*args.first().ok_or(rustler::Error::BadArg)?)?;
+    let mut stroke = Paint::default();
+    stroke
+        .set_anti_alias(true)
+        .set_style(PaintStyle::Stroke)
+        .set_stroke_width(path_opts.outline_width);
+    apply_stroke_options(&mut stroke, opts)?;
+
+    let mut builder = PathBuilder::new();
+    if !path_utils::fill_path_with_paint(&path, &stroke, &mut builder, None, None) {
+        return Ok(());
+    }
+    let mut outline = builder.detach();
+    apply_fill_rule(&mut outline, opts)?;
+
+    if let Some(fill) = path_opts.fill {
+        let mut paint = decode_paint(fill)?;
+        apply_blend_mode(&mut paint, opts)?;
+        surface.canvas().draw_path(&outline, &paint);
+    } else if let Some(stroke_color) = path_opts.stroke {
+        let mut paint = fill_paint(decode_color(stroke_color)?);
+        apply_blend_mode(&mut paint, opts)?;
+        surface.canvas().draw_path(&outline, &paint);
+    }
+
+    Ok(())
+}
+
 fn draw_path_op_impl<'a>(
     surface: &mut skia_safe::Surface,
     args: Vec<Term<'a>>,

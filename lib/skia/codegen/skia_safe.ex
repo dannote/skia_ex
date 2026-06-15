@@ -83,6 +83,8 @@ defmodule Skia.Codegen.SkiaSafe do
   defp rust_source("Canvas"), do: read_skia_safe_source("core/canvas.rs")
   defp rust_source("Font"), do: read_skia_safe_source("core/font.rs")
   defp rust_source("ImageFilter"), do: read_skia_safe_source("effects/image_filters.rs")
+  defp rust_source("Path"), do: read_skia_safe_source("pathops.rs")
+  defp rust_source("path_utils"), do: read_skia_safe_source("core/path_utils.rs")
   defp rust_source("pathops"), do: read_skia_safe_source("pathops.rs")
   defp rust_source(_module), do: :error
 

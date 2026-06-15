@@ -163,6 +163,8 @@ pub struct TextOpts<'a> {
     pub weight: Option<i64>,
     pub align: Option<Atom>,
     pub direction: Option<Atom>,
+    pub font_family: Option<String>,
+    pub line_height: Option<f32>,
     _phantom: std::marker::PhantomData<&'a ()>,
 }
 pub fn decode_text_opts<'a>(opts: &[(Atom, Term<'a>)]) -> NifResult<TextOpts<'a>> {
@@ -179,6 +181,11 @@ pub fn decode_text_opts<'a>(opts: &[(Atom, Term<'a>)]) -> NifResult<TextOpts<'a>
         },
         align: opt_atom_option(opts, atoms::align())?,
         direction: opt_atom_option(opts, atoms::direction())?,
+        font_family: match opt_term(opts, atoms::font_family()) {
+            Some(term) => Some(term.decode::<String>()?),
+            None => None,
+        },
+        line_height: opt_f32_option(opts, atoms::line_height())?,
         _phantom: std::marker::PhantomData,
     })
 }
@@ -221,6 +228,18 @@ pub fn decode_save_layer_opts<'a>(
         bounds: opt_term(opts, atoms::bounds()),
         blend_mode: opt_atom_option(opts, atoms::blend_mode())?,
         blur: opt_f32_option(opts, atoms::blur())?,
+        _phantom: std::marker::PhantomData,
+    })
+}
+pub struct PushStyleOpts<'a> {
+    pub style: Term<'a>,
+    _phantom: std::marker::PhantomData<&'a ()>,
+}
+pub fn decode_push_style_opts<'a>(
+    opts: &[(Atom, Term<'a>)],
+) -> NifResult<PushStyleOpts<'a>> {
+    Ok(PushStyleOpts {
+        style: opt_term(opts, atoms::style()).ok_or(rustler::Error::BadArg)?,
         _phantom: std::marker::PhantomData,
     })
 }
@@ -286,18 +305,6 @@ pub fn decode_concat_opts<'a>(opts: &[(Atom, Term<'a>)]) -> NifResult<ConcatOpts
         _phantom: std::marker::PhantomData,
     })
 }
-pub struct PushStyleOpts<'a> {
-    pub style: Term<'a>,
-    _phantom: std::marker::PhantomData<&'a ()>,
-}
-pub fn decode_push_style_opts<'a>(
-    opts: &[(Atom, Term<'a>)],
-) -> NifResult<PushStyleOpts<'a>> {
-    Ok(PushStyleOpts {
-        style: opt_term(opts, atoms::style()).ok_or(rustler::Error::BadArg)?,
-        _phantom: std::marker::PhantomData,
-    })
-}
 pub struct PathOpts<'a> {
     pub fill: Option<Term<'a>>,
     pub stroke: Option<Term<'a>>,
@@ -344,6 +351,34 @@ pub fn decode_path_op_opts<'a>(opts: &[(Atom, Term<'a>)]) -> NifResult<PathOpOpt
         stroke_miter: opt_f32_option(opts, atoms::stroke_miter())?,
         blend_mode: opt_atom_option(opts, atoms::blend_mode())?,
         path_op: opt_atom_option(opts, atoms::path_op())?.ok_or(rustler::Error::BadArg)?,
+        fill_rule: opt_atom_option(opts, atoms::fill_rule())?,
+        _phantom: std::marker::PhantomData,
+    })
+}
+pub struct PathOutlineOpts<'a> {
+    pub fill: Option<Term<'a>>,
+    pub stroke: Option<Term<'a>>,
+    pub stroke_width: Option<f32>,
+    pub stroke_cap: Option<Atom>,
+    pub stroke_join: Option<Atom>,
+    pub stroke_miter: Option<f32>,
+    pub blend_mode: Option<Atom>,
+    pub outline_width: f32,
+    pub fill_rule: Option<Atom>,
+    _phantom: std::marker::PhantomData<&'a ()>,
+}
+pub fn decode_path_outline_opts<'a>(
+    opts: &[(Atom, Term<'a>)],
+) -> NifResult<PathOutlineOpts<'a>> {
+    Ok(PathOutlineOpts {
+        fill: opt_term(opts, atoms::fill()),
+        stroke: opt_term(opts, atoms::stroke()),
+        stroke_width: opt_f32_option(opts, atoms::stroke_width())?,
+        stroke_cap: opt_atom_option(opts, atoms::stroke_cap())?,
+        stroke_join: opt_atom_option(opts, atoms::stroke_join())?,
+        stroke_miter: opt_f32_option(opts, atoms::stroke_miter())?,
+        blend_mode: opt_atom_option(opts, atoms::blend_mode())?,
+        outline_width: opt_f32(opts, atoms::outline_width())?,
         fill_rule: opt_atom_option(opts, atoms::fill_rule())?,
         _phantom: std::marker::PhantomData,
     })

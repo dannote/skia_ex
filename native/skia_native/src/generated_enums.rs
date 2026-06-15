@@ -2,7 +2,9 @@
 
 #![allow(dead_code)]
 use rustler::{Atom, NifResult};
-use skia_safe::{paint, BlendMode, EncodedImageFormat, FilterMode, PathFillType, PathOp};
+use skia_safe::{
+    paint, BlendMode, EncodedImageFormat, FilterMode, PathFillType, PathOp, TileMode,
+};
 use super::atoms;
 pub const BLEND_MODES: &[&str] = &[
     "clear",
@@ -67,6 +69,7 @@ pub const PATH_OPS: &[&str] = &[
 pub const SAMPLINGS: &[&str] = &["nearest", "linear"];
 pub const STROKE_CAPS: &[&str] = &["butt", "round", "square"];
 pub const STROKE_JOINS: &[&str] = &["miter", "round", "bevel"];
+pub const TILE_MODES: &[&str] = &["clamp", "repeat", "mirror", "decal"];
 pub fn decode_blend_mode(value: Atom) -> NifResult<BlendMode> {
     match value {
         value if value == atoms::clear() => Ok(BlendMode::Clear),
@@ -159,6 +162,15 @@ pub fn decode_stroke_join(value: Atom) -> NifResult<paint::Join> {
         value if value == atoms::miter() => Ok(paint::Join::Miter),
         value if value == atoms::round() => Ok(paint::Join::Round),
         value if value == atoms::bevel() => Ok(paint::Join::Bevel),
+        _ => Err(rustler::Error::BadArg),
+    }
+}
+pub fn decode_tile_mode(value: Atom) -> NifResult<TileMode> {
+    match value {
+        value if value == atoms::clamp() => Ok(TileMode::Clamp),
+        value if value == atoms::repeat() => Ok(TileMode::Repeat),
+        value if value == atoms::mirror() => Ok(TileMode::Mirror),
+        value if value == atoms::decal() => Ok(TileMode::Decal),
         _ => Err(rustler::Error::BadArg),
     }
 }

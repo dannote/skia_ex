@@ -10,20 +10,21 @@
 | `arc` | — | `x: number` required<br>`y: number` required<br>`width: number` required<br>`height: number` required<br>`start_degrees: number` required<br>`sweep_degrees: number` required<br>`use_center: boolean`<br>`fill: color`<br>`stroke: color`<br>`stroke_width: number`<br>`stroke_cap: stroke_cap`<br>`stroke_join: stroke_join`<br>`stroke_miter: number`<br>`blend_mode: blend_mode` | `use_center: false` | `skia_safe::Canvas::draw_arc` |
 | `circle` | — | `x: number` required<br>`y: number` required<br>`radius: number` required<br>`fill: color`<br>`stroke: color`<br>`stroke_width: number`<br>`stroke_cap: stroke_cap`<br>`stroke_join: stroke_join`<br>`stroke_miter: number`<br>`blend_mode: blend_mode` | — | `skia_safe::Canvas::draw_circle` |
 | `line` | — | `from: {number, number}` required<br>`to: {number, number}` required<br>`stroke: color` required<br>`stroke_width: number`<br>`stroke_cap: stroke_cap`<br>`stroke_join: stroke_join`<br>`stroke_miter: number`<br>`blend_mode: blend_mode` | — | `skia_safe::Canvas::draw_line` |
-| `text` | `text: string` | `x: number` required<br>`y: number` required<br>`width: number`<br>`size: number`<br>`fill: color`<br>`font: font`<br>`weight: integer`<br>`align: atom`<br>`direction: atom` | `size: 16`<br>`fill: :black` | `skia_safe::Canvas::draw_str`<br>`skia_safe::Font::measure_str` |
+| `text` | `text: string` | `x: number` required<br>`y: number` required<br>`width: number`<br>`size: number`<br>`fill: color`<br>`font: font`<br>`weight: integer`<br>`align: atom`<br>`direction: atom`<br>`font_family: string`<br>`line_height: number` | `size: 16`<br>`fill: :black` | `skia_safe::Canvas::draw_str`<br>`skia_safe::Font::measure_str` |
 | `image` | `image: image` | `x: number` required<br>`y: number` required<br>`width: number`<br>`height: number`<br>`source: {number, number, number, number}`<br>`opacity: number`<br>`sampling: sampling`<br>`blend_mode: blend_mode` | — | `skia_safe::Canvas::draw_image_with_sampling_options`<br>`skia_safe::Canvas::draw_image_rect_with_sampling_options` |
 | `save` | — | — | — | `skia_safe::Canvas::save` |
 | `save_layer` | — | `opacity: number`<br>`bounds: {number, number, number, number}`<br>`blend_mode: blend_mode`<br>`blur: number` | `opacity: 1.0` | `skia_safe::Canvas::save_layer`<br>`skia_safe::ImageFilter::blur` |
 | `restore` | — | — | — | `skia_safe::Canvas::restore` |
+| `push_style` | — | `style: term` required | — | — |
+| `pop_style` | — | — | — | — |
 | `translate` | — | `x: number` required<br>`y: number` required | — | `skia_safe::Canvas::translate` |
 | `scale` | — | `x: number` required<br>`y: number` required | — | `skia_safe::Canvas::scale` |
 | `rotate` | — | `degrees: number` required | — | `skia_safe::Canvas::rotate` |
 | `rotate_at` | — | `degrees: number` required<br>`x: number` required<br>`y: number` required | — | `skia_safe::Canvas::rotate` |
 | `concat` | — | `matrix: {number, number, number, number, number, number}` required | — | `skia_safe::Canvas::concat` |
-| `push_style` | — | `style: term` required | — | — |
-| `pop_style` | — | — | — | — |
 | `path` | `path: path` | `fill: color`<br>`stroke: color`<br>`stroke_width: number`<br>`stroke_cap: stroke_cap`<br>`stroke_join: stroke_join`<br>`stroke_miter: number`<br>`blend_mode: blend_mode`<br>`fill_rule: fill_rule` | — | `skia_safe::Canvas::draw_path` |
-| `path_op` | `a: path`<br>`b: path` | `fill: color`<br>`stroke: color`<br>`stroke_width: number`<br>`stroke_cap: stroke_cap`<br>`stroke_join: stroke_join`<br>`stroke_miter: number`<br>`blend_mode: blend_mode`<br>`path_op: path_op` required<br>`fill_rule: fill_rule` | — | `skia_safe::pathops::op`<br>`skia_safe::Canvas::draw_path` |
+| `path_op` | `a: path`<br>`b: path` | `fill: color`<br>`stroke: color`<br>`stroke_width: number`<br>`stroke_cap: stroke_cap`<br>`stroke_join: stroke_join`<br>`stroke_miter: number`<br>`blend_mode: blend_mode`<br>`path_op: path_op` required<br>`fill_rule: fill_rule` | — | `skia_safe::Path::op`<br>`skia_safe::Canvas::draw_path` |
+| `path_outline` | `path: path` | `fill: color`<br>`stroke: color`<br>`stroke_width: number`<br>`stroke_cap: stroke_cap`<br>`stroke_join: stroke_join`<br>`stroke_miter: number`<br>`blend_mode: blend_mode`<br>`outline_width: number` required<br>`fill_rule: fill_rule` | — | `skia_safe::path_utils::fill_path_with_paint`<br>`skia_safe::Canvas::draw_path` |
 | `clip_rect` | — | `x: number` required<br>`y: number` required<br>`width: number` required<br>`height: number` required<br>`radius: number`<br>`antialias: boolean` | `radius: 0`<br>`antialias: true` | `skia_safe::Canvas::clip_rect`<br>`skia_safe::Canvas::clip_rrect` |
 | `clip_circle` | — | `x: number` required<br>`y: number` required<br>`radius: number` required<br>`antialias: boolean` | `antialias: true` | `skia_safe::Canvas::clip_path` |
 | `clip_path` | `path: path` | `antialias: boolean`<br>`fill_rule: fill_rule` | `antialias: true`<br>`fill_rule: :winding` | `skia_safe::Canvas::clip_path` |
@@ -37,6 +38,7 @@
 - `sampling`: `:nearest`, `:linear`
 - `stroke_cap`: `:butt`, `:round`, `:square`
 - `stroke_join`: `:miter`, `:round`, `:bevel`
+- `tile_mode`: `:clamp`, `:repeat`, `:mirror`, `:decal`
 
 ## Rust doc excerpts
 
@@ -178,3 +180,10 @@
 > is used when the blur kernel goes outside the input image.
 > * `sigma_x` - The Gaussian sigma value for blurring along the X axis.
 > * `sigma_y` - The Gaussian sigma value for blurring along the Y axis.
+
+### `skia_safe::path_utils::fill_path_with_paint`
+
+> Returns the filled equivalent of the stroked path.
+> * `src` - [`Path`] read to create a filled version
+> * `paint` - uses settings for stroke cap, width, miter, join, and path effect.
+> * `dst` - results are written to this builder.

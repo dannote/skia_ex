@@ -122,8 +122,18 @@ defmodule Skia.Command do
     normalize_color!({:sweep_gradient, center, start_degrees, end_degrees, colors})
   end
 
+  defp normalize_color!(%Skia.Shader.ImageShader{} = shader) do
+    {:image_shader, shader.image, shader.tile_x, shader.tile_y, shader.sampling,
+     normalize_optional_matrix!(shader.matrix)}
+  end
+
   defp normalize_color!(%Skia.Shader.GradientStop{color: color, position: position}) do
     normalize_color!({:gradient_stop, color, position})
+  end
+
+  defp normalize_color!({:image_shader, %Skia.Image{} = image, tile_x, tile_y, sampling, matrix})
+       when is_atom(tile_x) and is_atom(tile_y) and is_atom(sampling) do
+    {:image_shader, image, tile_x, tile_y, sampling, normalize_optional_matrix!(matrix)}
   end
 
   defp normalize_color!({:gradient_stop, color, position}) do
@@ -193,6 +203,16 @@ defmodule Skia.Command do
 
   defp normalize_point!({x, y}), do: {normalize_number!(x), normalize_number!(y)}
   defp normalize_point!(value), do: raise(ArgumentError, "invalid point #{inspect(value)}")
+
+  defp normalize_optional_matrix!(nil), do: nil
+
+  defp normalize_optional_matrix!({m00, m01, m02, m10, m11, m12}) do
+    {normalize_number!(m00), normalize_number!(m01), normalize_number!(m02),
+     normalize_number!(m10), normalize_number!(m11), normalize_number!(m12)}
+  end
+
+  defp normalize_optional_matrix!(value),
+    do: raise(ArgumentError, "invalid matrix #{inspect(value)}")
 
   defp normalize_number!(value) when is_integer(value) or is_float(value), do: value * 1.0
   defp normalize_number!(value), do: raise(ArgumentError, "invalid number #{inspect(value)}")

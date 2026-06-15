@@ -3,7 +3,7 @@
 use rustler::{Atom, Binary, Encoder, Env, NifResult, OwnedBinary, ResourceArc, Term};
 use skia_safe::{
     canvas::SaveLayerRec,
-    image_filters, surfaces,
+    image_filters, path_utils, surfaces,
     textlayout::{FontCollection, ParagraphBuilder, ParagraphStyle, TextAlign, TextDirection, TextStyle},
     AlphaType, Color, ColorType, Data, EncodedImageFormat, FilterMode, Font, FontMgr, FontStyle,
     IPoint, Image, ImageInfo, Matrix, Paint, PaintStyle, PathBuilder, Point, RRect, Rect,

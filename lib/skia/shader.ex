@@ -24,6 +24,19 @@ defmodule Skia.Shader.SweepGradient do
   defstruct [:center, :start_degrees, :end_degrees, :colors]
 end
 
+defmodule Skia.Shader.ImageShader do
+  @moduledoc "Image shader paint source."
+
+  @type t :: %__MODULE__{
+          image: Skia.Image.t(),
+          tile_x: atom(),
+          tile_y: atom(),
+          sampling: atom(),
+          matrix: tuple() | nil
+        }
+  defstruct [:image, tile_x: :clamp, tile_y: :clamp, sampling: :linear, matrix: nil]
+end
+
 defmodule Skia.Shader.GradientStop do
   @moduledoc "Color stop with explicit position in a gradient."
 

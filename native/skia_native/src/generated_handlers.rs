@@ -75,6 +75,15 @@ fn draw_path_op<'a>(
     let decoded_opts = generated_opts::decode_path_op_opts(&opts)?;
     draw_path_op_impl(surface, args, decoded_opts, &opts)
 }
+fn draw_path_outline<'a>(
+    surface: &mut skia_safe::Surface,
+    command: Term<'a>,
+) -> NifResult<()> {
+    let args = command.map_get(atoms::args())?.decode::<Vec<Term>>()?;
+    let opts = decode_opts(command)?;
+    let decoded_opts = generated_opts::decode_path_outline_opts(&opts)?;
+    draw_path_outline_impl(surface, args, decoded_opts, &opts)
+}
 fn draw_rect<'a>(surface: &mut skia_safe::Surface, command: Term<'a>) -> NifResult<()> {
     let opts = decode_opts(command)?;
     let decoded_opts = generated_opts::decode_rect_opts(&opts)?;

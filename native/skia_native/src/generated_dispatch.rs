@@ -15,6 +15,7 @@ fn draw_command(surface: &mut skia_safe::Surface, command: Term) -> NifResult<()
         value if value == atoms::oval() => draw_oval(surface, command),
         value if value == atoms::path() => draw_path(surface, command),
         value if value == atoms::path_op() => draw_path_op(surface, command),
+        value if value == atoms::path_outline() => draw_path_outline(surface, command),
         value if value == atoms::rect() => draw_rect(surface, command),
         value if value == atoms::restore() => draw_restore(surface, command),
         value if value == atoms::rotate() => draw_rotate(surface, command),

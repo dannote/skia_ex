@@ -44,6 +44,18 @@ defmodule Skia do
   def gradient_stop(color, position),
     do: %Skia.Shader.GradientStop{color: color, position: position}
 
+  @doc "Creates an image shader paint value."
+  @spec image_shader(Skia.Image.t(), keyword()) :: Skia.Shader.ImageShader.t()
+  def image_shader(%Skia.Image{} = image, opts \\ []) do
+    %Skia.Shader.ImageShader{
+      image: image,
+      tile_x: Keyword.get(opts, :tile_x, :clamp),
+      tile_y: Keyword.get(opts, :tile_y, :clamp),
+      sampling: Keyword.get(opts, :sampling, :linear),
+      matrix: Keyword.get(opts, :matrix)
+    }
+  end
+
   @doc "Measures text using the native text engine."
   @spec measure_text(String.t(), keyword()) ::
           {:ok, %{width: float(), bounds: {float(), float(), float(), float()}}}

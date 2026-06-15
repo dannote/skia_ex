@@ -64,6 +64,28 @@ fn decode_paint(term: Term) -> NifResult<Paint> {
         }
     }
 
+    if let Ok((tag, image_term, tile_x, tile_y, sampling, matrix_term)) =
+        term.decode::<(Atom, Term, Atom, Atom, Atom, Term)>()
+    {
+        if tag == atoms::image_shader() {
+            let image = image_from_term(image_term)?;
+            let tile_x = generated_enums::decode_tile_mode(tile_x)?;
+            let tile_y = generated_enums::decode_tile_mode(tile_y)?;
+            let sampling = SamplingOptions::from(generated_enums::decode_sampling(sampling)?);
+            let matrix = if matrix_term.decode::<Atom>().is_ok_and(|atom| atom == atoms::nil()) {
+                None
+            } else {
+                Some(matrix_from_term(matrix_term)?)
+            };
+            let mut paint = Paint::default();
+            paint.set_anti_alias(true).set_style(PaintStyle::Fill);
+            if let Some(shader) = image.to_shader((tile_x, tile_y), sampling, matrix.as_ref()) {
+                paint.set_shader(shader);
+            }
+            return Ok(paint);
+        }
+    }
+
     Err(rustler::Error::BadArg)
 }
 
