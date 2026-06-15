@@ -93,6 +93,9 @@ defmodule SkiaTest do
 
     assert {:ok, blob} = Skia.TextBlob.new("Blob", size: 18)
     assert inspect(blob) == "#Skia.TextBlob<size=18.0 text=\"Blob\">"
+    assert {:ok, {blob_left, blob_top, blob_right, blob_bottom}} = Skia.TextBlob.bounds(blob)
+    assert blob_right >= blob_left
+    assert blob_bottom >= blob_top
 
     document =
       Skia.canvas(32, 24)
@@ -775,17 +778,34 @@ defmodule SkiaTest do
     assert raw.data == <<255, 0, 0, 255, 255, 0, 0, 255>>
     assert {:ok, png} = Skia.Compact.render(document, format: :png)
     assert <<137, 80, 78, 71, 13, 10, 26, 10, _::binary>> = png
+
+    path =
+      Skia.Path.new()
+      |> Skia.Path.move_to(0, 0)
+      |> Skia.Path.quad_to(1, 0, 1, 1)
+      |> Skia.Path.conic_to(2, 1, 2, 2, 0.5)
+      |> Skia.Path.cubic_to(3, 2, 3, 3, 2, 3)
+      |> Skia.Path.r_arc_to({1, 1}, 0, false, :cw, {1, 0})
+
+    assert {:ok, compact_path_raw} =
+             Skia.canvas(4, 4)
+             |> Skia.path(path, stroke: :red, stroke_width: 1)
+             |> Skia.Compact.to_raw()
+
+    assert byte_size(compact_path_raw.data) == 64
   end
 
   test "lists and matches system fonts" do
-    assert {:ok, families} = Skia.Font.families()
+    assert {:ok, families} = Skia.Typeface.families()
     assert is_list(families)
 
     case families do
       [family | _] ->
-        assert {:ok, font} = Skia.Font.match_family(family, weight: 400)
-        assert inspect(font) =~ "#Skia.Font<family="
-        assert {:ok, measurement} = Skia.measure_text("A", font: font, size: 12)
+        assert {:ok, typeface} = Skia.Typeface.match_family(family, weight: 400)
+        assert inspect(typeface) =~ "#Skia.Typeface<family="
+        font = Skia.Font.new(typeface, size: 12)
+        assert inspect(font) =~ "#Skia.Font<typeface="
+        assert {:ok, measurement} = Skia.measure_text("A", font: font)
         assert measurement.width >= 0
 
       [] ->

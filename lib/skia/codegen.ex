@@ -143,6 +143,7 @@ defmodule Skia.Codegen do
     :mitchell,
     :catmull_rom,
     :matrix,
+    :typeface,
     :left,
     :center,
     :right,
@@ -242,6 +243,11 @@ defmodule Skia.Codegen do
     ],
     create_text_blob: [
       args: [env: "Env<'a>", text: :String, font_term: "Term<'a>", size: :f64],
+      returns: "NifResult<Term<'a>>",
+      lifetime: :a
+    ],
+    text_blob_bounds: [
+      args: [env: "Env<'a>", blob_term: "Term<'a>"],
       returns: "NifResult<Term<'a>>",
       lifetime: :a
     ],

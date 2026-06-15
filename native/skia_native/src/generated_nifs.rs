@@ -90,6 +90,10 @@ fn create_text_blob<'a>(
     create_text_blob_impl(env, text, font_term, size)
 }
 #[rustler::nif(schedule = "DirtyCpu")]
+fn text_blob_bounds<'a>(env: Env<'a>, blob_term: Term<'a>) -> NifResult<Term<'a>> {
+    text_blob_bounds_impl(env, blob_term)
+}
+#[rustler::nif(schedule = "DirtyCpu")]
 fn record_picture<'a>(env: Env<'a>, batch: Term<'a>) -> NifResult<Term<'a>> {
     record_picture_impl(env, batch)
 }

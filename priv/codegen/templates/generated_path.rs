@@ -125,14 +125,54 @@ fn build_compact_path(segments: Vec<Term>) -> NifResult<skia_safe::Path> {
                 7 => { builder.r_line_to((x as f32, y as f32)); }
                 _ => {}
             };
-        } else if let Ok((op, x, y, width, height, rx, ry)) =
-            segment.decode::<(i64, f64, f64, f64, f64, f64, f64)>()
-        {
-            if op == 13 {
+        } else if let Ok((op, cx, cy, x, y)) = segment.decode::<(i64, f64, f64, f64, f64)>() {
+            match op {
+                3 => { builder.quad_to((cx as f32, cy as f32), (x as f32, y as f32)); }
+                8 => { builder.r_quad_to((cx as f32, cy as f32), (x as f32, y as f32)); }
+                _ => {}
+            };
+        } else if let Ok((op, cx, cy, x, y, weight)) = segment.decode::<(i64, f64, f64, f64, f64, f64)>() {
+            match op {
+                4 => { builder.conic_to((cx as f32, cy as f32), (x as f32, y as f32), weight as f32); }
+                9 => { builder.r_conic_to((cx as f32, cy as f32), (x as f32, y as f32), weight as f32); }
+                _ => {}
+            };
+        } else if let Ok((op, c1x, c1y, c2x, c2y, x, y)) = segment.decode::<(i64, f64, f64, f64, f64, f64, f64)>() {
+            if op == 5 {
+                builder.cubic_to((c1x as f32, c1y as f32), (c2x as f32, c2y as f32), (x as f32, y as f32));
+            } else if op == 10 {
+                builder.r_cubic_to((c1x as f32, c1y as f32), (c2x as f32, c2y as f32), (x as f32, y as f32));
+            } else if op == 13 {
                 builder.add_rrect(
-                    RRect::new_rect_xy(Rect::from_xywh(x as f32, y as f32, width as f32, height as f32), rx as f32, ry as f32),
+                    RRect::new_rect_xy(Rect::from_xywh(c1x as f32, c1y as f32, c2x as f32, c2y as f32), x as f32, y as f32),
                     None,
                     None,
+                );
+            }
+        } else if let Ok((op, x, y, width, height, start, arc_opts)) = segment.decode::<(i64, f64, f64, f64, f64, f64, Term)>() {
+            if op == 11 {
+                let (sweep, force_move_to) = arc_opts.decode::<(f64, bool)>()?;
+                builder.arc_to(
+                    Rect::from_xywh(x as f32, y as f32, width as f32, height as f32),
+                    start as f32,
+                    sweep as f32,
+                    force_move_to,
+                );
+            }
+        } else if let Ok((op, rx, ry, x_axis_rotate, arc_opts)) = segment.decode::<(i64, f64, f64, f64, Term)>() {
+            if op == 12 {
+                let (large_arc, sweep, dx, dy) = arc_opts.decode::<(bool, Atom, f64, f64)>()?;
+                let arc_size = if large_arc {
+                    skia_safe::path_builder::ArcSize::Large
+                } else {
+                    skia_safe::path_builder::ArcSize::Small
+                };
+                builder.r_arc_to(
+                    (rx as f32, ry as f32),
+                    x_axis_rotate as f32,
+                    arc_size,
+                    decode_path_direction(sweep)?,
+                    (dx as f32, dy as f32),
                 );
             }
         }

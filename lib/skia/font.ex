@@ -2,58 +2,39 @@ defmodule Skia.Font do
   import Inspect.Algebra
 
   @moduledoc """
-  Typeface resource for text drawing, blobs, and measurement.
+  Sized font value built from a `Skia.Typeface`.
 
-      {:ok, families} = Skia.Font.families()
-      {:ok, font} = Skia.Font.match_family("Inter", weight: 700)
-      {:ok, loaded} = Skia.Font.load(File.read!("Inter.ttf"))
+      {:ok, typeface} = Skia.Typeface.match_family("Inter", weight: 700)
+      font = Skia.Font.new(typeface, size: 18)
   """
 
-  @type t :: %__MODULE__{
-          ref: term(),
-          family: String.t() | nil,
-          weight: integer() | nil,
-          slant: atom() | nil
-        }
+  @type t :: %__MODULE__{typeface: Skia.Typeface.t() | nil, size: float() | nil}
+  defstruct [:typeface, :size]
 
-  defstruct [:ref, :family, :weight, :slant]
+  @spec new(Skia.Typeface.t() | nil, keyword()) :: t()
+  def new(typeface \\ nil, opts \\ [])
+  def new(nil, opts), do: %__MODULE__{size: normalize_size(Keyword.get(opts, :size))}
 
-  @spec load(binary()) :: {:ok, t()} | {:error, atom()}
-  def load(binary) when is_binary(binary) do
-    case Skia.Native.load_font(binary) do
-      {:ok, ref} -> {:ok, %__MODULE__{ref: ref}}
-      {:error, reason} -> {:error, reason}
-    end
-  end
+  def new(%Skia.Typeface{} = typeface, opts),
+    do: %__MODULE__{typeface: typeface, size: normalize_size(Keyword.get(opts, :size))}
 
-  @spec families() :: {:ok, [String.t()]} | {:error, atom()}
-  def families, do: Skia.Native.font_families()
-
-  @spec match_family(String.t(), keyword()) :: {:ok, t()} | {:error, atom()}
-  def match_family(family, opts \\ []) when is_binary(family) do
-    weight = Keyword.get(opts, :weight, 400)
-    slant = Keyword.get(opts, :slant, :upright)
-
-    case Skia.Native.match_font(family, weight, slant) do
-      {:ok, ref} -> {:ok, %__MODULE__{ref: ref, family: family, weight: weight, slant: slant}}
-      {:error, reason} -> {:error, reason}
-    end
-  end
-
-  @spec load_path(Path.t()) :: {:ok, t()} | {:error, atom() | File.posix()}
-  def load_path(path) when is_binary(path) do
-    with {:ok, binary} <- File.read(path) do
-      load(binary)
-    end
-  end
+  defp normalize_size(nil), do: nil
+  defp normalize_size(size) when is_number(size), do: :erlang.float(size)
 
   defimpl Inspect do
     import Inspect.Algebra
 
-    def inspect(%{family: nil}, _opts), do: concat(["#Skia.Font<>"])
+    def inspect(%{typeface: nil, size: size}, opts),
+      do: concat(["#Skia.Font<size=", to_doc(size, opts), ">"])
 
     def inspect(font, opts) do
-      concat(["#Skia.Font<family=", to_doc(font.family, opts), ">"])
+      concat([
+        "#Skia.Font<typeface=",
+        to_doc(font.typeface, opts),
+        " size=",
+        to_doc(font.size, opts),
+        ">"
+      ])
     end
   end
 end

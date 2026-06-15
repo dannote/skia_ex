@@ -12,10 +12,16 @@ defmodule Skia.TextBlob do
     size = Keyword.get(opts, :size, 16)
 
     case Skia.Native.create_text_blob(text, font, size) do
-      {:ok, ref} -> {:ok, %__MODULE__{ref: ref, text: text, size: :erlang.float(size)}}
+      {:ok, ref} -> {:ok, %__MODULE__{ref: ref, text: text, size: blob_size(font, size)}}
       {:error, reason} -> {:error, reason}
     end
   end
+
+  @spec bounds(t()) :: {:ok, {float(), float(), float(), float()}} | {:error, atom()}
+  def bounds(%__MODULE__{} = blob), do: Skia.Native.text_blob_bounds(blob)
+
+  defp blob_size(%Skia.Font{size: size}, _size) when is_number(size), do: size
+  defp blob_size(_font, size), do: :erlang.float(size)
 
   defimpl Inspect do
     import Inspect.Algebra

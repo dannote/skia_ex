@@ -140,12 +140,15 @@ Skia.canvas(256, 64)
 Skia.rect(doc, x: 0, y: 0, width: 128, height: 128, fill: Skia.Shader.picture(picture))
 ```
 
-## Fonts
+## Fonts and typefaces
+
+`Skia.Typeface` represents the reusable font face; `Skia.Font` adds size for drawing and measurement.
 
 ```elixir
-{:ok, families} = Skia.Font.families()
-{:ok, font} = Skia.Font.match_family("Inter", weight: 700, slant: :upright)
-{:ok, measurement} = Skia.measure_text("Hello", font: font, size: 24)
+{:ok, families} = Skia.Typeface.families()
+{:ok, typeface} = Skia.Typeface.match_family("Inter", weight: 700, slant: :upright)
+font = Skia.Font.new(typeface, size: 24)
+{:ok, measurement} = Skia.measure_text("Hello", font: font)
 ```
 
 Loaded images, fonts, and pictures keep decoded Skia handles in their native
@@ -168,7 +171,8 @@ spans = [
 Skia.text(doc, "Hello", x: 0, y: 0, style: style, paragraph_style: paragraph)
 Skia.text(doc, "", x: 0, y: 32, paragraph_style: paragraph, spans: spans)
 
-{:ok, blob} = Skia.TextBlob.new("Cached", size: 18, font: font)
+{:ok, blob} = Skia.TextBlob.new("Cached", font: font)
+{:ok, bounds} = Skia.TextBlob.bounds(blob)
 Skia.text_blob(doc, blob, x: 0, y: 64, fill: :black)
 ```
 

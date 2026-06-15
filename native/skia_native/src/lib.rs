@@ -261,6 +261,15 @@ fn create_text_blob_impl<'a>(
     Ok((atoms::ok(), ResourceArc::new(EncodedTextBlob { blob })).encode(env))
 }
 
+fn text_blob_bounds_impl<'a>(env: Env<'a>, blob_term: Term<'a>) -> NifResult<Term<'a>> {
+    let blob = match text_blob_from_term(blob_term) {
+        Ok(blob) => blob,
+        Err(_) => return Ok((atoms::error(), atoms::invalid_text_blob()).encode(env)),
+    };
+    let bounds = blob.bounds();
+    Ok((atoms::ok(), (bounds.left, bounds.top, bounds.right, bounds.bottom)).encode(env))
+}
+
 fn path_to_svg_impl<'a>(env: Env<'a>, path_term: Term<'a>) -> NifResult<Term<'a>> {
     match build_path(path_term) {
         Ok(path) => Ok((atoms::ok(), path.to_svg()).encode(env)),
@@ -583,8 +592,31 @@ fn font_from_term(term: Term, size: f32) -> NifResult<Font> {
         return Ok(Font::new(typeface, size));
     }
 
-    let font_ref = decode_encoded_font_ref(term)?;
-    Ok(Font::new(font_ref.typeface.clone(), size))
+    if let Ok(typeface_term) = term.map_get(atoms::typeface()) {
+        let font_size = match term.map_get(atoms::size()) {
+            Ok(size_term) => {
+                if size_term.decode::<Atom>().is_ok_and(|atom| atom == atoms::nil()) {
+                    size
+                } else {
+                    size_term.decode::<f64>()? as f32
+                }
+            }
+            Err(_) => size,
+        };
+
+        if typeface_term.decode::<Atom>().is_ok_and(|atom| atom == atoms::nil()) {
+            let typeface = FontMgr::new()
+                .legacy_make_typeface(None, FontStyle::normal())
+                .ok_or(rustler::Error::BadArg)?;
+            return Ok(Font::new(typeface, font_size));
+        }
+
+        let typeface_ref = decode_encoded_font_ref(typeface_term)?;
+        return Ok(Font::new(typeface_ref.typeface.clone(), font_size));
+    }
+
+    let typeface_ref = decode_encoded_font_ref(term)?;
+    Ok(Font::new(typeface_ref.typeface.clone(), size))
 }
 
 rustler::init!("Elixir.Skia.Native");
