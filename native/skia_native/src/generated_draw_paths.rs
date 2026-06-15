@@ -80,10 +80,12 @@ fn draw_path_outline_impl<'a>(
         let mut paint = decode_paint(fill)?;
         apply_blend_mode(&mut paint, raw_opts)?;
         surface.canvas().draw_path(&outline, &paint);
-    } else if let Some(stroke_color) = opts.stroke {
-        let mut paint = fill_paint(decode_color(stroke_color)?);
-        apply_blend_mode(&mut paint, raw_opts)?;
-        surface.canvas().draw_path(&outline, &paint);
+    } else {
+        if let Some(stroke_color) = opts.stroke {
+            let mut paint = fill_paint(decode_color(stroke_color)?);
+            apply_blend_mode(&mut paint, raw_opts)?;
+            surface.canvas().draw_path(&outline, &paint);
+        }
     }
     Ok(())
 }

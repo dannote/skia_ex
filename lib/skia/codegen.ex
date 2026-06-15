@@ -594,23 +594,36 @@ defmodule Skia.Codegen do
   end
 
   defp rust_lines(lines), do: Enum.map_join(lines, "\n    ", &rust_line/1)
+  defp rust_line(line), do: line |> rust_fragment() |> Rust.to_fragment()
 
-  defp rust_line(line) when is_binary(line), do: line
-  defp rust_line({:stmt, expr}), do: "#{expr};"
-  defp rust_line({:let, pattern, expr}), do: "let #{pattern} = #{expr};"
-  defp rust_line({:let_mut, pattern, expr}), do: "let mut #{pattern} = #{expr};"
-  defp rust_line({:assign, target, expr}), do: "#{target} = #{expr};"
+  defp rust_fragments(lines), do: Enum.map(lines, &rust_fragment/1)
 
-  defp rust_line({:call, receiver, method, args}) do
-    "#{receiver}.#{method}(#{Enum.join(args, ", ")});"
+  defp rust_fragment(line) when is_binary(line), do: Rust.raw(line)
+  defp rust_fragment({:stmt, expr}), do: Rust.raw([expr, ";"])
+  defp rust_fragment({:let, pattern, expr}), do: Rust.let_(pattern, expr)
+  defp rust_fragment({:let_mut, pattern, expr}), do: Rust.let_mut(pattern, expr)
+  defp rust_fragment({:assign, target, expr}), do: Rust.assign(target, expr)
+  defp rust_fragment({:call, receiver, method, args}), do: Rust.call_stmt(receiver, method, args)
+  defp rust_fragment({:return_if, condition}), do: Rust.return_if(condition)
+
+  defp rust_fragment({:if, condition, then_lines}),
+    do: Rust.if_(condition, rust_fragments(then_lines))
+
+  defp rust_fragment({:if_else, condition, then_lines, else_lines}) do
+    Rust.if_(condition, rust_fragments(then_lines), else: rust_fragments(else_lines))
   end
 
-  defp rust_line({:if, condition, then_lines}) do
-    "if #{condition} {\n    #{rust_lines(then_lines)}\n}"
+  defp rust_fragment({:if_let, pattern, expr, then_lines}) do
+    Rust.if_let(pattern, expr, rust_fragments(then_lines))
   end
 
-  defp rust_line({:if_let, pattern, expr, then_lines}) do
-    "if let #{pattern} = #{expr} {\n    #{rust_lines(then_lines)}\n}"
+  defp rust_fragment({:if_let_else, pattern, expr, then_lines, else_lines}) do
+    Rust.if_let(pattern, expr, rust_fragments(then_lines), else: rust_fragments(else_lines))
+  end
+
+  defp rust_fragment({:match, expr, clauses}) do
+    arms = Enum.map(clauses, fn {pattern, lines} -> {pattern, rust_fragments(lines)} end)
+    Rust.match_(expr, arms)
   end
 
   defp body_impl_params(name, spec, source) do

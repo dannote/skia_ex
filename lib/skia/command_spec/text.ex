@@ -24,18 +24,24 @@ defmodule Skia.CommandSpec.Text do
         ],
         text_draw: [
           setup: [
-            "let text = args.first().ok_or(rustler::Error::BadArg)?.decode::<String>()?;",
-            "let size = opts.size.unwrap_or(16.0);",
-            "let mut font = match opts.font { Some(term) => font_from_term(term, size)?, None => Font::default() };",
-            "font.set_size(size);",
-            "let paint = match opts.fill { Some(term) => fill_paint(decode_color(term)?), None => fill_paint(Color::BLACK) };"
+            {:let, "text", "args.first().ok_or(rustler::Error::BadArg)?.decode::<String>()?"},
+            {:let, "size", "opts.size.unwrap_or(16.0)"},
+            {:let_mut, "font",
+             "match opts.font { Some(term) => font_from_term(term, size)?, None => Font::default() }"},
+            {:call, "font", :set_size, ["size"]},
+            {:let, "paint",
+             "match opts.fill { Some(term) => fill_paint(decode_color(term)?), None => fill_paint(Color::BLACK) }"}
           ],
           body: [
-            "if let Some(width) = opts.width {",
-            "    draw_paragraph_text(surface, &text, opts.x, opts.y, width, size, &paint, &opts)?;",
-            "} else {",
-            "    surface.canvas().draw_str(text, (opts.x, opts.y), &font, &paint);",
-            "}"
+            {:if_let_else, "Some(width)", "opts.width",
+             [
+               {:stmt,
+                "draw_paragraph_text(surface, &text, opts.x, opts.y, width, size, &paint, &opts)?"}
+             ],
+             [
+               {:call, "surface.canvas()", :draw_str,
+                ["text", "(opts.x, opts.y)", "&font", "&paint"]}
+             ]}
           ]
         ],
         native_refs: ["skia_safe::Canvas::draw_str", "skia_safe::Font::measure_str"]
