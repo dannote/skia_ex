@@ -21,6 +21,9 @@ fn apply_paint_effects<'a>(
     if let Some(term) = opt_term(opts, atoms::color_filter()) {
         paint.set_color_filter(decode_color_filter(term)?);
     }
+    if let Some(term) = opt_term(opts, atoms::mask_filter()) {
+        paint.set_mask_filter(decode_mask_filter(term)?);
+    }
     Ok(())
 }
 fn decode_clip_op(value: Atom) -> NifResult<Option<ClipOp>> {

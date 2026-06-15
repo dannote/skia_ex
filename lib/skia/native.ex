@@ -33,6 +33,7 @@ defmodule Skia.Native do
   def font_families, do: :erlang.nif_error(:nif_not_loaded)
   def match_font(_family, _weight, _slant), do: :erlang.nif_error(:nif_not_loaded)
   def measure_text(_text, _font, _size), do: :erlang.nif_error(:nif_not_loaded)
+  def create_text_blob(_text, _font, _size), do: :erlang.nif_error(:nif_not_loaded)
   def record_picture(_batch), do: :erlang.nif_error(:nif_not_loaded)
   def decode_picture(_bytes), do: :erlang.nif_error(:nif_not_loaded)
   def encode_picture(_picture), do: :erlang.nif_error(:nif_not_loaded)

@@ -3,8 +3,8 @@
 #![allow(dead_code)]
 use rustler::{Atom, NifResult};
 use skia_safe::{
-    paint, BlendMode, ClipOp, EncodedImageFormat, FilterMode, MipmapMode, PathFillType,
-    PathOp, TileMode,
+    paint, BlendMode, BlurStyle, ClipOp, EncodedImageFormat, FilterMode, MipmapMode,
+    PathFillType, PathOp, TileMode,
 };
 use super::atoms;
 pub const BLEND_MODES: &[&str] = &[
@@ -38,6 +38,7 @@ pub const BLEND_MODES: &[&str] = &[
     "color",
     "luminosity",
 ];
+pub const BLUR_STYLES: &[&str] = &["normal", "solid", "outer", "inner"];
 pub const CLIP_OPS: &[&str] = &["difference", "intersect"];
 pub const ENCODED_IMAGE_FORMATS: &[&str] = &[
     "bmp",
@@ -104,6 +105,15 @@ pub fn decode_blend_mode(value: Atom) -> NifResult<BlendMode> {
         value if value == atoms::saturation() => Ok(BlendMode::Saturation),
         value if value == atoms::color() => Ok(BlendMode::Color),
         value if value == atoms::luminosity() => Ok(BlendMode::Luminosity),
+        _ => Err(rustler::Error::BadArg),
+    }
+}
+pub fn decode_blur_style(value: Atom) -> NifResult<BlurStyle> {
+    match value {
+        value if value == atoms::normal() => Ok(BlurStyle::Normal),
+        value if value == atoms::solid() => Ok(BlurStyle::Solid),
+        value if value == atoms::outer() => Ok(BlurStyle::Outer),
+        value if value == atoms::inner() => Ok(BlurStyle::Inner),
         _ => Err(rustler::Error::BadArg),
     }
 }

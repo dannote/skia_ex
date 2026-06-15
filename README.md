@@ -47,7 +47,7 @@ Skia.Shader.image(image,
 
 ## Filters and effects
 
-Paints can carry image filters, color filters, blend modes, and path effects. You can pass options directly or build a reusable `%Skia.Paint{}`:
+Paints can carry image filters, color filters, mask filters, blend modes, and path effects. You can pass options directly or build a reusable `%Skia.Paint{}`:
 
 ```elixir
 paint = Skia.Paint.new(fill: :red, image_filter: Skia.ImageFilter.blur(2), blend_mode: :src_over)
@@ -76,6 +76,7 @@ Skia.path(doc, path,
   blend_mode: :src_over,
   color_filter: color_filter,
   image_filter: Skia.ImageFilter.blur(2),
+  mask_filter: Skia.MaskFilter.blur(1.5, style: :normal),
   path_effect: path_effect
 )
 ```
@@ -166,6 +167,9 @@ spans = [
 
 Skia.text(doc, "Hello", x: 0, y: 0, style: style, paragraph_style: paragraph)
 Skia.text(doc, "", x: 0, y: 32, paragraph_style: paragraph, spans: spans)
+
+{:ok, blob} = Skia.TextBlob.new("Cached", size: 18, font: font)
+Skia.text_blob(doc, blob, x: 0, y: 64, fill: :black)
 ```
 
 ## Compact batches and benchmarking

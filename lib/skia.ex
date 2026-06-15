@@ -1,10 +1,15 @@
 defmodule Skia do
   @moduledoc """
-  Batched, Elixir-native drawing API designed for a future Skia renderer.
+  Batched, immutable drawing documents rendered through Skia.
 
-  The fluent API and `Skia.DSL` both build immutable `%Skia.Document{}`
-  values. Rendering can later be implemented as a single Rustler NIF call that
-  consumes the normalized command list.
+  Build a `%Skia.Document{}` with pipe-friendly commands, then end the pipeline
+  with a renderer such as `to_png/1`, `to_raw/1`, or `render/2`.
+
+      {:ok, png} =
+        Skia.canvas(800, 600)
+        |> Skia.clear(:white)
+        |> Skia.rect(x: 40, y: 40, width: 120, height: 80, fill: :red)
+        |> Skia.to_png()
   """
 
   alias Skia.{Command, CommandSpec, Document}

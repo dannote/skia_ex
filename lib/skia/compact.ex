@@ -1,7 +1,16 @@
 defmodule Skia.Compact do
   import Bitwise
 
-  @moduledoc "Compact command batch encoding and rendering."
+  @moduledoc """
+  Compact command batch encoding and rendering.
+
+  Compact batches are useful for storage, transport, and native decode
+  benchmarking. They are explicit API, not the default renderer path.
+
+      batch = Skia.Compact.encode(document)
+      binary = Skia.Compact.encode_binary(document)
+      {:ok, raw} = Skia.Compact.to_raw(document)
+  """
 
   alias Skia.{Command, CommandSpec, Document}
 

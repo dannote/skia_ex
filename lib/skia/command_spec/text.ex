@@ -5,6 +5,30 @@ defmodule Skia.CommandSpec.Text do
 
   def commands do
     [
+      text_blob: [
+        handler: :draw_text_blob,
+        args: [blob: T.text_blob()],
+        defaults: [fill: :black],
+        opts:
+          [
+            [name: :x, type: :number, required: true],
+            [name: :y, type: :number, required: true]
+          ] ++ T.paint_opts(),
+        text_draw: [
+          setup: [
+            {:let, "blob", "text_blob_from_term(*args.first().ok_or(rustler::Error::BadArg)?)?"},
+            {:let, "paint",
+             "match opts.fill { Some(term) => decode_paint(term)?, None => fill_paint(Color::BLACK) }"},
+            {:let_mut, "paint", "paint"},
+            {:stmt, "apply_paint_effects(&mut paint, raw_opts)?"}
+          ],
+          body: [
+            {:call, "canvas", :draw_text_blob,
+             [{:ref, "blob"}, {:tuple, ["opts.x", "opts.y"]}, {:ref, "paint"}]}
+          ]
+        ],
+        native_refs: ["skia_safe::Canvas::draw_text_blob"]
+      ],
       text: [
         handler: :draw_text,
         args: [text: :string],

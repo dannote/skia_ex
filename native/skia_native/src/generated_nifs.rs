@@ -81,6 +81,15 @@ fn measure_text<'a>(
     measure_text_impl(env, text, font_term, size)
 }
 #[rustler::nif(schedule = "DirtyCpu")]
+fn create_text_blob<'a>(
+    env: Env<'a>,
+    text: String,
+    font_term: Term<'a>,
+    size: f64,
+) -> NifResult<Term<'a>> {
+    create_text_blob_impl(env, text, font_term, size)
+}
+#[rustler::nif(schedule = "DirtyCpu")]
 fn record_picture<'a>(env: Env<'a>, batch: Term<'a>) -> NifResult<Term<'a>> {
     record_picture_impl(env, batch)
 }

@@ -2,7 +2,11 @@ defmodule Skia.Font do
   import Inspect.Algebra
 
   @moduledoc """
-  Decoded typeface resource for text drawing and measurement.
+  Typeface resource for text drawing, blobs, and measurement.
+
+      {:ok, families} = Skia.Font.families()
+      {:ok, font} = Skia.Font.match_family("Inter", weight: 700)
+      {:ok, loaded} = Skia.Font.load(File.read!("Inter.ttf"))
   """
 
   @type t :: %__MODULE__{

@@ -351,6 +351,21 @@ fn decode_shader(term: Term) -> NifResult<Shader> {
     let paint = decode_paint(term)?;
     paint.shader().ok_or(rustler::Error::BadArg)
 }
+fn decode_mask_filter(term: Term) -> NifResult<MaskFilter> {
+    if let Ok((tag, style, sigma, respect_ctm)) = term
+        .decode::<(Atom, Atom, f64, bool)>()
+    {
+        if tag == atoms::blur_mask_filter() {
+            return MaskFilter::blur(
+                    generated_enums::decode_blur_style(style)?,
+                    sigma as f32,
+                    respect_ctm,
+                )
+                .ok_or(rustler::Error::BadArg);
+        }
+    }
+    Err(rustler::Error::BadArg)
+}
 fn decode_color_filter(term: Term) -> NifResult<ColorFilter> {
     if let Ok((tag, color_term, blend_mode)) = term.decode::<(Atom, Term, Atom)>() {
         if tag == atoms::blend_color_filter() {

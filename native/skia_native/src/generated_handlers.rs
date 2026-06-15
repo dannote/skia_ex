@@ -115,6 +115,12 @@ fn draw_text<'a>(canvas: &skia_safe::Canvas, command: Term<'a>) -> NifResult<()>
     let decoded_opts = generated_opts::decode_text_opts(&opts)?;
     draw_text_impl(canvas, args, decoded_opts, &opts)
 }
+fn draw_text_blob<'a>(canvas: &skia_safe::Canvas, command: Term<'a>) -> NifResult<()> {
+    let args = command.map_get(atoms::args())?.decode::<Vec<Term>>()?;
+    let opts = decode_opts(command)?;
+    let decoded_opts = generated_opts::decode_text_blob_opts(&opts)?;
+    draw_text_blob_impl(canvas, args, decoded_opts, &opts)
+}
 fn draw_translate<'a>(canvas: &skia_safe::Canvas, command: Term<'a>) -> NifResult<()> {
     let opts = decode_opts(command)?;
     let decoded_opts = generated_opts::decode_translate_opts(&opts)?;

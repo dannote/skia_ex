@@ -83,9 +83,11 @@ defmodule Skia.Command do
   defp normalize_value!(_name, _key, :path, %Skia.Path{} = value), do: value
   defp normalize_value!(_name, _key, :image, %Skia.Image{} = value), do: value
   defp normalize_value!(_name, _key, :picture, %Skia.Picture{} = value), do: value
+  defp normalize_value!(_name, _key, :text_blob, %Skia.TextBlob{} = value), do: value
   defp normalize_value!(_name, _key, :font, %Skia.Font{} = value), do: value
   defp normalize_value!(_name, _key, :image_filter, value), do: normalize_image_filter!(value)
   defp normalize_value!(_name, _key, :color_filter, value), do: normalize_color_filter!(value)
+  defp normalize_value!(_name, _key, :mask_filter, value), do: normalize_mask_filter!(value)
   defp normalize_value!(_name, _key, :path_effect, value), do: normalize_path_effect!(value)
 
   defp normalize_value!(_name, _key, :sampling_options, value),
@@ -416,6 +418,18 @@ defmodule Skia.Command do
 
   defp normalize_color_filter!(value),
     do: raise(ArgumentError, "invalid color filter #{inspect(value)}")
+
+  defp normalize_mask_filter!(%Skia.MaskFilter.Blur{
+         style: style,
+         sigma: sigma,
+         respect_ctm: respect_ctm
+       })
+       when is_atom(style) and is_boolean(respect_ctm) do
+    {:blur_mask_filter, style, normalize_number!(sigma), respect_ctm}
+  end
+
+  defp normalize_mask_filter!(value),
+    do: raise(ArgumentError, "invalid mask filter #{inspect(value)}")
 
   defp normalize_path_effect!(%Skia.PathEffect.Dash{intervals: intervals, phase: phase}) do
     {:dash_path_effect, Enum.map(intervals, &normalize_number!/1), normalize_number!(phase)}

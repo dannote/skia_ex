@@ -1,7 +1,16 @@
 defmodule Skia.Picture do
   import Inspect.Algebra
 
-  @moduledoc "Recorded Skia picture resource."
+  @moduledoc """
+  Recorded Skia picture resource.
+
+  Pictures store reusable drawing subtrees. Record a document once, replay it as
+  a draw command, serialize it, or turn it into an image/shader.
+
+      {:ok, picture} = Skia.Picture.record(document)
+      {:ok, bytes} = Skia.Picture.encode(picture)
+      {:ok, picture} = Skia.Picture.decode(bytes, width: 64, height: 64)
+  """
 
   @type cull_rect :: {float(), float(), float(), float()}
 

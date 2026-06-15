@@ -4,9 +4,11 @@ defmodule Skia.CommandSpec.Types do
   def color, do: :color
   def image_filter, do: :image_filter
   def color_filter, do: :color_filter
+  def mask_filter, do: :mask_filter
   def path_effect, do: :path_effect
   def sampling_options, do: :sampling_options
   def picture, do: :picture
+  def text_blob, do: :text_blob
   def paint, do: :paint
   def blend_mode, do: {:enum, :blend_mode, skia: "SkBlendMode", rust: :BlendMode}
   def clip_op, do: {:enum, :clip_op, skia: "SkClipOp", rust: :ClipOp}
@@ -38,7 +40,8 @@ defmodule Skia.CommandSpec.Types do
       [name: :blend_mode, type: blend_mode()],
       [name: :image_filter, type: image_filter()],
       [name: :path_effect, type: path_effect()],
-      [name: :color_filter, type: color_filter()]
+      [name: :color_filter, type: color_filter()],
+      [name: :mask_filter, type: mask_filter()]
     ]
   end
 end

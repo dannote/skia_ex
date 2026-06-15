@@ -8,9 +8,9 @@ use skia_safe::{
     image_filters, path_utils, surfaces,
     textlayout::{FontCollection, ParagraphBuilder, ParagraphStyle, TextAlign, TextDirection, TextStyle},
     color_filters, AlphaType, Color, ColorFilter, ColorType, CubicResampler, Data,
-    ClipOp, EncodedImageFormat, FilterMode, Font, FontMgr, FontStyle, IPoint, Image, ImageInfo, Matrix,
+    ClipOp, EncodedImageFormat, FilterMode, Font, FontMgr, FontStyle, IPoint, Image, ImageInfo, MaskFilter, Matrix,
     Paint, PaintStyle, PathBuilder, PathDirection, PathEffect, Picture, PictureRecorder, Point, RRect,
-    Rect, SamplingOptions, Shader, TileMode,
+    Rect, SamplingOptions, Shader, TextBlob, TileMode,
 };
 
 include!("generated_resources.rs");
@@ -244,6 +244,23 @@ fn measure_text_impl<'a>(
         .encode(env))
 }
 
+fn create_text_blob_impl<'a>(
+    env: Env<'a>,
+    text: String,
+    font_term: Term<'a>,
+    size: f64,
+) -> NifResult<Term<'a>> {
+    let font = match font_from_term(font_term, size as f32) {
+        Ok(font) => font,
+        Err(_) => return Ok((atoms::error(), atoms::invalid_font()).encode(env)),
+    };
+    let Some(blob) = TextBlob::from_str(text, &font) else {
+        return Ok((atoms::error(), atoms::invalid_text_blob()).encode(env));
+    };
+
+    Ok((atoms::ok(), ResourceArc::new(EncodedTextBlob { blob })).encode(env))
+}
+
 fn path_to_svg_impl<'a>(env: Env<'a>, path_term: Term<'a>) -> NifResult<Term<'a>> {
     match build_path(path_term) {
         Ok(path) => Ok((atoms::ok(), path.to_svg()).encode(env)),
@@ -338,6 +355,11 @@ fn image_from_term(image_term: Term) -> NifResult<Image> {
 fn picture_from_term(picture_term: Term) -> NifResult<Picture> {
     let picture_ref = decode_encoded_picture_ref(picture_term)?;
     Ok(picture_ref.picture.clone())
+}
+
+fn text_blob_from_term(blob_term: Term) -> NifResult<TextBlob> {
+    let blob_ref = decode_encoded_text_blob_ref(blob_term)?;
+    Ok(blob_ref.blob.clone())
 }
 
 fn render_image_resource(image: &Image, src: Option<Rect>, dst: Rect) -> NifResult<Vec<u8>> {

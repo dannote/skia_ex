@@ -84,12 +84,23 @@ defmodule SkiaTest do
     assert raw.data == <<255, 0, 0, 255, 255, 0, 0, 255>>
   end
 
-  test "measures text through the native text engine" do
+  test "measures text and draws text blobs through the native text engine" do
     assert {:ok, measurement} = Skia.measure_text("Hello", size: 18)
     assert measurement.width > 0
     assert {left, top, right, bottom} = measurement.bounds
     assert right >= left
     assert bottom >= top
+
+    assert {:ok, blob} = Skia.TextBlob.new("Blob", size: 18)
+    assert inspect(blob) == "#Skia.TextBlob<size=18.0 text=\"Blob\">"
+
+    document =
+      Skia.canvas(32, 24)
+      |> Skia.clear(:white)
+      |> Skia.text_blob(blob, x: 2, y: 18, fill: :black)
+
+    assert {:ok, raw} = Skia.to_raw(document)
+    assert byte_size(raw.data) == 32 * 24 * 4
   end
 
   test "renders gradient paints through the native batch boundary" do
@@ -125,6 +136,16 @@ defmodule SkiaTest do
       |> :erlang.binary_to_term()
 
     assert %{width: 8, height: 8, commands: [%Skia.Command{op: :clear}]} = batch
+  end
+
+  test "renders paint with mask filters" do
+    document =
+      Skia.canvas(8, 8)
+      |> Skia.clear(:transparent)
+      |> Skia.circle(x: 4, y: 4, radius: 2, fill: :red, mask_filter: Skia.MaskFilter.blur(1.0))
+
+    assert {:ok, raw} = Skia.to_raw(document)
+    assert byte_size(raw.data) == 8 * 8 * 4
   end
 
   test "renders layers with composed generic image filters" do

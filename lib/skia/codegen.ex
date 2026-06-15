@@ -67,6 +67,7 @@ defmodule Skia.Codegen do
 
   @extra_enum_specs %{
     encoded_image_format: [skia: "SkEncodedImageFormat", rust: :EncodedImageFormat],
+    blur_style: [skia: "SkBlurStyle", rust: :BlurStyle],
     sampling: [skia: "SkFilterMode", rust: :FilterMode],
     tile_mode: [skia: "SkTileMode", rust: :TileMode],
     mipmap_mode: [skia: "SkMipmapMode", rust: :MipmapMode]
@@ -85,6 +86,7 @@ defmodule Skia.Codegen do
     :invalid_image,
     :invalid_font,
     :invalid_picture,
+    :invalid_text_blob,
     "nil",
     :render_failed,
     :unsupported_format,
@@ -108,6 +110,7 @@ defmodule Skia.Codegen do
     :compose_filter,
     :offset_filter,
     :drop_shadow_filter,
+    :blur_mask_filter,
     :morphology_filter,
     :color_filter_image_filter,
     :shader_image_filter,
@@ -233,6 +236,11 @@ defmodule Skia.Codegen do
       lifetime: :a
     ],
     measure_text: [
+      args: [env: "Env<'a>", text: :String, font_term: "Term<'a>", size: :f64],
+      returns: "NifResult<Term<'a>>",
+      lifetime: :a
+    ],
+    create_text_blob: [
       args: [env: "Env<'a>", text: :String, font_term: "Term<'a>", size: :f64],
       returns: "NifResult<Term<'a>>",
       lifetime: :a
@@ -567,6 +575,9 @@ defmodule Skia.Codegen do
         if let Some(term) = opt_term(opts, atoms::color_filter()) {
             paint.set_color_filter(decode_color_filter(term)?);
         }
+        if let Some(term) = opt_term(opts, atoms::mask_filter()) {
+            paint.set_mask_filter(decode_mask_filter(term)?);
+        }
         Ok(())
     }
     """)
@@ -695,6 +706,10 @@ defmodule Skia.Codegen do
         RustQ.Rustler.resource_handle(:EncodedPicture,
           fields: [bytes: "Vec<u8>", picture: "Picture"],
           decoder: :decode_encoded_picture_ref
+        ),
+        RustQ.Rustler.resource_handle(:EncodedTextBlob,
+          fields: [blob: "TextBlob"],
+          decoder: :decode_encoded_text_blob_ref
         )
       ]
       |> List.flatten()
@@ -1073,8 +1088,10 @@ defmodule Skia.Codegen do
               :path,
               :image,
               :font,
+              :text_blob,
               :image_filter,
               :color_filter,
+              :mask_filter,
               :path_effect,
               :sampling_options,
               :paint,
@@ -1097,8 +1114,10 @@ defmodule Skia.Codegen do
               :path,
               :image,
               :font,
+              :text_blob,
               :image_filter,
               :color_filter,
+              :mask_filter,
               :path_effect,
               :sampling_options,
               :paint,
@@ -1143,8 +1162,10 @@ defmodule Skia.Codegen do
               :path,
               :image,
               :font,
+              :text_blob,
               :image_filter,
               :color_filter,
+              :mask_filter,
               :path_effect,
               :sampling_options,
               :paint,
@@ -1174,8 +1195,10 @@ defmodule Skia.Codegen do
               :path,
               :image,
               :font,
+              :text_blob,
               :image_filter,
               :color_filter,
+              :mask_filter,
               :path_effect,
               :sampling_options,
               :paint,

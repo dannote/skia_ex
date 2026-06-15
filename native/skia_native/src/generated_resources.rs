@@ -30,3 +30,14 @@ fn decode_encoded_picture_ref<'a>(
     term.map_get(Atom::from_bytes(term.get_env(), b"ref")?)?
         .decode::<ResourceArc<EncodedPicture>>()
 }
+struct EncodedTextBlob {
+    pub blob: TextBlob,
+}
+#[rustler::resource_impl]
+impl rustler::Resource for EncodedTextBlob {}
+fn decode_encoded_text_blob_ref<'a>(
+    term: Term<'a>,
+) -> NifResult<ResourceArc<EncodedTextBlob>> {
+    term.map_get(Atom::from_bytes(term.get_env(), b"ref")?)?
+        .decode::<ResourceArc<EncodedTextBlob>>()
+}

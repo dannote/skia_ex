@@ -215,7 +215,8 @@ defmodule Skia.Paint do
           blend_mode: atom() | nil,
           image_filter: Skia.ImageFilter.t() | nil,
           path_effect: Skia.PathEffect.t() | nil,
-          color_filter: Skia.ColorFilter.t() | nil
+          color_filter: Skia.ColorFilter.t() | nil,
+          mask_filter: Skia.MaskFilter.t() | nil
         }
   defstruct [
     :fill,
@@ -224,7 +225,8 @@ defmodule Skia.Paint do
     :blend_mode,
     :image_filter,
     :path_effect,
-    :color_filter
+    :color_filter,
+    :mask_filter
   ]
 
   @spec new(keyword()) :: t()
@@ -238,7 +240,8 @@ defmodule Skia.Paint do
         :blend_mode,
         :image_filter,
         :path_effect,
-        :color_filter
+        :color_filter,
+        :mask_filter
       ])
     )
   end
