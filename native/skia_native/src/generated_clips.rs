@@ -2,17 +2,12 @@
 
 fn clip_rect_impl<'a>(
     surface: &mut skia_safe::Surface,
-    clip_opts: generated_opts::ClipRectOpts<'a>,
-    _opts: &[(Atom, Term<'a>)],
+    opts: generated_opts::ClipRectOpts<'a>,
+    _raw_opts: &[(Atom, Term<'a>)],
 ) -> NifResult<()> {
-    let rect = Rect::from_xywh(
-        clip_opts.x,
-        clip_opts.y,
-        clip_opts.width,
-        clip_opts.height,
-    );
-    let radius = clip_opts.radius.unwrap_or(0.0);
-    let antialias = clip_opts.antialias.unwrap_or(true);
+    let rect = Rect::from_xywh(opts.x, opts.y, opts.width, opts.height);
+    let radius = opts.radius.unwrap_or(0.0);
+    let antialias = opts.antialias.unwrap_or(true);
     if radius > 0.0 {
         surface
             .canvas()
@@ -24,24 +19,23 @@ fn clip_rect_impl<'a>(
 }
 fn clip_circle_impl<'a>(
     surface: &mut skia_safe::Surface,
-    clip_opts: generated_opts::ClipCircleOpts<'a>,
-    _opts: &[(Atom, Term<'a>)],
+    opts: generated_opts::ClipCircleOpts<'a>,
+    _raw_opts: &[(Atom, Term<'a>)],
 ) -> NifResult<()> {
     let mut builder = PathBuilder::new();
-    builder.add_circle(Point::new(clip_opts.x, clip_opts.y), clip_opts.radius, None);
-    surface
-        .canvas()
-        .clip_path(&builder.detach(), None, clip_opts.antialias.unwrap_or(true));
+    builder.add_circle(Point::new(opts.x, opts.y), opts.radius, None);
+    let path = builder.detach();
+    surface.canvas().clip_path(&path, None, opts.antialias.unwrap_or(true));
     Ok(())
 }
 fn clip_path_impl<'a>(
     surface: &mut skia_safe::Surface,
     args: Vec<Term<'a>>,
-    clip_opts: generated_opts::ClipPathOpts<'a>,
-    opts: &[(Atom, Term<'a>)],
+    opts: generated_opts::ClipPathOpts<'a>,
+    raw_opts: &[(Atom, Term<'a>)],
 ) -> NifResult<()> {
     let mut path = build_path(*args.first().ok_or(rustler::Error::BadArg)?)?;
-    apply_fill_rule(&mut path, &opts)?;
-    surface.canvas().clip_path(&path, None, clip_opts.antialias.unwrap_or(true));
+    apply_fill_rule(&mut path, raw_opts)?;
+    surface.canvas().clip_path(&path, None, opts.antialias.unwrap_or(true));
     Ok(())
 }
