@@ -21,6 +21,8 @@ defmodule Skia.Native do
 
   def render_png(_batch), do: :erlang.nif_error(:nif_not_loaded)
   def render_rgba(_batch), do: :erlang.nif_error(:nif_not_loaded)
+  def render_compact_png(_batch), do: :erlang.nif_error(:nif_not_loaded)
+  def render_compact_rgba(_batch), do: :erlang.nif_error(:nif_not_loaded)
   def render_jpeg(_batch, _quality), do: :erlang.nif_error(:nif_not_loaded)
   def render_webp(_batch, _quality), do: :erlang.nif_error(:nif_not_loaded)
   def decode_image(_bytes), do: :erlang.nif_error(:nif_not_loaded)
@@ -28,6 +30,8 @@ defmodule Skia.Native do
   def resize_image(_image, _width, _height), do: :erlang.nif_error(:nif_not_loaded)
   def crop_image(_image, _source), do: :erlang.nif_error(:nif_not_loaded)
   def load_font(_bytes), do: :erlang.nif_error(:nif_not_loaded)
+  def font_families, do: :erlang.nif_error(:nif_not_loaded)
+  def match_font(_family, _weight, _slant), do: :erlang.nif_error(:nif_not_loaded)
   def measure_text(_text, _font, _size), do: :erlang.nif_error(:nif_not_loaded)
   def record_picture(_batch), do: :erlang.nif_error(:nif_not_loaded)
   def decode_picture(_bytes), do: :erlang.nif_error(:nif_not_loaded)

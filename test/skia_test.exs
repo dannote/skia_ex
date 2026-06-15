@@ -249,6 +249,13 @@ defmodule SkiaTest do
     assert {:ok, image} = Skia.Image.from_picture(decoded)
     assert Skia.Image.width(image) == 4
     assert Skia.Image.height(image) == 4
+
+    shader_doc =
+      Skia.canvas(4, 4)
+      |> Skia.rect(x: 0, y: 0, width: 4, height: 4, fill: Skia.picture_shader(decoded))
+
+    assert {:ok, shader_raw} = Skia.to_raw(shader_doc)
+    assert byte_size(shader_raw.data) == 64
   end
 
   test "returns explicit native error atoms for malformed native inputs" do
@@ -732,8 +739,36 @@ defmodule SkiaTest do
     assert result.normal_batch_bytes > 0
     assert result.compact_batch_bytes > 0
     assert result.normal_render_us >= 0
+    assert result.compact_render_us >= 0
     assert result.picture_record_us >= 0
     assert result.picture_replay_us >= 0
+  end
+
+  test "renders compact batches through native compact renderer" do
+    document =
+      Skia.canvas(2, 1)
+      |> Skia.background(:red)
+
+    assert {:ok, raw} = Skia.to_compact_raw(document)
+    assert raw.data == <<255, 0, 0, 255, 255, 0, 0, 255>>
+    assert {:ok, png} = Skia.render_compact(document, format: :png)
+    assert <<137, 80, 78, 71, 13, 10, 26, 10, _::binary>> = png
+  end
+
+  test "lists and matches system fonts" do
+    assert {:ok, families} = Skia.Font.families()
+    assert is_list(families)
+
+    case families do
+      [family | _] ->
+        assert {:ok, font} = Skia.Font.match(family, weight: 400)
+        assert inspect(font) =~ "#Skia.Font<family="
+        assert {:ok, measurement} = Skia.measure_text("A", font: font, size: 12)
+        assert measurement.width >= 0
+
+      [] ->
+        assert true
+    end
   end
 
   test "supports render options and preflight validation" do

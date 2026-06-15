@@ -128,6 +128,23 @@ fn decode_paint(term: Term) -> NifResult<Paint> {
         }
     }
 
+    if let Ok((tag, picture_term, tile_x, tile_y, filter_mode, matrix_term, tile_rect_term)) =
+        term.decode::<(Atom, Term, Atom, Atom, Atom, Term, Term)>()
+    {
+        if tag == atoms::picture_shader() {
+            let picture = picture_from_term(picture_term)?;
+            let tile_x = generated_enums::decode_tile_mode(tile_x)?;
+            let tile_y = generated_enums::decode_tile_mode(tile_y)?;
+            let filter_mode = generated_enums::decode_sampling(filter_mode)?;
+            let matrix = optional_matrix_from_term(matrix_term)?;
+            let tile_rect = optional_rect_from_term(tile_rect_term)?;
+            let mut paint = Paint::default();
+            paint.set_anti_alias(true).set_style(PaintStyle::Fill);
+            paint.set_shader(picture.to_shader((tile_x, tile_y), filter_mode, matrix.as_ref(), tile_rect.as_ref()));
+            return Ok(paint);
+        }
+    }
+
     Err(rustler::Error::BadArg)
 }
 
@@ -469,6 +486,14 @@ fn optional_matrix_from_term(matrix_term: Term) -> NifResult<Option<Matrix>> {
     }
 }
 
+fn optional_rect_from_term(rect_term: Term) -> NifResult<Option<Rect>> {
+    if rect_term.decode::<Atom>().is_ok_and(|atom| atom == atoms::nil()) {
+        Ok(None)
+    } else {
+        Ok(Some(rect_from_term(rect_term)?))
+    }
+}
+
 fn decode_gradient_stops(stops: Vec<Term>) -> NifResult<(Vec<Color>, Option<Vec<f32>>)> {
     let mut colors = Vec::with_capacity(stops.len());
     let mut positions = Vec::with_capacity(stops.len());
@@ -491,6 +516,16 @@ fn decode_gradient_stops(stops: Vec<Term>) -> NifResult<(Vec<Color>, Option<Vec<
 }
 
 fn decode_color(term: Term) -> NifResult<Color> {
+    if let Ok((tag, rgba)) = term.decode::<(Atom, u32)>() {
+        if tag == atoms::c() {
+            let red = ((rgba >> 24) & 0xff) as u8;
+            let green = ((rgba >> 16) & 0xff) as u8;
+            let blue = ((rgba >> 8) & 0xff) as u8;
+            let alpha = (rgba & 0xff) as u8;
+            return Ok(Color::from_argb(alpha, red, green, blue));
+        }
+    }
+
     let (tag, red, green, blue, alpha) = term.decode::<(Atom, u8, u8, u8, u8)>()?;
 
     if tag == atoms::rgba() {

@@ -7,6 +7,7 @@ defmodule Skia.Benchmark do
           compact_batch_bytes: non_neg_integer(),
           normal_render_us: non_neg_integer(),
           compact_encode_us: non_neg_integer(),
+          compact_render_us: non_neg_integer(),
           picture_record_us: non_neg_integer(),
           picture_replay_us: non_neg_integer()
         }
@@ -27,6 +28,7 @@ defmodule Skia.Benchmark do
          compact_batch_bytes: byte_size(:erlang.term_to_binary(compact_batch)),
          normal_render_us: timed(iterations, fn -> Skia.to_raw(document) end),
          compact_encode_us: timed(iterations, fn -> Skia.to_compact_binary(document) end),
+         compact_render_us: timed(iterations, fn -> Skia.to_compact_raw(document) end),
          picture_record_us: timed(iterations, fn -> Skia.Picture.record(document) end),
          picture_replay_us:
            timed(iterations, fn ->

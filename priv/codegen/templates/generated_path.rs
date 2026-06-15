@@ -1,4 +1,16 @@
 fn build_path(path_term: Term) -> NifResult<skia_safe::Path> {
+    if let Ok((tag, svg)) = path_term.decode::<(Atom, String)>() {
+        if tag == atoms::svg() {
+            return skia_safe::Path::from_svg(svg).ok_or(rustler::Error::BadArg);
+        }
+    }
+
+    if let Ok((tag, segments)) = path_term.decode::<(Atom, Vec<Term>)>() {
+        if tag == atoms::p() {
+            return build_compact_path(segments);
+        }
+    }
+
     if let Ok(svg_term) = path_term.map_get(atoms::svg()) {
         if let Ok(svg) = svg_term.decode::<String>() {
             return skia_safe::Path::from_svg(svg).ok_or(rustler::Error::BadArg);
@@ -91,6 +103,36 @@ fn build_path(path_term: Term) -> NifResult<skia_safe::Path> {
                     (c1x as f32, c1y as f32),
                     (c2x as f32, c2y as f32),
                     (x as f32, y as f32),
+                );
+            }
+        }
+    }
+
+    Ok(builder.detach())
+}
+
+fn build_compact_path(segments: Vec<Term>) -> NifResult<skia_safe::Path> {
+    let mut builder = PathBuilder::new();
+
+    for segment in segments {
+        if let Ok((14,)) = segment.decode::<(i64,)>() {
+            builder.close();
+        } else if let Ok((op, x, y)) = segment.decode::<(i64, f64, f64)>() {
+            match op {
+                1 => { builder.move_to((x as f32, y as f32)); }
+                2 => { builder.line_to((x as f32, y as f32)); }
+                6 => { builder.r_move_to((x as f32, y as f32)); }
+                7 => { builder.r_line_to((x as f32, y as f32)); }
+                _ => {}
+            };
+        } else if let Ok((op, x, y, width, height, rx, ry)) =
+            segment.decode::<(i64, f64, f64, f64, f64, f64, f64)>()
+        {
+            if op == 13 {
+                builder.add_rrect(
+                    RRect::new_rect_xy(Rect::from_xywh(x as f32, y as f32, width as f32, height as f32), rx as f32, ry as f32),
+                    None,
+                    None,
                 );
             }
         }

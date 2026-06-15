@@ -78,6 +78,10 @@ defmodule Skia.Codegen do
     :invalid_batch,
     :invalid_command,
     :invalid_path,
+    :c,
+    :p,
+    :italic,
+    :oblique,
     :invalid_image,
     :invalid_font,
     :invalid_picture,
@@ -97,6 +101,7 @@ defmodule Skia.Codegen do
     :sweep_gradient,
     :gradient_stop,
     :image_shader,
+    :picture_shader,
     :two_point_conical_gradient,
     :color_shader,
     :blur_filter,
@@ -172,6 +177,16 @@ defmodule Skia.Codegen do
       returns: "NifResult<Term<'a>>",
       lifetime: :a
     ],
+    render_compact_png: [
+      args: [env: "Env<'a>", batch: "Term<'a>"],
+      returns: "NifResult<Term<'a>>",
+      lifetime: :a
+    ],
+    render_compact_rgba: [
+      args: [env: "Env<'a>", batch: "Term<'a>"],
+      returns: "NifResult<Term<'a>>",
+      lifetime: :a
+    ],
     render_jpeg: [
       args: [env: "Env<'a>", batch: "Term<'a>", quality: :u32],
       returns: "NifResult<Term<'a>>",
@@ -204,6 +219,16 @@ defmodule Skia.Codegen do
     ],
     load_font: [
       args: [env: "Env<'a>", bytes: "Binary<'a>"],
+      returns: "NifResult<Term<'a>>",
+      lifetime: :a
+    ],
+    font_families: [
+      args: [env: "Env<'a>"],
+      returns: "NifResult<Term<'a>>",
+      lifetime: :a
+    ],
+    match_font: [
+      args: [env: "Env<'a>", family: :String, weight: :i32, slant: :Atom],
       returns: "NifResult<Term<'a>>",
       lifetime: :a
     ],
@@ -270,7 +295,11 @@ defmodule Skia.Codegen do
           |> Enum.reject(&(&1 == :env))
           |> elixir_nif_args()
 
-        "  def #{name}(#{args}), do: :erlang.nif_error(:nif_not_loaded)"
+        if args == "" do
+          "  def #{name}, do: :erlang.nif_error(:nif_not_loaded)"
+        else
+          "  def #{name}(#{args}), do: :erlang.nif_error(:nif_not_loaded)"
+        end
       end)
 
     """
@@ -447,7 +476,11 @@ defmodule Skia.Codegen do
         "        value if value == atoms::#{atom}() => #{call},"
       end)
 
-    item =
+    compact_cases =
+      compact_ops()
+      |> Enum.map_join("\n", fn {atom, id} -> "        #{id} => Ok(atoms::#{atom}())," end)
+
+    items = [
       Rust.item("""
       fn draw_command(canvas: &skia_safe::Canvas, command: Term) -> NifResult<()> {
           let value = command.map_get(atoms::op())?.decode::<Atom>()?;
@@ -456,11 +489,27 @@ defmodule Skia.Codegen do
               _ => Err(rustler::Error::BadArg),
           }
       }
+      """),
+      Rust.item("""
+      fn compact_op_atom(id: i64) -> NifResult<Atom> {
+          match id {
+      #{compact_cases}
+              _ => Err(rustler::Error::BadArg),
+          }
+      }
       """)
+    ]
 
     "generated_dispatch.rs"
     |> template_path()
-    |> RustQ.render_file!(preamble: generated_rust_preamble(), splice: [items: [item]])
+    |> RustQ.render_file!(preamble: generated_rust_preamble(), splice: [items: items])
+  end
+
+  defp compact_ops do
+    Skia.CommandSpec.all()
+    |> Enum.flat_map(fn {name, spec} -> [name, Keyword.get(spec, :op, name)] end)
+    |> Enum.uniq()
+    |> Enum.with_index(1)
   end
 
   @spec generated_style_helpers() :: String.t()
@@ -636,15 +685,15 @@ defmodule Skia.Codegen do
     resources =
       [
         RustQ.Rustler.resource_handle(:EncodedImage,
-          fields: [bytes: "Vec<u8>"],
+          fields: [image: "Image"],
           decoder: :decode_encoded_image_ref
         ),
         RustQ.Rustler.resource_handle(:EncodedFont,
-          fields: [bytes: "Vec<u8>"],
+          fields: [typeface: "skia_safe::Typeface"],
           decoder: :decode_encoded_font_ref
         ),
         RustQ.Rustler.resource_handle(:EncodedPicture,
-          fields: [bytes: "Vec<u8>"],
+          fields: [bytes: "Vec<u8>", picture: "Picture"],
           decoder: :decode_encoded_picture_ref
         )
       ]

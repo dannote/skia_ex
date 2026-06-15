@@ -95,6 +95,19 @@ defmodule Skia do
     }
   end
 
+  @doc "Creates a picture shader paint value."
+  @spec picture_shader(Skia.Picture.t(), keyword()) :: Skia.Shader.PictureShader.t()
+  def picture_shader(%Skia.Picture{} = picture, opts \\ []) do
+    %Skia.Shader.PictureShader{
+      picture: picture,
+      tile_x: image_shader_tile(opts) |> elem(0),
+      tile_y: image_shader_tile(opts) |> elem(1),
+      filter: Keyword.get(opts, :filter, :linear),
+      matrix: Keyword.get(opts, :matrix),
+      tile_rect: Keyword.get(opts, :tile_rect)
+    }
+  end
+
   defp image_shader_tile(opts) do
     case Keyword.get(opts, :tile) do
       nil -> {Keyword.get(opts, :tile_x, :clamp), Keyword.get(opts, :tile_y, :clamp)}
@@ -225,6 +238,51 @@ defmodule Skia do
       case Skia.Native.record_picture(batch) do
         {:ok, ref} ->
           {:ok, %Skia.Picture{ref: ref, width: document.width, height: document.height}}
+
+        {:error, reason} ->
+          {:error, reason, batch}
+      end
+    end
+  end
+
+  @doc "Renders the compact document representation through the native compact renderer."
+  @spec render_compact(Document.t(), keyword() | Skia.RenderOptions.t()) ::
+          {:ok, binary() | map()} | {:error, atom(), map()}
+  def render_compact(%Document{} = document, opts \\ []) do
+    options = if is_list(opts), do: Skia.RenderOptions.new(opts), else: opts
+
+    case options.format do
+      :png -> to_compact_png(document)
+      :raw -> to_compact_raw(document)
+      format -> {:error, :unsupported_format, %{format: format}}
+    end
+  end
+
+  @doc "Renders the document to PNG through the native compact renderer."
+  @spec to_compact_png(Document.t()) :: {:ok, binary()} | {:error, atom(), map()}
+  def to_compact_png(%Document{} = document) do
+    with :ok <- validate(document) do
+      batch = to_compact_batch(document)
+
+      case Skia.Native.render_compact_png(batch) do
+        {:ok, png} -> {:ok, png}
+        {:error, reason} -> {:error, reason, batch}
+      end
+    end
+  end
+
+  @doc "Renders the document to a raw RGBA buffer through the native compact renderer."
+  @spec to_compact_raw(Document.t()) ::
+          {:ok,
+           %{width: pos_integer(), height: pos_integer(), stride: pos_integer(), data: binary()}}
+          | {:error, atom(), map()}
+  def to_compact_raw(%Document{} = document) do
+    with :ok <- validate(document) do
+      batch = to_compact_batch(document)
+
+      case Skia.Native.render_compact_rgba(batch) do
+        {:ok, {width, height, stride, data}} ->
+          {:ok, %{width: width, height: height, stride: stride, data: data}}
 
         {:error, reason} ->
           {:error, reason, batch}

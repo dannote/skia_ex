@@ -58,8 +58,7 @@ defmodule Skia.Compact do
     {:p, path |> Skia.Path.segments() |> Enum.map(&compact_segment/1)}
   end
 
-  defp compact_value(%struct{} = value),
-    do: Map.from_struct(value) |> Map.put(:__compact_struct__, struct)
+  defp compact_value(%_struct{} = value), do: value
 
   defp compact_value(list) when is_list(list), do: Enum.map(list, &compact_value/1)
 

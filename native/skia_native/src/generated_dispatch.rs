@@ -29,3 +29,34 @@ fn draw_command(canvas: &skia_safe::Canvas, command: Term) -> NifResult<()> {
         _ => Err(rustler::Error::BadArg),
     }
 }
+fn compact_op_atom(id: i64) -> NifResult<Atom> {
+    match id {
+        1 => Ok(atoms::background()),
+        2 => Ok(atoms::clear()),
+        3 => Ok(atoms::rect()),
+        4 => Ok(atoms::oval()),
+        5 => Ok(atoms::arc()),
+        6 => Ok(atoms::circle()),
+        7 => Ok(atoms::line()),
+        8 => Ok(atoms::text()),
+        9 => Ok(atoms::image()),
+        10 => Ok(atoms::picture()),
+        11 => Ok(atoms::save()),
+        12 => Ok(atoms::save_layer()),
+        13 => Ok(atoms::restore()),
+        14 => Ok(atoms::push_style()),
+        15 => Ok(atoms::pop_style()),
+        16 => Ok(atoms::translate()),
+        17 => Ok(atoms::scale()),
+        18 => Ok(atoms::rotate()),
+        19 => Ok(atoms::rotate_at()),
+        20 => Ok(atoms::concat()),
+        21 => Ok(atoms::path()),
+        22 => Ok(atoms::path_op()),
+        23 => Ok(atoms::path_outline()),
+        24 => Ok(atoms::clip_rect()),
+        25 => Ok(atoms::clip_circle()),
+        26 => Ok(atoms::clip_path()),
+        _ => Err(rustler::Error::BadArg),
+    }
+}

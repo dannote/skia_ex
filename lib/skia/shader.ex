@@ -73,6 +73,27 @@ defmodule Skia.Shader.ImageShader do
   defstruct [:image, tile_x: :clamp, tile_y: :clamp, sampling: :linear, matrix: nil]
 end
 
+defmodule Skia.Shader.PictureShader do
+  @moduledoc "Picture shader paint source."
+
+  @type t :: %__MODULE__{
+          picture: Skia.Picture.t(),
+          tile_x: atom(),
+          tile_y: atom(),
+          filter: atom(),
+          matrix: tuple() | nil,
+          tile_rect: tuple() | nil
+        }
+  defstruct [
+    :picture,
+    tile_x: :clamp,
+    tile_y: :clamp,
+    filter: :linear,
+    matrix: nil,
+    tile_rect: nil
+  ]
+end
+
 defmodule Skia.Shader.GradientStop do
   @moduledoc "Color stop with explicit position in a gradient."
 

@@ -9,6 +9,14 @@ fn render_rgba<'a>(env: Env<'a>, batch: Term<'a>) -> NifResult<Term<'a>> {
     render_rgba_impl(env, batch)
 }
 #[rustler::nif(schedule = "DirtyCpu")]
+fn render_compact_png<'a>(env: Env<'a>, batch: Term<'a>) -> NifResult<Term<'a>> {
+    render_compact_png_impl(env, batch)
+}
+#[rustler::nif(schedule = "DirtyCpu")]
+fn render_compact_rgba<'a>(env: Env<'a>, batch: Term<'a>) -> NifResult<Term<'a>> {
+    render_compact_rgba_impl(env, batch)
+}
+#[rustler::nif(schedule = "DirtyCpu")]
 fn render_jpeg<'a>(env: Env<'a>, batch: Term<'a>, quality: u32) -> NifResult<Term<'a>> {
     render_jpeg_impl(env, batch, quality)
 }
@@ -49,6 +57,19 @@ fn crop_image<'a>(
 #[rustler::nif(schedule = "DirtyCpu")]
 fn load_font<'a>(env: Env<'a>, bytes: Binary<'a>) -> NifResult<Term<'a>> {
     load_font_impl(env, bytes)
+}
+#[rustler::nif(schedule = "DirtyCpu")]
+fn font_families<'a>(env: Env<'a>) -> NifResult<Term<'a>> {
+    font_families_impl(env)
+}
+#[rustler::nif(schedule = "DirtyCpu")]
+fn match_font<'a>(
+    env: Env<'a>,
+    family: String,
+    weight: i32,
+    slant: Atom,
+) -> NifResult<Term<'a>> {
+    match_font_impl(env, family, weight, slant)
 }
 #[rustler::nif(schedule = "DirtyCpu")]
 fn measure_text<'a>(

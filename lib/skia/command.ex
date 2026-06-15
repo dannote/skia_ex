@@ -255,6 +255,11 @@ defmodule Skia.Command do
      normalize_sampling_options!(shader.sampling), normalize_optional_matrix!(shader.matrix)}
   end
 
+  defp normalize_color!(%Skia.Shader.PictureShader{} = shader) do
+    {:picture_shader, shader.picture, shader.tile_x, shader.tile_y, shader.filter,
+     normalize_optional_matrix!(shader.matrix), normalize_optional_rect!(shader.tile_rect)}
+  end
+
   defp normalize_color!(%Skia.Shader.GradientStop{color: color, position: position}) do
     normalize_color!({:gradient_stop, color, position})
   end
@@ -263,6 +268,14 @@ defmodule Skia.Command do
        when is_atom(tile_x) and is_atom(tile_y) do
     {:image_shader, image, tile_x, tile_y, normalize_sampling_options!(sampling),
      normalize_optional_matrix!(matrix)}
+  end
+
+  defp normalize_color!(
+         {:picture_shader, %Skia.Picture{} = picture, tile_x, tile_y, filter, matrix, tile_rect}
+       )
+       when is_atom(tile_x) and is_atom(tile_y) and is_atom(filter) do
+    {:picture_shader, picture, tile_x, tile_y, filter, normalize_optional_matrix!(matrix),
+     normalize_optional_rect!(tile_rect)}
   end
 
   defp normalize_color!({:gradient_stop, color, position}) do
@@ -514,6 +527,9 @@ defmodule Skia.Command do
   end
 
   defp normalize_rect!(value), do: raise(ArgumentError, "invalid rect #{inspect(value)}")
+
+  defp normalize_optional_rect!(nil), do: nil
+  defp normalize_optional_rect!(rect), do: normalize_rect!(rect)
 
   defp normalize_point!({x, y}), do: {normalize_number!(x), normalize_number!(y)}
   defp normalize_point!(value), do: raise(ArgumentError, "invalid point #{inspect(value)}")

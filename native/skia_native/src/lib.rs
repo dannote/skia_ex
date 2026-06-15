@@ -1,8 +1,10 @@
 #![allow(deprecated)]
 
 use rustler::{Atom, Binary, Encoder, Env, NifResult, OwnedBinary, ResourceArc, Term};
+use rustler::types::map::map_new;
 use skia_safe::{
     canvas::SaveLayerRec,
+    font_style::{Slant, Weight, Width},
     image_filters, path_utils, surfaces,
     textlayout::{FontCollection, ParagraphBuilder, ParagraphStyle, TextAlign, TextDirection, TextStyle},
     color_filters, AlphaType, Color, ColorFilter, ColorType, CubicResampler, Data,
@@ -35,9 +37,39 @@ fn render_webp_impl<'a>(env: Env<'a>, batch: Term<'a>, quality: u32) -> NifResul
 }
 
 fn render_rgba_impl<'a>(env: Env<'a>, batch: Term<'a>) -> NifResult<Term<'a>> {
-    let width = batch.map_get(atoms::width())?.decode::<i32>()?;
-    let height = batch.map_get(atoms::height())?.decode::<i32>()?;
-    let mut surface = match render_surface(batch)? {
+    encode_rgba_surface(env, batch, render_surface)
+}
+
+fn render_compact_png_impl<'a>(env: Env<'a>, batch: Term<'a>) -> NifResult<Term<'a>> {
+    let mut surface = match render_compact_surface(env, batch)? {
+        Ok(surface) => surface,
+        Err(reason) => return Ok((atoms::error(), reason).encode(env)),
+    };
+
+    let image = surface.image_snapshot();
+    let data = match image.encode(None, EncodedImageFormat::PNG, 100) {
+        Some(data) => data,
+        None => return Ok((atoms::error(), atoms::unsupported_format()).encode(env)),
+    };
+
+    Ok((atoms::ok(), binary(env, data.as_bytes())?).encode(env))
+}
+
+fn render_compact_rgba_impl<'a>(env: Env<'a>, batch: Term<'a>) -> NifResult<Term<'a>> {
+    encode_rgba_surface(env, batch, |batch| render_compact_surface(env, batch))
+}
+
+fn encode_rgba_surface<'a, F>(
+    env: Env<'a>,
+    batch: Term<'a>,
+    render: F,
+) -> NifResult<Term<'a>>
+where
+    F: FnOnce(Term<'a>) -> NifResult<Result<skia_safe::Surface, Atom>>,
+{
+    let width = batch_width(batch)?;
+    let height = batch_height(batch)?;
+    let mut surface = match render(batch)? {
         Ok(surface) => surface,
         Err(reason) => return Ok((atoms::error(), reason).encode(env)),
     };
@@ -69,11 +101,11 @@ fn decode_image_impl<'a>(env: Env<'a>, bytes: Binary<'a>) -> NifResult<Term<'a>>
         None => return Ok((atoms::error(), atoms::invalid_image()).encode(env)),
     };
 
-    let resource = ResourceArc::new(EncodedImage {
-        bytes: bytes.as_slice().to_vec(),
-    });
+    let width = image.width();
+    let height = image.height();
+    let resource = ResourceArc::new(EncodedImage { image });
 
-    Ok((atoms::ok(), resource, image.width(), image.height()).encode(env))
+    Ok((atoms::ok(), resource, width, height).encode(env))
 }
 
 fn encode_image_impl<'a>(
@@ -115,9 +147,10 @@ fn resize_image_impl<'a>(
         None,
         Rect::from_xywh(0.0, 0.0, width as f32, height as f32),
     )?;
+    let image = Image::from_encoded(Data::new_copy(&encoded)).ok_or(rustler::Error::BadArg)?;
     Ok((
         atoms::ok(),
-        ResourceArc::new(EncodedImage { bytes: encoded }),
+        ResourceArc::new(EncodedImage { image }),
     )
         .encode(env))
 }
@@ -142,26 +175,47 @@ fn crop_image_impl<'a>(
         Some(src),
         Rect::from_xywh(0.0, 0.0, src.width(), src.height()),
     )?;
+    let image = Image::from_encoded(Data::new_copy(&encoded)).ok_or(rustler::Error::BadArg)?;
     Ok((
         atoms::ok(),
-        ResourceArc::new(EncodedImage { bytes: encoded }),
+        ResourceArc::new(EncodedImage { image }),
     )
         .encode(env))
 }
 
 fn load_font_impl<'a>(env: Env<'a>, bytes: Binary<'a>) -> NifResult<Term<'a>> {
-    if FontMgr::new()
-        .new_from_data(bytes.as_slice(), None)
-        .is_none()
-    {
+    let Some(typeface) = FontMgr::new().new_from_data(bytes.as_slice(), None) else {
         return Ok((atoms::error(), atoms::invalid_font()).encode(env));
-    }
+    };
 
     Ok((
         atoms::ok(),
-        ResourceArc::new(EncodedFont {
-            bytes: bytes.as_slice().to_vec(),
-        }),
+        ResourceArc::new(EncodedFont { typeface }),
+    )
+        .encode(env))
+}
+
+fn font_families_impl<'a>(env: Env<'a>) -> NifResult<Term<'a>> {
+    let families: Vec<String> = FontMgr::new().family_names().collect();
+    Ok((atoms::ok(), families).encode(env))
+}
+
+fn match_font_impl<'a>(env: Env<'a>, family: String, weight: i32, slant: Atom) -> NifResult<Term<'a>> {
+    let slant = if slant == atoms::italic() {
+        Slant::Italic
+    } else if slant == atoms::oblique() {
+        Slant::Oblique
+    } else {
+        Slant::Upright
+    };
+    let style = FontStyle::new(Weight::from(weight), Width::NORMAL, slant);
+    let Some(typeface) = FontMgr::new().match_family_style(family, style) else {
+        return Ok((atoms::error(), atoms::invalid_font()).encode(env));
+    };
+
+    Ok((
+        atoms::ok(),
+        ResourceArc::new(EncodedFont { typeface }),
     )
         .encode(env))
 }
@@ -225,20 +279,22 @@ fn record_picture_impl<'a>(env: Env<'a>, batch: Term<'a>) -> NifResult<Term<'a>>
         atoms::ok(),
         ResourceArc::new(EncodedPicture {
             bytes: picture.serialize().as_bytes().to_vec(),
+            picture,
         }),
     )
         .encode(env))
 }
 
 fn decode_picture_impl<'a>(env: Env<'a>, bytes: Binary<'a>) -> NifResult<Term<'a>> {
-    if Picture::from_bytes(bytes.as_slice()).is_none() {
+    let Some(picture) = Picture::from_bytes(bytes.as_slice()) else {
         return Ok((atoms::error(), atoms::invalid_picture()).encode(env));
-    }
+    };
 
     Ok((
         atoms::ok(),
         ResourceArc::new(EncodedPicture {
             bytes: bytes.as_slice().to_vec(),
+            picture,
         }),
     )
         .encode(env))
@@ -276,12 +332,12 @@ fn picture_info_impl<'a>(env: Env<'a>, picture_term: Term<'a>) -> NifResult<Term
 
 fn image_from_term(image_term: Term) -> NifResult<Image> {
     let image_ref = decode_encoded_image_ref(image_term)?;
-    Image::from_encoded(Data::new_copy(&image_ref.bytes)).ok_or(rustler::Error::BadArg)
+    Ok(image_ref.image.clone())
 }
 
 fn picture_from_term(picture_term: Term) -> NifResult<Picture> {
     let picture_ref = decode_encoded_picture_ref(picture_term)?;
-    Picture::from_bytes(&picture_ref.bytes).ok_or(rustler::Error::BadArg)
+    Ok(picture_ref.picture.clone())
 }
 
 fn render_image_resource(image: &Image, src: Option<Rect>, dst: Rect) -> NifResult<Vec<u8>> {
@@ -328,19 +384,13 @@ fn encode_rendered<'a>(
 }
 
 fn render_surface(batch: Term) -> NifResult<Result<skia_safe::Surface, Atom>> {
-    let width = batch.map_get(atoms::width())?.decode::<i32>()?;
-    let height = batch.map_get(atoms::height())?.decode::<i32>()?;
+    let width = batch_width(batch)?;
+    let height = batch_height(batch)?;
 
-    if width <= 0 || height <= 0 {
-        return Ok(Err(atoms::invalid_batch()));
-    }
-
-    let mut surface = match surfaces::raster_n32_premul((width, height)) {
-        Some(surface) => surface,
-        None => return Ok(Err(atoms::render_failed())),
+    let mut surface = match new_surface(width, height) {
+        Ok(surface) => surface,
+        Err(reason) => return Ok(Err(reason)),
     };
-
-    surface.canvas().clear(Color::TRANSPARENT);
 
     for command in batch.map_get(atoms::commands())?.decode::<Vec<Term>>()? {
         if let Err(reason) = draw_command_result(surface.canvas(), command)? {
@@ -349,6 +399,64 @@ fn render_surface(batch: Term) -> NifResult<Result<skia_safe::Surface, Atom>> {
     }
 
     Ok(Ok(surface))
+}
+
+fn render_compact_surface<'a>(env: Env<'a>, batch: Term<'a>) -> NifResult<Result<skia_safe::Surface, Atom>> {
+    let width = batch_width(batch)?;
+    let height = batch_height(batch)?;
+
+    let mut surface = match new_surface(width, height) {
+        Ok(surface) => surface,
+        Err(reason) => return Ok(Err(reason)),
+    };
+
+    let (_, _, commands) = batch.decode::<(i32, i32, Vec<Term>)>()?;
+    for command in commands {
+        let command = command_from_compact(env, command)?;
+        if let Err(reason) = draw_command_result(surface.canvas(), command)? {
+            return Ok(Err(reason));
+        }
+    }
+
+    Ok(Ok(surface))
+}
+
+fn new_surface(width: i32, height: i32) -> Result<skia_safe::Surface, Atom> {
+    if width <= 0 || height <= 0 {
+        return Err(atoms::invalid_batch());
+    }
+
+    let mut surface = surfaces::raster_n32_premul((width, height)).ok_or(atoms::render_failed())?;
+    surface.canvas().clear(Color::TRANSPARENT);
+    Ok(surface)
+}
+
+fn batch_width(batch: Term) -> NifResult<i32> {
+    if let Ok(term) = batch.map_get(atoms::width()) {
+        if let Ok(width) = term.decode::<i32>() {
+            return Ok(width);
+        }
+    }
+    let (width, _, _) = batch.decode::<(i32, i32, Vec<Term>)>()?;
+    Ok(width)
+}
+
+fn batch_height(batch: Term) -> NifResult<i32> {
+    if let Ok(term) = batch.map_get(atoms::height()) {
+        if let Ok(height) = term.decode::<i32>() {
+            return Ok(height);
+        }
+    }
+    let (_, height, _) = batch.decode::<(i32, i32, Vec<Term>)>()?;
+    Ok(height)
+}
+
+fn command_from_compact<'a>(env: Env<'a>, command: Term<'a>) -> NifResult<Term<'a>> {
+    let (op_id, args, opts) = command.decode::<(i64, Vec<Term>, Vec<(Atom, Term)>)>()?;
+    map_new(env)
+        .map_put(atoms::op(), compact_op_atom(op_id)?)?
+        .map_put(atoms::args(), args)?
+        .map_put(atoms::opts(), opts)
 }
 
 include!("generated_dispatch.rs");
@@ -454,10 +562,7 @@ fn font_from_term(term: Term, size: f32) -> NifResult<Font> {
     }
 
     let font_ref = decode_encoded_font_ref(term)?;
-    let typeface = FontMgr::new()
-        .new_from_data(&font_ref.bytes, None)
-        .ok_or(rustler::Error::BadArg)?;
-    Ok(Font::new(typeface, size))
+    Ok(Font::new(font_ref.typeface.clone(), size))
 }
 
 rustler::init!("Elixir.Skia.Native");
