@@ -9,7 +9,7 @@ defmodule Skia.Native do
     otp_app: :skia,
     crate: "skia_native",
     base_url: "https://github.com/dannote/skia_ex/releases/download/v#{version}",
-    force_build: Mix.env() in [:dev, :test] or System.get_env("SKIA_EX_BUILD") in ["1", "true"],
+    force_build: System.get_env("SKIA_EX_BUILD") in ["1", "true"],
     targets: ~w(
       aarch64-apple-darwin
       x86_64-apple-darwin
