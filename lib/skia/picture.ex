@@ -11,8 +11,13 @@ defmodule Skia.Picture do
   @spec record(Skia.Document.t()) :: {:ok, t()} | {:error, atom(), map()}
   def record(%Skia.Document{} = document), do: Skia.record_picture(document)
 
-  @spec from_bytes(binary(), pos_integer(), pos_integer()) :: {:ok, t()} | {:error, atom()}
-  def from_bytes(bytes, width, height)
+  @spec decode(binary(), keyword()) :: {:ok, t()} | {:error, atom()}
+  def decode(bytes, opts) when is_binary(bytes) and is_list(opts) do
+    decode(bytes, Keyword.get(opts, :width), Keyword.get(opts, :height))
+  end
+
+  @spec decode(binary(), pos_integer(), pos_integer()) :: {:ok, t()} | {:error, atom()}
+  def decode(bytes, width, height)
       when is_binary(bytes) and is_integer(width) and width > 0 and is_integer(height) and
              height > 0 do
     case Skia.Native.decode_picture(bytes) do
@@ -21,10 +26,10 @@ defmodule Skia.Picture do
     end
   end
 
-  def from_bytes(_bytes, _width, _height), do: {:error, :invalid_picture}
+  def decode(_bytes, _width, _height), do: {:error, :invalid_picture}
 
-  @spec to_bytes(t()) :: {:ok, binary()} | {:error, atom()}
-  def to_bytes(%__MODULE__{} = picture), do: Skia.Native.encode_picture(picture)
+  @spec encode(t()) :: {:ok, binary()} | {:error, atom()}
+  def encode(%__MODULE__{} = picture), do: Skia.Native.encode_picture(picture)
 
   @spec width(t()) :: pos_integer()
   def width(%__MODULE__{width: width}), do: width

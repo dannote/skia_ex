@@ -18,7 +18,7 @@ defmodule Skia.Benchmark do
     iterations = max(iterations, 1)
 
     normal_batch = Skia.to_batch(document)
-    compact_batch = Skia.to_compact_batch(document)
+    compact_batch = Skia.Compact.encode(document)
 
     with {:ok, picture} <- Skia.Picture.record(document) do
       {:ok,
@@ -27,8 +27,8 @@ defmodule Skia.Benchmark do
          normal_batch_bytes: byte_size(:erlang.term_to_binary(normal_batch)),
          compact_batch_bytes: byte_size(:erlang.term_to_binary(compact_batch)),
          normal_render_us: timed(iterations, fn -> Skia.to_raw(document) end),
-         compact_encode_us: timed(iterations, fn -> Skia.to_compact_binary(document) end),
-         compact_render_us: timed(iterations, fn -> Skia.to_compact_raw(document) end),
+         compact_encode_us: timed(iterations, fn -> Skia.Compact.encode_binary(document) end),
+         compact_render_us: timed(iterations, fn -> Skia.Compact.to_raw(document) end),
          picture_record_us: timed(iterations, fn -> Skia.Picture.record(document) end),
          picture_replay_us:
            timed(iterations, fn ->

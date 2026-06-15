@@ -25,8 +25,8 @@ defmodule Skia.Font do
   @spec families() :: {:ok, [String.t()]} | {:error, atom()}
   def families, do: Skia.Native.font_families()
 
-  @spec match(String.t(), keyword()) :: {:ok, t()} | {:error, atom()}
-  def match(family, opts \\ []) when is_binary(family) do
+  @spec match_family(String.t(), keyword()) :: {:ok, t()} | {:error, atom()}
+  def match_family(family, opts \\ []) when is_binary(family) do
     weight = Keyword.get(opts, :weight, 400)
     slant = Keyword.get(opts, :slant, :upright)
 

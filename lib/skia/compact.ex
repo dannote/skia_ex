@@ -1,7 +1,7 @@
 defmodule Skia.Compact do
   import Bitwise
 
-  @moduledoc "Compact, Erlang-term-friendly command batch representation."
+  @moduledoc "Compact command batch encoding and rendering."
 
   alias Skia.{Command, CommandSpec, Document}
 
@@ -30,24 +30,66 @@ defmodule Skia.Compact do
 
   @type compact_value :: term()
   @type compact_command :: {pos_integer(), [compact_value()], keyword(compact_value())}
-  @type compact_batch :: {pos_integer(), pos_integer(), [compact_command()]}
+  @type batch :: {pos_integer(), pos_integer(), [compact_command()]}
 
   @spec op_id(atom()) :: pos_integer()
   def op_id(op), do: Map.fetch!(@op_ids, op)
 
-  @spec from_document(Document.t()) :: compact_batch()
-  def from_document(%Document{} = document) do
-    {document.width, document.height, Enum.map(Skia.commands(document), &from_command/1)}
+  @spec encode(Document.t()) :: batch()
+  def encode(%Document{} = document) do
+    {document.width, document.height, Enum.map(Skia.commands(document), &encode_command/1)}
   end
 
-  @spec from_command(Command.t()) :: compact_command()
-  def from_command(%Command{} = command) do
+  @spec encode_binary(Document.t()) :: binary()
+  def encode_binary(%Document{} = document),
+    do: document |> encode() |> :erlang.term_to_binary(compressed: 1)
+
+  @spec render(Document.t(), keyword() | Skia.RenderOptions.t()) ::
+          {:ok, binary() | map()} | {:error, atom(), map()}
+  def render(%Document{} = document, opts \\ []) do
+    options = if is_list(opts), do: Skia.RenderOptions.new(opts), else: opts
+
+    case options.format do
+      :png -> to_png(document)
+      :raw -> to_raw(document)
+      format -> {:error, :unsupported_format, %{format: format}}
+    end
+  end
+
+  @spec to_png(Document.t()) :: {:ok, binary()} | {:error, atom(), batch()}
+  def to_png(%Document{} = document) do
+    with :ok <- Skia.validate(document) do
+      batch = encode(document)
+
+      case Skia.Native.render_compact_png(batch) do
+        {:ok, png} -> {:ok, png}
+        {:error, reason} -> {:error, reason, batch}
+      end
+    end
+  end
+
+  @spec to_raw(Document.t()) ::
+          {:ok,
+           %{width: pos_integer(), height: pos_integer(), stride: pos_integer(), data: binary()}}
+          | {:error, atom(), batch()}
+  def to_raw(%Document{} = document) do
+    with :ok <- Skia.validate(document) do
+      batch = encode(document)
+
+      case Skia.Native.render_compact_rgba(batch) do
+        {:ok, {width, height, stride, data}} ->
+          {:ok, %{width: width, height: height, stride: stride, data: data}}
+
+        {:error, reason} ->
+          {:error, reason, batch}
+      end
+    end
+  end
+
+  @spec encode_command(Command.t()) :: compact_command()
+  def encode_command(%Command{} = command) do
     {op_id(command.op), Enum.map(command.args, &compact_value/1), compact_opts(command.opts)}
   end
-
-  @spec to_binary(Document.t()) :: binary()
-  def to_binary(%Document{} = document),
-    do: document |> from_document() |> :erlang.term_to_binary(compressed: 1)
 
   defp compact_opts(opts), do: Enum.map(opts, fn {key, value} -> {key, compact_value(value)} end)
 
@@ -59,7 +101,6 @@ defmodule Skia.Compact do
   end
 
   defp compact_value(%_struct{} = value), do: value
-
   defp compact_value(list) when is_list(list), do: Enum.map(list, &compact_value/1)
 
   defp compact_value(tuple) when is_tuple(tuple),

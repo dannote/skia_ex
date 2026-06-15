@@ -129,8 +129,8 @@ Record reusable drawing subtrees as Skia pictures and replay them later:
   |> Skia.Picture.record()
 
 {:ok, info} = Skia.Picture.info(picture)
-{:ok, bytes} = Skia.Picture.to_bytes(picture)
-{:ok, picture} = Skia.Picture.from_bytes(bytes, 64, 64)
+{:ok, bytes} = Skia.Picture.encode(picture)
+{:ok, picture} = Skia.Picture.decode(bytes, width: 64, height: 64)
 {:ok, image} = Skia.Image.from_picture(picture)
 
 Skia.canvas(256, 64)
@@ -143,13 +143,13 @@ Skia.rect(doc, x: 0, y: 0, width: 128, height: 128, fill: Skia.picture_shader(pi
 
 ```elixir
 {:ok, families} = Skia.Font.families()
-{:ok, font} = Skia.Font.match("Inter", weight: 700, slant: :upright)
+{:ok, font} = Skia.Font.match_family("Inter", weight: 700, slant: :upright)
 {:ok, measurement} = Skia.measure_text("Hello", font: font, size: 24)
 ```
 
 Loaded images, fonts, and pictures keep decoded Skia handles in their native
 resources for repeated drawing, while pictures still retain serialized bytes for
-`Skia.Picture.to_bytes/1`.
+`Skia.Picture.encode/1`.
 
 ## Text
 
@@ -171,13 +171,14 @@ Skia.text(doc, "", x: 0, y: 32, paragraph_style: paragraph, spans: spans)
 ## Compact batches and benchmarking
 
 `Skia.to_batch/1` returns the normal map/struct batch consumed by the native renderer.
-`Skia.to_binary_batch/1` encodes that normal batch as ETF. `Skia.to_compact_batch/1`
-uses stable operation ids and compact color/path values, and `Skia.to_compact_binary/1`
-writes compressed ETF. Compact batches can also render through native compact decode:
+Encode normal batches directly with `:erlang.term_to_binary(Skia.to_batch(document))`.
+`Skia.Compact.encode/1` uses stable operation ids and compact color/path values, and
+`Skia.Compact.encode_binary/1` writes compressed ETF. Compact batches can also render
+through native compact decode:
 
 ```elixir
-{:ok, raw} = Skia.to_compact_raw(document)
-{:ok, png} = Skia.render_compact(document, format: :png)
+{:ok, raw} = Skia.Compact.to_raw(document)
+{:ok, png} = Skia.Compact.render(document, format: :png)
 
 {:ok, stats} = Skia.Benchmark.compare(document, iterations: 20)
 stats.normal_batch_bytes

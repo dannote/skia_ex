@@ -10,4 +10,4 @@ doc =
 {:ok, png} = Skia.render(doc, Skia.RenderOptions.new(format: :png))
 File.write!("svg_paths_render_options.png", png)
 
-IO.inspect(Skia.to_compact_batch(doc), label: "compact batch")
+IO.inspect(Skia.Compact.encode(doc), label: "compact batch")

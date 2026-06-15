@@ -120,7 +120,8 @@ defmodule SkiaTest do
     batch =
       Skia.canvas(8, 8)
       |> Skia.background(:white)
-      |> Skia.to_binary_batch()
+      |> Skia.to_batch()
+      |> :erlang.term_to_binary()
       |> :erlang.binary_to_term()
 
     assert %{width: 8, height: 8, commands: [%Skia.Command{op: :clear}]} = batch
@@ -235,9 +236,9 @@ defmodule SkiaTest do
     assert info.cull_rect == {0.0, 0.0, 4.0, 4.0}
     assert info.op_count >= 1
     assert info.bytes_used > 0
-    assert {:ok, bytes} = Skia.Picture.to_bytes(picture)
+    assert {:ok, bytes} = Skia.Picture.encode(picture)
     assert byte_size(bytes) > 0
-    assert {:ok, decoded} = Skia.Picture.from_bytes(bytes, 4, 4)
+    assert {:ok, decoded} = Skia.Picture.decode(bytes, width: 4, height: 4)
 
     document =
       Skia.canvas(8, 4)
@@ -259,8 +260,8 @@ defmodule SkiaTest do
   end
 
   test "returns explicit native error atoms for malformed native inputs" do
-    assert {:error, :invalid_picture} = Skia.Picture.from_bytes("not a picture", 4, 4)
-    assert {:error, :invalid_picture} = Skia.Picture.from_bytes("not a picture", 0, 4)
+    assert {:error, :invalid_picture} = Skia.Picture.decode("not a picture", 4, 4)
+    assert {:error, :invalid_picture} = Skia.Picture.decode("not a picture", width: 0, height: 4)
     assert {:error, :invalid_path} = Skia.Path.to_svg(Skia.Path.from_svg("not a path"))
 
     invalid = %Skia.Document{
@@ -720,8 +721,8 @@ defmodule SkiaTest do
       |> Skia.clip_circle(x: 1, y: 1, radius: 1, clip_op: :difference)
       |> Skia.rect(x: 0, y: 0, width: 4, height: 4, fill: :red)
 
-    assert {4, 4, commands} = Skia.to_compact_batch(document)
-    assert is_binary(Skia.to_compact_binary(document))
+    assert {4, 4, commands} = Skia.Compact.encode(document)
+    assert is_binary(Skia.Compact.encode_binary(document))
     assert [{clip_rect_id, [], _}, _, _] = commands
     assert clip_rect_id == Skia.Compact.op_id(:clip_rect)
     assert {:ok, raw} = Skia.to_raw(document)
@@ -749,9 +750,9 @@ defmodule SkiaTest do
       Skia.canvas(2, 1)
       |> Skia.background(:red)
 
-    assert {:ok, raw} = Skia.to_compact_raw(document)
+    assert {:ok, raw} = Skia.Compact.to_raw(document)
     assert raw.data == <<255, 0, 0, 255, 255, 0, 0, 255>>
-    assert {:ok, png} = Skia.render_compact(document, format: :png)
+    assert {:ok, png} = Skia.Compact.render(document, format: :png)
     assert <<137, 80, 78, 71, 13, 10, 26, 10, _::binary>> = png
   end
 
@@ -761,7 +762,7 @@ defmodule SkiaTest do
 
     case families do
       [family | _] ->
-        assert {:ok, font} = Skia.Font.match(family, weight: 400)
+        assert {:ok, font} = Skia.Font.match_family(family, weight: 400)
         assert inspect(font) =~ "#Skia.Font<family="
         assert {:ok, measurement} = Skia.measure_text("A", font: font, size: 12)
         assert measurement.width >= 0

@@ -245,51 +245,6 @@ defmodule Skia do
     end
   end
 
-  @doc "Renders the compact document representation through the native compact renderer."
-  @spec render_compact(Document.t(), keyword() | Skia.RenderOptions.t()) ::
-          {:ok, binary() | map()} | {:error, atom(), map()}
-  def render_compact(%Document{} = document, opts \\ []) do
-    options = if is_list(opts), do: Skia.RenderOptions.new(opts), else: opts
-
-    case options.format do
-      :png -> to_compact_png(document)
-      :raw -> to_compact_raw(document)
-      format -> {:error, :unsupported_format, %{format: format}}
-    end
-  end
-
-  @doc "Renders the document to PNG through the native compact renderer."
-  @spec to_compact_png(Document.t()) :: {:ok, binary()} | {:error, atom(), map()}
-  def to_compact_png(%Document{} = document) do
-    with :ok <- validate(document) do
-      batch = to_compact_batch(document)
-
-      case Skia.Native.render_compact_png(batch) do
-        {:ok, png} -> {:ok, png}
-        {:error, reason} -> {:error, reason, batch}
-      end
-    end
-  end
-
-  @doc "Renders the document to a raw RGBA buffer through the native compact renderer."
-  @spec to_compact_raw(Document.t()) ::
-          {:ok,
-           %{width: pos_integer(), height: pos_integer(), stride: pos_integer(), data: binary()}}
-          | {:error, atom(), map()}
-  def to_compact_raw(%Document{} = document) do
-    with :ok <- validate(document) do
-      batch = to_compact_batch(document)
-
-      case Skia.Native.render_compact_rgba(batch) do
-        {:ok, {width, height, stride, data}} ->
-          {:ok, %{width: width, height: height, stride: stride, data: data}}
-
-        {:error, reason} ->
-          {:error, reason, batch}
-      end
-    end
-  end
-
   @doc "Renders the document according to `Skia.RenderOptions`."
   @spec render(Document.t(), keyword() | Skia.RenderOptions.t()) ::
           {:ok, binary() | map()} | {:error, atom(), map()}
@@ -328,19 +283,6 @@ defmodule Skia do
     with :ok <- validate(document),
          do: render_native(document, &Skia.Native.render_webp(&1, quality))
   end
-
-  @doc "Returns a compact term representation `{width, height, commands}`."
-  @spec to_compact_batch(Document.t()) :: Skia.Compact.compact_batch()
-  def to_compact_batch(%Document{} = document), do: Skia.Compact.from_document(document)
-
-  @doc "Encodes the normalized command batch as an Erlang external term binary."
-  @spec to_binary_batch(Document.t()) :: binary()
-  def to_binary_batch(%Document{} = document),
-    do: document |> to_batch() |> :erlang.term_to_binary()
-
-  @doc "Encodes the compact command batch as an Erlang external term binary."
-  @spec to_compact_binary(Document.t()) :: binary()
-  def to_compact_binary(%Document{} = document), do: Skia.Compact.to_binary(document)
 
   @doc "Renders the document to a raw RGBA buffer."
   @spec to_raw(Document.t()) ::
