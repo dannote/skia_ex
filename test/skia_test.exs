@@ -164,6 +164,31 @@ defmodule SkiaTest do
     assert is_binary(error)
   end
 
+  test "renders runtime SkSL shaders with int uniforms and child shaders" do
+    shader =
+      Skia.Shader.sksl!(
+        """
+        uniform shader child;
+        uniform int enabled;
+        uniform float strength;
+
+        half4 main(vec2 p) {
+          half4 c = child.eval(p);
+          return enabled == 1 ? half4(c.r * strength, c.g, c.b, c.a) : half4(0.0, 0.0, 0.0, 1.0);
+        }
+        """,
+        uniforms: %{enabled: Skia.RuntimeEffect.int(1), strength: 1.0},
+        children: %{child: Skia.Shader.color(:red)}
+      )
+
+    document =
+      Skia.canvas(4, 4)
+      |> Skia.rect(x: 0, y: 0, width: 4, height: 4, fill: shader)
+
+    assert {:ok, raw} = Skia.to_raw(document)
+    assert <<255, 0, 0, 255, _::binary>> = raw.data
+  end
+
   test "renders vertices meshes" do
     vertices =
       Skia.Vertices.new([{1, 1}, {7, 1}, {4, 7}],

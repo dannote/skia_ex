@@ -257,8 +257,10 @@ defmodule Skia.Command do
   end
 
   defp normalize_color!(%Skia.Shader.RuntimeEffect{} = shader) do
-    {:runtime_effect_shader, shader.effect, normalize_uniforms!(shader.uniforms),
-     normalize_optional_matrix!(shader.matrix)}
+    {float_uniforms, int_uniforms} = normalize_uniforms!(shader.uniforms)
+
+    {:runtime_effect_shader, shader.effect, float_uniforms, int_uniforms,
+     normalize_children!(shader.children), normalize_optional_matrix!(shader.matrix)}
   end
 
   defp normalize_color!(%Skia.Shader.ImageShader{} = shader) do
@@ -278,7 +280,9 @@ defmodule Skia.Command do
   defp normalize_color!(
          {:runtime_effect_shader, %Skia.RuntimeEffect{} = effect, uniforms, matrix}
        ) do
-    {:runtime_effect_shader, effect, normalize_uniforms!(uniforms),
+    {float_uniforms, int_uniforms} = normalize_uniforms!(uniforms)
+
+    {:runtime_effect_shader, effect, float_uniforms, int_uniforms, [],
      normalize_optional_matrix!(matrix)}
   end
 
@@ -422,16 +426,42 @@ defmodule Skia.Command do
     do: uniforms |> Map.to_list() |> normalize_uniforms!()
 
   defp normalize_uniforms!(uniforms) when is_list(uniforms) do
-    Enum.map(uniforms, fn {name, value} -> {to_string(name), normalize_uniform_value!(value)} end)
+    {ints, floats} =
+      Enum.split_with(uniforms, fn {_name, value} -> match?({:int, _}, value) end)
+
+    {
+      Enum.map(floats, fn
+        {name, {:float, value}} -> {to_string(name), normalize_uniform_float!(value)}
+        {name, value} -> {to_string(name), normalize_uniform_float!(value)}
+      end),
+      Enum.map(ints, fn {name, {:int, value}} ->
+        {to_string(name), normalize_uniform_int!(value)}
+      end)
+    }
   end
 
-  defp normalize_uniform_value!(value) when is_number(value), do: [normalize_number!(value)]
+  defp normalize_uniform_float!(value) when is_number(value), do: [normalize_number!(value)]
 
-  defp normalize_uniform_value!(tuple) when is_tuple(tuple),
-    do: tuple |> Tuple.to_list() |> normalize_uniform_value!()
+  defp normalize_uniform_float!(tuple) when is_tuple(tuple),
+    do: tuple |> Tuple.to_list() |> normalize_uniform_float!()
 
-  defp normalize_uniform_value!(values) when is_list(values),
+  defp normalize_uniform_float!(values) when is_list(values),
     do: Enum.map(values, &normalize_number!/1)
+
+  defp normalize_uniform_int!(value) when is_integer(value), do: [value]
+
+  defp normalize_uniform_int!(tuple) when is_tuple(tuple),
+    do: tuple |> Tuple.to_list() |> normalize_uniform_int!()
+
+  defp normalize_uniform_int!(values) when is_list(values),
+    do: Enum.map(values, fn value when is_integer(value) -> value end)
+
+  defp normalize_children!(children) when is_map(children),
+    do: children |> Map.to_list() |> normalize_children!()
+
+  defp normalize_children!(children) when is_list(children) do
+    Enum.map(children, fn {name, shader} -> {to_string(name), normalize_color!(shader)} end)
+  end
 
   defp normalize_color_filter!(%Skia.ColorFilter.Blend{color: color, blend_mode: blend_mode})
        when is_atom(blend_mode) do

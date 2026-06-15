@@ -199,6 +199,22 @@ shader = Skia.RuntimeEffect.shader(effect, uniforms: %{time: 1.2, resolution: {8
 Skia.rect(doc, x: 0, y: 0, width: 800, height: 600, fill: shader)
 ```
 
+Runtime effects also support int uniforms, child shaders, and one-off compile helpers:
+
+```elixir
+shader =
+  Skia.Shader.sksl!("""
+  uniform shader child;
+  uniform int enabled;
+
+  half4 main(vec2 p) {
+    return enabled == 1 ? child.eval(p) : half4(0, 0, 0, 1);
+  }
+  """,
+  uniforms: %{enabled: Skia.RuntimeEffect.int(1)},
+  children: %{child: Skia.Shader.color(:red)})
+```
+
 ## Vertices
 
 Draw triangle meshes with per-vertex colors:

@@ -100,9 +100,10 @@ defmodule Skia.Shader.RuntimeEffect do
   @type t :: %__MODULE__{
           effect: Skia.RuntimeEffect.t(),
           uniforms: map() | keyword(),
+          children: map() | keyword(),
           matrix: tuple() | nil
         }
-  defstruct [:effect, uniforms: %{}, matrix: nil]
+  defstruct [:effect, uniforms: %{}, children: %{}, matrix: nil]
 end
 
 defmodule Skia.Shader.GradientStop do
@@ -186,6 +187,15 @@ defmodule Skia.Shader do
   @spec runtime_effect(Skia.RuntimeEffect.t(), keyword()) :: Skia.Shader.RuntimeEffect.t()
   def runtime_effect(%Skia.RuntimeEffect{} = effect, opts \\ []),
     do: Skia.RuntimeEffect.shader(effect, opts)
+
+  @doc "Compiles a SkSL runtime effect and returns a shader paint value."
+  @spec sksl!(String.t(), keyword()) :: Skia.Shader.RuntimeEffect.t()
+  def sksl!(source, opts \\ []) when is_binary(source) do
+    case Skia.RuntimeEffect.compile(source) do
+      {:ok, effect} -> Skia.RuntimeEffect.shader(effect, opts)
+      {:error, reason} -> raise ArgumentError, "invalid SkSL runtime effect: #{reason}"
+    end
+  end
 
   @doc "Creates an image shader paint value."
   @spec image(Skia.Image.t(), keyword()) :: Skia.Shader.ImageShader.t()

@@ -19,9 +19,16 @@ defmodule Skia.RuntimeEffect do
     %Skia.Shader.RuntimeEffect{
       effect: effect,
       uniforms: Keyword.get(opts, :uniforms, %{}),
+      children: Keyword.get(opts, :children, %{}),
       matrix: Keyword.get(opts, :matrix)
     }
   end
+
+  @spec int(integer() | [integer()] | tuple()) :: {:int, integer() | [integer()] | tuple()}
+  def int(value), do: {:int, value}
+
+  @spec float(number() | [number()] | tuple()) :: {:float, number() | [number()] | tuple()}
+  def float(value), do: {:float, value}
 
   defimpl Inspect do
     import Inspect.Algebra

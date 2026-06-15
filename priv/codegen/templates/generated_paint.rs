@@ -1,3 +1,53 @@
+fn runtime_uniform_data(
+    effect: &RuntimeEffect,
+    float_uniforms: Vec<(String, Vec<f64>)>,
+    int_uniforms: Vec<(String, Vec<i64>)>,
+) -> NifResult<Data> {
+    let mut bytes = vec![0_u8; effect.uniform_size()];
+
+    for (name, values) in float_uniforms {
+        let uniform = effect.find_uniform(&name).ok_or(rustler::Error::BadArg)?;
+        let offset = uniform.offset();
+        let byte_len = values.len() * std::mem::size_of::<f32>();
+        if offset + byte_len > bytes.len() || byte_len > uniform.size_in_bytes() {
+            return Err(rustler::Error::BadArg);
+        }
+        for (index, value) in values.into_iter().enumerate() {
+            let start = offset + index * std::mem::size_of::<f32>();
+            bytes[start..start + 4].copy_from_slice(&(value as f32).to_ne_bytes());
+        }
+    }
+
+    for (name, values) in int_uniforms {
+        let uniform = effect.find_uniform(&name).ok_or(rustler::Error::BadArg)?;
+        let offset = uniform.offset();
+        let byte_len = values.len() * std::mem::size_of::<i32>();
+        if offset + byte_len > bytes.len() || byte_len > uniform.size_in_bytes() {
+            return Err(rustler::Error::BadArg);
+        }
+        for (index, value) in values.into_iter().enumerate() {
+            let start = offset + index * std::mem::size_of::<i32>();
+            bytes[start..start + 4].copy_from_slice(&(value as i32).to_ne_bytes());
+        }
+    }
+
+    Ok(Data::new_copy(&bytes))
+}
+
+fn runtime_children(effect: &RuntimeEffect, children: Vec<(String, Term)>) -> NifResult<Vec<ChildPtr>> {
+    let effect_children = effect.children();
+    let mut ordered: Vec<Option<ChildPtr>> = vec![None; effect_children.len()];
+
+    for (name, child_term) in children {
+        let child = effect.find_child(&name).ok_or(rustler::Error::BadArg)?;
+        let paint = decode_paint(child_term)?;
+        let shader = paint.shader().ok_or(rustler::Error::BadArg)?;
+        ordered[child.index()] = Some(ChildPtr::from(shader));
+    }
+
+    ordered.into_iter().collect::<Option<Vec<_>>>().ok_or(rustler::Error::BadArg)
+}
+
 fn decode_paint(term: Term) -> NifResult<Paint> {
     if let Ok(color) = decode_color(term) {
         return Ok(fill_paint(color));
@@ -110,20 +160,17 @@ fn decode_paint(term: Term) -> NifResult<Paint> {
         }
     }
 
-    if let Ok((tag, effect_term, uniforms, matrix_term)) =
-        term.decode::<(Atom, Term, Vec<(String, Vec<f64>)>, Term)>()
+    if let Ok((tag, effect_term, float_uniforms, int_uniforms, children, matrix_term)) =
+        term.decode::<(Atom, Term, Vec<(String, Vec<f64>)>, Vec<(String, Vec<i64>)>, Vec<(String, Term)>, Term)>()
     {
         if tag == atoms::runtime_effect_shader() {
             let effect = runtime_effect_from_term(effect_term)?;
-            let mut builder = skia_safe::runtime_effect::RuntimeShaderBuilder::new(effect);
-            for (name, values) in uniforms {
-                let values: Vec<f32> = values.into_iter().map(|value| value as f32).collect();
-                builder.set_uniform_float(name, &values).map_err(|_| rustler::Error::BadArg)?;
-            }
-            let matrix = optional_matrix_from_term(matrix_term)?.unwrap_or_else(Matrix::default);
+            let uniforms = runtime_uniform_data(&effect, float_uniforms, int_uniforms)?;
+            let children = runtime_children(&effect, children)?;
+            let matrix = optional_matrix_from_term(matrix_term)?;
             let mut paint = Paint::default();
             paint.set_anti_alias(true).set_style(PaintStyle::Fill);
-            paint.set_shader(builder.make_shader(&matrix).ok_or(rustler::Error::BadArg)?);
+            paint.set_shader(effect.make_shader(uniforms, children.as_slice(), matrix.as_ref()).ok_or(rustler::Error::BadArg)?);
             return Ok(paint);
         }
     }
