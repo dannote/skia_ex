@@ -3,33 +3,24 @@
 fn draw_text_impl<'a>(
     surface: &mut skia_safe::Surface,
     args: Vec<Term<'a>>,
-    text_opts: generated_opts::TextOpts<'a>,
-    _opts: &[(Atom, Term<'a>)],
+    opts: generated_opts::TextOpts<'a>,
+    _raw_opts: &[(Atom, Term<'a>)],
 ) -> NifResult<()> {
     let text = args.first().ok_or(rustler::Error::BadArg)?.decode::<String>()?;
-    let size = text_opts.size.unwrap_or(16.0);
-    let mut font = match text_opts.font {
+    let size = opts.size.unwrap_or(16.0);
+    let mut font = match opts.font {
         Some(term) => font_from_term(term, size)?,
         None => Font::default(),
     };
     font.set_size(size);
-    let paint = match text_opts.fill {
+    let paint = match opts.fill {
         Some(term) => fill_paint(decode_color(term)?),
         None => fill_paint(Color::BLACK),
     };
-    if let Some(width) = text_opts.width {
-        draw_paragraph_text(
-            surface,
-            &text,
-            text_opts.x,
-            text_opts.y,
-            width,
-            size,
-            &paint,
-            &text_opts,
-        )?;
+    if let Some(width) = opts.width {
+        draw_paragraph_text(surface, &text, opts.x, opts.y, width, size, &paint, &opts)?;
     } else {
-        surface.canvas().draw_str(text, (text_opts.x, text_opts.y), &font, &paint);
+        surface.canvas().draw_str(text, (opts.x, opts.y), &font, &paint);
     }
     Ok(())
 }
@@ -41,24 +32,24 @@ fn draw_paragraph_text<'a>(
     width: f32,
     size: f32,
     paint: &Paint,
-    text_opts: &generated_opts::TextOpts<'a>,
+    opts: &generated_opts::TextOpts<'a>,
 ) -> NifResult<()> {
     let mut text_style = TextStyle::new();
     text_style.set_font_size(size);
     text_style.set_color(paint.color());
-    if let Some(ref family) = text_opts.font_family {
+    if let Some(ref family) = opts.font_family {
         text_style.set_font_families(&[family]);
     }
-    if let Some(line_height) = text_opts.line_height {
+    if let Some(line_height) = opts.line_height {
         text_style.set_height(line_height / size);
         text_style.set_height_override(true);
     }
     let mut paragraph_style = ParagraphStyle::new();
     paragraph_style.set_text_style(&text_style);
-    if let Some(align) = text_opts.align {
+    if let Some(align) = opts.align {
         paragraph_style.set_text_align(decode_text_align(align)?);
     }
-    if let Some(direction) = text_opts.direction {
+    if let Some(direction) = opts.direction {
         paragraph_style.set_text_direction(decode_text_direction(direction)?);
     }
     let mut font_collection = FontCollection::new();

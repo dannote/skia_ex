@@ -6,7 +6,9 @@ defmodule Skia.Codegen do
   alias Skia.CommandSpec.Clips
   alias Skia.CommandSpec.Images
   alias Skia.CommandSpec.Layers
+  alias Skia.CommandSpec.Paths
   alias Skia.CommandSpec.Shapes
+  alias Skia.CommandSpec.Text
   alias Skia.CommandSpec.Transforms
 
   @spec generated_targets() :: [{atom(), keyword()}]
@@ -504,12 +506,6 @@ defmodule Skia.Codegen do
     |> RustQ.render_file!(preamble: generated_rust_preamble(), splice: [items: resources])
   end
 
-  defp render_template_file(name) do
-    name
-    |> template_path()
-    |> RustQ.render_file!(preamble: generated_rust_preamble())
-  end
-
   @spec generated_layers() :: String.t()
   def generated_layers do
     Layers.commands()
@@ -712,7 +708,10 @@ defmodule Skia.Codegen do
   end
 
   @spec generated_text() :: String.t()
-  def generated_text, do: render_template_file("generated_text.rs")
+  def generated_text do
+    items = generated_body_impls(Text.commands(), :text_draw) ++ text_helper_impls()
+    render_items(items, "generated_text.rs")
+  end
 
   @spec generated_images() :: String.t()
   def generated_images do
@@ -751,7 +750,121 @@ defmodule Skia.Codegen do
   end
 
   @spec generated_draw_paths() :: String.t()
-  def generated_draw_paths, do: render_template_file("generated_draw_paths.rs")
+  def generated_draw_paths do
+    Paths.commands()
+    |> generated_body_impls(:path_draw)
+    |> render_items("generated_draw_paths.rs")
+  end
+
+  defp generated_body_impls(commands, key) do
+    commands
+    |> Enum.filter(fn {_name, spec} -> Keyword.has_key?(spec, key) end)
+    |> Enum.map(fn {name, spec} -> body_impl(name, spec, key) end)
+  end
+
+  defp body_impl(name, spec, key) do
+    handler = Keyword.fetch!(spec, :handler)
+    opts_type = name |> Atom.to_string() |> Macro.camelize() |> Kernel.<>("Opts")
+    command_body = Keyword.fetch!(spec, key)
+    setup = command_body |> Keyword.get(:setup, []) |> Enum.join("\n    ")
+    body = command_body |> Keyword.fetch!(:body) |> Enum.join("\n    ")
+    setup = if setup == "", do: "", else: setup <> "\n\n    "
+
+    raw_opts_name =
+      if String.contains?(setup <> body, "raw_opts"), do: "raw_opts", else: "_raw_opts"
+
+    Rust.item("""
+    fn #{handler}_impl<'a>(
+        surface: &mut skia_safe::Surface,
+        #{body_args(spec)}opts: generated_opts::#{opts_type}<'a>,
+        #{raw_opts_name}: &[(Atom, Term<'a>)],
+    ) -> NifResult<()> {
+        #{setup}#{body}
+        Ok(())
+    }
+    """)
+  end
+
+  defp body_args(spec) do
+    if Keyword.get(spec, :args, []) == [] do
+      ""
+    else
+      "args: Vec<Term<'a>>,\n    "
+    end
+  end
+
+  defp text_helper_impls do
+    [
+      Rust.item("""
+      fn draw_paragraph_text<'a>(
+          surface: &mut skia_safe::Surface,
+          text: &str,
+          x: f32,
+          y: f32,
+          width: f32,
+          size: f32,
+          paint: &Paint,
+          opts: &generated_opts::TextOpts<'a>,
+      ) -> NifResult<()> {
+          let mut text_style = TextStyle::new();
+          text_style.set_font_size(size);
+          text_style.set_color(paint.color());
+          if let Some(ref family) = opts.font_family {
+              text_style.set_font_families(&[family]);
+          }
+          if let Some(line_height) = opts.line_height {
+              text_style.set_height(line_height / size);
+              text_style.set_height_override(true);
+          }
+
+          let mut paragraph_style = ParagraphStyle::new();
+          paragraph_style.set_text_style(&text_style);
+          if let Some(align) = opts.align {
+              paragraph_style.set_text_align(decode_text_align(align)?);
+          }
+          if let Some(direction) = opts.direction {
+              paragraph_style.set_text_direction(decode_text_direction(direction)?);
+          }
+
+          let mut font_collection = FontCollection::new();
+          font_collection.set_default_font_manager(FontMgr::default(), None);
+          let mut paragraph_builder = ParagraphBuilder::new(&paragraph_style, font_collection);
+          paragraph_builder.push_style(&text_style);
+          paragraph_builder.add_text(text);
+          let mut paragraph = paragraph_builder.build();
+          paragraph.layout(width);
+          paragraph.paint(surface.canvas(), Point::new(x, y));
+          Ok(())
+      }
+      """),
+      Rust.item("""
+      fn decode_text_align(value: Atom) -> NifResult<TextAlign> {
+          if value == atoms::center() {
+              Ok(TextAlign::Center)
+          } else if value == atoms::right() {
+              Ok(TextAlign::Right)
+          } else if value == atoms::justify() {
+              Ok(TextAlign::Justify)
+          } else if value == atoms::left() {
+              Ok(TextAlign::Left)
+          } else {
+              Err(rustler::Error::BadArg)
+          }
+      }
+      """),
+      Rust.item("""
+      fn decode_text_direction(value: Atom) -> NifResult<TextDirection> {
+          if value == atoms::rtl() {
+              Ok(TextDirection::RTL)
+          } else if value == atoms::ltr() {
+              Ok(TextDirection::LTR)
+          } else {
+              Err(rustler::Error::BadArg)
+          }
+      }
+      """)
+    ]
+  end
 
   @spec generated_clips() :: String.t()
   def generated_clips do
