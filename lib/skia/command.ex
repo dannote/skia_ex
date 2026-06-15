@@ -82,6 +82,7 @@ defmodule Skia.Command do
   defp normalize_value!(_name, _key, :color, value), do: normalize_color!(value)
   defp normalize_value!(_name, _key, :path, %Skia.Path{} = value), do: value
   defp normalize_value!(_name, _key, :image, %Skia.Image{} = value), do: value
+  defp normalize_value!(_name, _key, :picture, %Skia.Picture{} = value), do: value
   defp normalize_value!(_name, _key, :font, %Skia.Font{} = value), do: value
   defp normalize_value!(_name, _key, :image_filter, value), do: normalize_image_filter!(value)
   defp normalize_value!(_name, _key, :color_filter, value), do: normalize_color_filter!(value)

@@ -12,6 +12,7 @@
 | `line` | — | `from: {number, number}` required<br>`to: {number, number}` required<br>`stroke: color` required<br>`stroke_width: number`<br>`stroke_cap: stroke_cap`<br>`stroke_join: stroke_join`<br>`stroke_miter: number`<br>`blend_mode: blend_mode` | — | `skia_safe::Canvas::draw_line` |
 | `text` | `text: string` | `x: number` required<br>`y: number` required<br>`width: number`<br>`size: number`<br>`fill: color`<br>`font: font`<br>`weight: integer`<br>`align: atom`<br>`direction: atom`<br>`font_family: string`<br>`line_height: number`<br>`spans: term` | `size: 16`<br>`fill: :black` | `skia_safe::Canvas::draw_str`<br>`skia_safe::Font::measure_str` |
 | `image` | `image: image` | `x: number` required<br>`y: number` required<br>`width: number`<br>`height: number`<br>`source: {number, number, number, number}`<br>`opacity: number`<br>`sampling: sampling_options`<br>`blend_mode: blend_mode` | — | `skia_safe::Canvas::draw_image_with_sampling_options`<br>`skia_safe::Canvas::draw_image_rect_with_sampling_options` |
+| `picture` | `picture: picture` | `x: number`<br>`y: number`<br>`opacity: number`<br>`blend_mode: blend_mode` | `x: 0`<br>`y: 0` | `skia_safe::Canvas::draw_picture` |
 | `save` | — | — | — | `skia_safe::Canvas::save` |
 | `save_layer` | — | `opacity: number`<br>`bounds: {number, number, number, number}`<br>`blend_mode: blend_mode`<br>`blur: number`<br>`image_filter: image_filter` | `opacity: 1.0` | `skia_safe::Canvas::save_layer`<br>`skia_safe::ImageFilter::blur` |
 | `restore` | — | — | — | `skia_safe::Canvas::restore` |
@@ -112,6 +113,13 @@
 > [`Path`] contains an array of path contour, each of which may be open or closed.
 > In `paint`: [`crate::paint::Style`] determines if [`RRect`] is stroked or filled:
 > if filled, [`crate::PathFillType`] determines whether path contour describes inside or
+
+### `skia_safe::Canvas::draw_picture`
+
+> Draws [`Picture`] picture, using clip and [`Matrix`]; transforming picture with
+> [`Matrix`] matrix, if provided; and use [`Paint`] `paint` alpha, [`crate::ColorFilter`],
+> [`ImageFilter`], and [`BlendMode`], if provided.
+> If paint is not `None`, then the picture is always drawn into a temporary layer before
 
 ### `skia_safe::Canvas::draw_rect`
 

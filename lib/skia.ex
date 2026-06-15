@@ -216,6 +216,22 @@ defmodule Skia do
     %{width: document.width, height: document.height, commands: commands(document)}
   end
 
+  @doc "Records the document into a reusable Skia picture."
+  @spec record_picture(Document.t()) :: {:ok, Skia.Picture.t()} | {:error, atom(), map()}
+  def record_picture(%Document{} = document) do
+    with :ok <- validate(document) do
+      batch = to_batch(document)
+
+      case Skia.Native.record_picture(batch) do
+        {:ok, ref} ->
+          {:ok, %Skia.Picture{ref: ref, width: document.width, height: document.height}}
+
+        {:error, reason} ->
+          {:error, reason, batch}
+      end
+    end
+  end
+
   @doc "Renders the document according to `Skia.RenderOptions`."
   @spec render(Document.t(), keyword() | Skia.RenderOptions.t()) ::
           {:ok, binary() | map()} | {:error, atom(), map()}

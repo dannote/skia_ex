@@ -18,3 +18,14 @@ fn decode_encoded_font_ref<'a>(term: Term<'a>) -> NifResult<ResourceArc<EncodedF
     term.map_get(Atom::from_bytes(term.get_env(), b"ref")?)?
         .decode::<ResourceArc<EncodedFont>>()
 }
+struct EncodedPicture {
+    pub bytes: Vec<u8>,
+}
+#[rustler::resource_impl]
+impl rustler::Resource for EncodedPicture {}
+fn decode_encoded_picture_ref<'a>(
+    term: Term<'a>,
+) -> NifResult<ResourceArc<EncodedPicture>> {
+    term.map_get(Atom::from_bytes(term.get_env(), b"ref")?)?
+        .decode::<ResourceArc<EncodedPicture>>()
+}

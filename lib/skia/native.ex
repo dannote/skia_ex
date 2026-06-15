@@ -3,7 +3,21 @@
 defmodule Skia.Native do
   @moduledoc false
 
-  use Rustler, otp_app: :skia, crate: :skia_native
+  version = Mix.Project.config()[:version]
+
+  use RustlerPrecompiled,
+    otp_app: :skia,
+    crate: "skia_native",
+    base_url: "https://github.com/dannote/skia_ex/releases/download/v#{version}",
+    force_build: Mix.env() in [:dev, :test] or System.get_env("SKIA_EX_BUILD") in ["1", "true"],
+    targets: ~w(
+      aarch64-apple-darwin
+      aarch64-unknown-linux-gnu
+      x86_64-apple-darwin
+      x86_64-unknown-linux-gnu
+      x86_64-unknown-linux-musl
+    ),
+    version: version
 
   def render_png(_batch), do: :erlang.nif_error(:nif_not_loaded)
   def render_rgba(_batch), do: :erlang.nif_error(:nif_not_loaded)
@@ -15,5 +29,8 @@ defmodule Skia.Native do
   def crop_image(_image, _source), do: :erlang.nif_error(:nif_not_loaded)
   def load_font(_bytes), do: :erlang.nif_error(:nif_not_loaded)
   def measure_text(_text, _font, _size), do: :erlang.nif_error(:nif_not_loaded)
+  def record_picture(_batch), do: :erlang.nif_error(:nif_not_loaded)
+  def decode_picture(_bytes), do: :erlang.nif_error(:nif_not_loaded)
+  def encode_picture(_picture), do: :erlang.nif_error(:nif_not_loaded)
   def path_to_svg(_path_term), do: :erlang.nif_error(:nif_not_loaded)
 end

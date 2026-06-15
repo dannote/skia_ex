@@ -9,7 +9,7 @@ defmodule Skia.CommandSpec.Layers do
         handler: :draw_save,
         args: [],
         opts: [],
-        layer: [body: [{:call, "surface.canvas()", :save, []}]],
+        layer: [body: [{:call, "canvas", :save, []}]],
         native_refs: ["skia_safe::Canvas::save"]
       ],
       save_layer: [
@@ -45,7 +45,7 @@ defmodule Skia.CommandSpec.Layers do
             {:let_mut, "rec", "SaveLayerRec::default().paint(&paint)"},
             {:if_let, "Some(ref bounds)", "bounds", [{:assign, "rec", "rec.bounds(bounds)"}]}
           ],
-          body: [{:call, "surface.canvas()", :save_layer, [{:ref, "rec"}]}]
+          body: [{:call, "canvas", :save_layer, [{:ref, "rec"}]}]
         ],
         native_refs: ["skia_safe::Canvas::save_layer", "skia_safe::ImageFilter::blur"]
       ],
@@ -53,7 +53,7 @@ defmodule Skia.CommandSpec.Layers do
         handler: :draw_restore,
         args: [],
         opts: [],
-        layer: [body: [{:call, "surface.canvas()", :restore, []}]],
+        layer: [body: [{:call, "canvas", :restore, []}]],
         native_refs: ["skia_safe::Canvas::restore"]
       ],
       push_style: [args: [], opts: [[name: :style, type: :term, required: true]]],

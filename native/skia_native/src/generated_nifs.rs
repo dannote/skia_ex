@@ -60,6 +60,18 @@ fn measure_text<'a>(
     measure_text_impl(env, text, font_term, size)
 }
 #[rustler::nif(schedule = "DirtyCpu")]
+fn record_picture<'a>(env: Env<'a>, batch: Term<'a>) -> NifResult<Term<'a>> {
+    record_picture_impl(env, batch)
+}
+#[rustler::nif(schedule = "DirtyCpu")]
+fn decode_picture<'a>(env: Env<'a>, bytes: Binary<'a>) -> NifResult<Term<'a>> {
+    decode_picture_impl(env, bytes)
+}
+#[rustler::nif(schedule = "DirtyCpu")]
+fn encode_picture<'a>(env: Env<'a>, picture_term: Term<'a>) -> NifResult<Term<'a>> {
+    encode_picture_impl(env, picture_term)
+}
+#[rustler::nif(schedule = "DirtyCpu")]
 fn path_to_svg<'a>(env: Env<'a>, path_term: Term<'a>) -> NifResult<Term<'a>> {
     path_to_svg_impl(env, path_term)
 }

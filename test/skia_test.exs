@@ -221,6 +221,28 @@ defmodule SkiaTest do
     assert <<137, 80, 78, 71, 13, 10, 26, 10, _rest::binary>> = rendered
   end
 
+  test "records and draws reusable Skia pictures" do
+    source =
+      Skia.canvas(4, 4)
+      |> Skia.background(:transparent)
+      |> Skia.rect(x: 0, y: 0, width: 4, height: 4, fill: :red)
+
+    assert {:ok, picture} = Skia.Picture.record(source)
+    assert picture.width == 4
+    assert picture.height == 4
+    assert {:ok, bytes} = Skia.Picture.to_bytes(picture)
+    assert byte_size(bytes) > 0
+    assert {:ok, decoded} = Skia.Picture.from_bytes(bytes, 4, 4)
+
+    document =
+      Skia.canvas(8, 4)
+      |> Skia.background(:transparent)
+      |> Skia.picture(decoded, x: 4, y: 0)
+
+    assert {:ok, raw} = Skia.to_raw(document)
+    assert <<0, 0, 0, 0, _::binary-size(12), 255, 0, 0, 255, _::binary>> = raw.data
+  end
+
   test "supports image encode resize and crop helpers" do
     source =
       Skia.canvas(2, 1)

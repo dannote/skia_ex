@@ -118,6 +118,23 @@ svg_path = Skia.Path.from_svg("M0 0L100 0L100 100Z")
 {:ok, svg} = Skia.Path.to_svg(svg_path)
 ```
 
+## Pictures
+
+Record reusable drawing subtrees as Skia pictures and replay them later:
+
+```elixir
+{:ok, picture} =
+  Skia.canvas(64, 64)
+  |> Skia.rect(x: 0, y: 0, width: 64, height: 64, fill: :red)
+  |> Skia.Picture.record()
+
+{:ok, bytes} = Skia.Picture.to_bytes(picture)
+{:ok, picture} = Skia.Picture.from_bytes(bytes, 64, 64)
+
+Skia.canvas(256, 64)
+|> Skia.picture(picture, x: 96, y: 0, opacity: 0.75)
+```
+
 ## Text
 
 Use direct options for convenience or reusable style structs for paragraph text:
@@ -140,6 +157,9 @@ Skia.text(doc, "", x: 0, y: 32, paragraph_style: paragraph, spans: spans)
 ```sh
 mix deps.get
 mix ci
+
+# Force local Rustler build instead of downloading a precompiled NIF.
+SKIA_EX_BUILD=1 mix compile
 ```
 
 See `docs/commands.md` for the generated command reference.

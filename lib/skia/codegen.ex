@@ -78,6 +78,7 @@ defmodule Skia.Codegen do
     :invalid_batch,
     :invalid_image,
     :invalid_font,
+    :invalid_picture,
     "nil",
     :render_failed,
     :unsupported_format,
@@ -209,6 +210,21 @@ defmodule Skia.Codegen do
       returns: "NifResult<Term<'a>>",
       lifetime: :a
     ],
+    record_picture: [
+      args: [env: "Env<'a>", batch: "Term<'a>"],
+      returns: "NifResult<Term<'a>>",
+      lifetime: :a
+    ],
+    decode_picture: [
+      args: [env: "Env<'a>", bytes: "Binary<'a>"],
+      returns: "NifResult<Term<'a>>",
+      lifetime: :a
+    ],
+    encode_picture: [
+      args: [env: "Env<'a>", picture_term: "Term<'a>"],
+      returns: "NifResult<Term<'a>>",
+      lifetime: :a
+    ],
     path_to_svg: [
       args: [env: "Env<'a>", path_term: "Term<'a>"],
       returns: "NifResult<Term<'a>>",
@@ -256,7 +272,21 @@ defmodule Skia.Codegen do
     defmodule Skia.Native do
       @moduledoc false
 
-      use Rustler, otp_app: :skia, crate: :skia_native
+      version = Mix.Project.config()[:version]
+
+      use RustlerPrecompiled,
+        otp_app: :skia,
+        crate: "skia_native",
+        base_url: "https://github.com/dannote/skia_ex/releases/download/v\#{version}",
+        force_build: Mix.env() in [:dev, :test] or System.get_env("SKIA_EX_BUILD") in ["1", "true"],
+        targets: ~w(
+          aarch64-apple-darwin
+          aarch64-unknown-linux-gnu
+          x86_64-apple-darwin
+          x86_64-unknown-linux-gnu
+          x86_64-unknown-linux-musl
+        ),
+        version: version
 
     #{functions}
     end
@@ -268,6 +298,7 @@ defmodule Skia.Codegen do
   defp elixir_arg_name(:env), do: :env
   defp elixir_arg_name(:image_term), do: :image
   defp elixir_arg_name(:font_term), do: :font
+  defp elixir_arg_name(:picture_term), do: :picture
   defp elixir_arg_name(name), do: name
 
   @spec generated_native_nifs() :: String.t()
@@ -397,7 +428,7 @@ defmodule Skia.Codegen do
       Skia.CommandSpec.all()
       |> Enum.flat_map(fn {name, spec} ->
         case Keyword.fetch(spec, :handler) do
-          {:ok, handler} -> [{Keyword.get(spec, :op, name), "#{handler}(surface, command)"}]
+          {:ok, handler} -> [{Keyword.get(spec, :op, name), "#{handler}(canvas, command)"}]
           :error -> []
         end
       end)
@@ -406,7 +437,7 @@ defmodule Skia.Codegen do
 
     item =
       RustQ.Rustler.atom_dispatch(:draw_command,
-        args: [surface: "&mut skia_safe::Surface", command: :Term],
+        args: [canvas: "&skia_safe::Canvas", command: :Term],
         on: "command.map_get(atoms::op())?.decode::<Atom>()?",
         cases: cases
       )
@@ -543,7 +574,7 @@ defmodule Skia.Codegen do
         else: ""
 
     call_args =
-      ["surface"]
+      ["canvas"]
       |> append_if(Keyword.get(spec, :args), "args")
       |> append_if(opts, "decoded_opts")
       |> append_if(opts, "&opts")
@@ -561,7 +592,7 @@ defmodule Skia.Codegen do
       bind: [handler: name, call: Rust.expr("#{name}_impl(#{call_args})")],
       splice: [
         args: [
-          Rust.arg(:surface, "&mut skia_safe::Surface"),
+          Rust.arg(:canvas, "&skia_safe::Canvas"),
           Rust.arg(command_arg(spec), "Term<'a>")
         ],
         setup: setup
@@ -595,6 +626,10 @@ defmodule Skia.Codegen do
         RustQ.Rustler.resource_handle(:EncodedFont,
           fields: [bytes: "Vec<u8>"],
           decoder: :decode_encoded_font_ref
+        ),
+        RustQ.Rustler.resource_handle(:EncodedPicture,
+          fields: [bytes: "Vec<u8>"],
+          decoder: :decode_encoded_picture_ref
         )
       ]
       |> List.flatten()
@@ -626,13 +661,11 @@ defmodule Skia.Codegen do
 
   defp rect_shape_helper do
     Rust.item("""
-    fn draw_rect_shape(surface: &mut skia_safe::Surface, rect: Rect, radius: f32, paint: &Paint) {
+    fn draw_rect_shape(canvas: &skia_safe::Canvas, rect: Rect, radius: f32, paint: &Paint) {
         if radius > 0.0 {
-            surface
-                .canvas()
-                .draw_rrect(RRect::new_rect_xy(rect, radius, radius), paint);
+            canvas.draw_rrect(RRect::new_rect_xy(rect, radius, radius), paint);
         } else {
-            surface.canvas().draw_rect(rect, paint);
+            canvas.draw_rect(rect, paint);
         }
     }
     """)
@@ -751,7 +784,7 @@ defmodule Skia.Codegen do
   defp body_impl_params(name, spec, source) do
     opts = Keyword.get(spec, :opts, [])
 
-    ["surface: &mut skia_safe::Surface"]
+    ["canvas: &skia_safe::Canvas"]
     |> append_if(Keyword.get(spec, :args, []) != [], "args: Vec<Term<'a>>")
     |> append_if(opts != [], "opts: generated_opts::#{opts_type(name)}<'a>")
     |> append_if(opts != [], "#{raw_opts_name(source)}: &[(Atom, Term<'a>)]")
@@ -766,7 +799,7 @@ defmodule Skia.Codegen do
     [
       Rust.item("""
       fn draw_paragraph_text<'a>(
-          surface: &mut skia_safe::Surface,
+          canvas: &skia_safe::Canvas,
           text: &str,
           x: f32,
           y: f32,
@@ -812,7 +845,7 @@ defmodule Skia.Codegen do
           }
           let mut paragraph = paragraph_builder.build();
           paragraph.layout(width);
-          paragraph.paint(surface.canvas(), Point::new(x, y));
+          paragraph.paint(canvas, Point::new(x, y));
           Ok(())
       }
       """),

@@ -7,8 +7,8 @@ use skia_safe::{
     textlayout::{FontCollection, ParagraphBuilder, ParagraphStyle, TextAlign, TextDirection, TextStyle},
     color_filters, AlphaType, Color, ColorFilter, ColorType, CubicResampler, Data,
     ClipOp, EncodedImageFormat, FilterMode, Font, FontMgr, FontStyle, IPoint, Image, ImageInfo, Matrix,
-    Paint, PaintStyle, PathBuilder, PathDirection, PathEffect, Point, RRect, Rect, SamplingOptions,
-    Shader, TileMode,
+    Paint, PaintStyle, PathBuilder, PathDirection, PathEffect, Picture, PictureRecorder, Point, RRect,
+    Rect, SamplingOptions, Shader, TileMode,
 };
 
 include!("generated_resources.rs");
@@ -185,9 +185,64 @@ fn path_to_svg_impl<'a>(env: Env<'a>, path_term: Term<'a>) -> NifResult<Term<'a>
     }
 }
 
+fn record_picture_impl<'a>(env: Env<'a>, batch: Term<'a>) -> NifResult<Term<'a>> {
+    let width = batch.map_get(atoms::width())?.decode::<i32>()?;
+    let height = batch.map_get(atoms::height())?.decode::<i32>()?;
+
+    if width <= 0 || height <= 0 {
+        return Ok((atoms::error(), atoms::invalid_batch()).encode(env));
+    }
+
+    let mut recorder = PictureRecorder::new();
+    {
+        let canvas = recorder.begin_recording(Rect::from_xywh(0.0, 0.0, width as f32, height as f32), false);
+        canvas.clear(Color::TRANSPARENT);
+
+        for command in batch.map_get(atoms::commands())?.decode::<Vec<Term>>()? {
+            draw_command(canvas, command)?;
+        }
+    }
+
+    let Some(picture) = recorder.finish_recording_as_picture(None) else {
+        return Ok((atoms::error(), atoms::render_failed()).encode(env));
+    };
+
+    Ok((
+        atoms::ok(),
+        ResourceArc::new(EncodedPicture {
+            bytes: picture.serialize().as_bytes().to_vec(),
+        }),
+    )
+        .encode(env))
+}
+
+fn decode_picture_impl<'a>(env: Env<'a>, bytes: Binary<'a>) -> NifResult<Term<'a>> {
+    if Picture::from_bytes(bytes.as_slice()).is_none() {
+        return Ok((atoms::error(), atoms::invalid_picture()).encode(env));
+    }
+
+    Ok((
+        atoms::ok(),
+        ResourceArc::new(EncodedPicture {
+            bytes: bytes.as_slice().to_vec(),
+        }),
+    )
+        .encode(env))
+}
+
+fn encode_picture_impl<'a>(env: Env<'a>, picture_term: Term<'a>) -> NifResult<Term<'a>> {
+    let picture_ref = decode_encoded_picture_ref(picture_term)?;
+    Ok((atoms::ok(), binary(env, &picture_ref.bytes)?).encode(env))
+}
+
 fn image_from_term(image_term: Term) -> NifResult<Image> {
     let image_ref = decode_encoded_image_ref(image_term)?;
     Image::from_encoded(Data::new_copy(&image_ref.bytes)).ok_or(rustler::Error::BadArg)
+}
+
+fn picture_from_term(picture_term: Term) -> NifResult<Picture> {
+    let picture_ref = decode_encoded_picture_ref(picture_term)?;
+    Picture::from_bytes(&picture_ref.bytes).ok_or(rustler::Error::BadArg)
 }
 
 fn render_image_resource(image: &Image, src: Option<Rect>, dst: Rect) -> NifResult<Vec<u8>> {
@@ -249,7 +304,7 @@ fn render_surface(batch: Term) -> NifResult<Result<skia_safe::Surface, Atom>> {
     surface.canvas().clear(Color::TRANSPARENT);
 
     for command in batch.map_get(atoms::commands())?.decode::<Vec<Term>>()? {
-        draw_command(&mut surface, command)?;
+        draw_command(surface.canvas(), command)?;
     }
 
     Ok(Ok(surface))

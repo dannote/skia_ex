@@ -41,7 +41,8 @@ defmodule Skia.MixProject do
       {:ex_dna, "~> 1.0", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.0", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.0", only: [:dev, :test], runtime: false},
-      {:rustler, "~> 0.38.0", runtime: false},
+      {:rustler_precompiled, "~> 0.8"},
+      {:rustler, "~> 0.38.0", optional: true, runtime: false},
       {:rustq, "~> 0.5", only: [:dev, :test], runtime: false},
       {:vibe_kit, "~> 0.1"},
       {:igniter, "~> 0.6", only: [:dev, :test]}
@@ -52,16 +53,17 @@ defmodule Skia.MixProject do
     [
       licenses: ["MIT"],
       links: %{"GitHub" => @source_url},
-      files: [
-        "lib",
-        "native/skia_native/src",
-        "native/skia_native/Cargo.toml",
-        "native/skia_native/Cargo.lock",
-        "examples",
-        "mix.exs",
-        "README.md",
-        "LICENSE"
-      ]
+      files:
+        [
+          "lib",
+          "native/skia_native/src",
+          "native/skia_native/Cargo.toml",
+          "native/skia_native/Cargo.lock",
+          "examples",
+          "mix.exs",
+          "README.md",
+          "LICENSE"
+        ] ++ Path.wildcard("checksum-*.exs")
     ]
   end
 

@@ -11,7 +11,7 @@ defmodule Skia.CommandSpec.Transforms do
           [name: :y, type: :number, required: true]
         ],
         transform: [
-          body: [{:call, "surface.canvas()", :translate, [{:tuple, ["opts.x", "opts.y"]}]}]
+          body: [{:call, "canvas", :translate, [{:tuple, ["opts.x", "opts.y"]}]}]
         ],
         native_refs: ["skia_safe::Canvas::translate"]
       ],
@@ -22,14 +22,14 @@ defmodule Skia.CommandSpec.Transforms do
           [name: :x, type: :number, required: true],
           [name: :y, type: :number, required: true]
         ],
-        transform: [body: [{:call, "surface.canvas()", :scale, [{:tuple, ["opts.x", "opts.y"]}]}]],
+        transform: [body: [{:call, "canvas", :scale, [{:tuple, ["opts.x", "opts.y"]}]}]],
         native_refs: ["skia_safe::Canvas::scale"]
       ],
       rotate: [
         handler: :draw_rotate,
         args: [],
         opts: [[name: :degrees, type: :number, required: true]],
-        transform: [body: [{:call, "surface.canvas()", :rotate, ["opts.degrees", :none]}]],
+        transform: [body: [{:call, "canvas", :rotate, ["opts.degrees", :none]}]],
         native_refs: ["skia_safe::Canvas::rotate"]
       ],
       rotate_at: [
@@ -42,8 +42,7 @@ defmodule Skia.CommandSpec.Transforms do
         ],
         transform: [
           body: [
-            {:call, "surface.canvas()", :rotate,
-             ["opts.degrees", {:some, "Point::new(opts.x, opts.y)"}]}
+            {:call, "canvas", :rotate, ["opts.degrees", {:some, "Point::new(opts.x, opts.y)"}]}
           ]
         ],
         native_refs: ["skia_safe::Canvas::rotate"]
@@ -60,7 +59,7 @@ defmodule Skia.CommandSpec.Transforms do
         ],
         transform: [
           setup: [{:let, "matrix", "matrix_from_term(opts.matrix)?"}],
-          body: [{:call, "surface.canvas()", :concat, ["&matrix"]}]
+          body: [{:call, "canvas", :concat, ["&matrix"]}]
         ],
         native_refs: ["skia_safe::Canvas::concat"]
       ]

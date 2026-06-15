@@ -37,10 +37,10 @@ defmodule Skia.CommandSpec.Text do
             {:if_let_else, "Some(width)", "opts.width",
              [
                {:stmt,
-                "draw_paragraph_text(surface, &text, opts.x, opts.y, width, size, &paint, &opts)?"}
+                "draw_paragraph_text(canvas, &text, opts.x, opts.y, width, size, &paint, &opts)?"}
              ],
              [
-               {:call, "surface.canvas()", :draw_str,
+               {:call, "canvas", :draw_str,
                 ["text", {:tuple, ["opts.x", "opts.y"]}, {:ref, "font"}, {:ref, "paint"}]}
              ]}
           ]

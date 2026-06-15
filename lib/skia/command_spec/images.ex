@@ -39,7 +39,7 @@ defmodule Skia.CommandSpec.Images do
                 [
                   {:let, "src",
                    "source.as_ref().map(|rect| (rect, skia_safe::canvas::SrcRectConstraint::Strict))"},
-                  {:call, "surface.canvas()", :draw_image_rect_with_sampling_options,
+                  {:call, "canvas", :draw_image_rect_with_sampling_options,
                    [
                      "image",
                      "src",
@@ -50,7 +50,7 @@ defmodule Skia.CommandSpec.Images do
                 ]},
                {"(_, _, Some(source))",
                 [
-                  {:call, "surface.canvas()", :draw_image_rect_with_sampling_options,
+                  {:call, "canvas", :draw_image_rect_with_sampling_options,
                    [
                      "image",
                      {:some, "(&source, skia_safe::canvas::SrcRectConstraint::Strict)"},
@@ -61,7 +61,7 @@ defmodule Skia.CommandSpec.Images do
                 ]},
                {"_",
                 [
-                  {:call, "surface.canvas()", :draw_image_with_sampling_options,
+                  {:call, "canvas", :draw_image_with_sampling_options,
                    ["image", {:tuple, ["opts.x", "opts.y"]}, "sampling", {:some, {:ref, "paint"}}]}
                 ]}
              ]}
@@ -71,6 +71,38 @@ defmodule Skia.CommandSpec.Images do
           "skia_safe::Canvas::draw_image_with_sampling_options",
           "skia_safe::Canvas::draw_image_rect_with_sampling_options"
         ]
+      ],
+      picture: [
+        handler: :draw_picture,
+        args: [picture: T.picture()],
+        defaults: [x: 0, y: 0],
+        opts: [
+          [name: :x, type: :number],
+          [name: :y, type: :number],
+          [name: :opacity, type: :number],
+          [name: :blend_mode, type: T.blend_mode()]
+        ],
+        image_draw: [
+          setup: [
+            {:let, "picture", "picture_from_term(*args.first().ok_or(rustler::Error::BadArg)?)?"},
+            {:let_mut, "paint", "Paint::default()"},
+            {:call, "paint", :set_anti_alias, ["true"]},
+            {:if_let, "Some(opacity)", "opts.opacity",
+             [
+               {:call, "paint", :set_alpha, ["(opacity.clamp(0.0, 1.0) * 255.0).round() as u8"]}
+             ]},
+            {:stmt, "apply_blend_mode(&mut paint, raw_opts)?"}
+          ],
+          body: [
+            {:call, "canvas", :save, []},
+            {:call, "canvas", :translate,
+             [{:tuple, ["opts.x.unwrap_or(0.0)", "opts.y.unwrap_or(0.0)"]}]},
+            {:call, "canvas", :draw_picture,
+             [{:ref, "picture"}, :none, {:some, {:ref, "paint"}}]},
+            {:call, "canvas", :restore, []}
+          ]
+        ],
+        native_refs: ["skia_safe::Canvas::draw_picture"]
       ]
     ]
   end

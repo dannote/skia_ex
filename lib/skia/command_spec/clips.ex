@@ -26,9 +26,9 @@ defmodule Skia.CommandSpec.Clips do
           body: [
             {:if_else, "radius > 0.0",
              [
-               {:call, "surface.canvas()", :clip_rrect,
+               {:call, "canvas", :clip_rrect,
                 ["RRect::new_rect_xy(rect, radius, radius)", "clip_op", "antialias"]}
-             ], [{:call, "surface.canvas()", :clip_rect, ["rect", "clip_op", "antialias"]}]}
+             ], [{:call, "canvas", :clip_rect, ["rect", "clip_op", "antialias"]}]}
           ]
         ],
         native_refs: ["skia_safe::Canvas::clip_rect", "skia_safe::Canvas::clip_rrect"]
@@ -52,7 +52,7 @@ defmodule Skia.CommandSpec.Clips do
             {:let, "clip_op", "decode_clip_op(opts.clip_op.unwrap_or(atoms::intersect()))?"}
           ],
           body: [
-            {:call, "surface.canvas()", :clip_path,
+            {:call, "canvas", :clip_path,
              [{:ref, "path"}, "clip_op", "opts.antialias.unwrap_or(true)"]}
           ]
         ],
@@ -74,7 +74,7 @@ defmodule Skia.CommandSpec.Clips do
             {:let, "clip_op", "decode_clip_op(opts.clip_op.unwrap_or(atoms::intersect()))?"}
           ],
           body: [
-            {:call, "surface.canvas()", :clip_path,
+            {:call, "canvas", :clip_path,
              [{:ref, "path"}, "clip_op", "opts.antialias.unwrap_or(true)"]}
           ]
         ],

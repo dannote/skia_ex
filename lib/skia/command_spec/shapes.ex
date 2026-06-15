@@ -13,7 +13,7 @@ defmodule Skia.CommandSpec.Shapes do
         shape_draw: [
           body: [
             {:if_let, "Some(color)", "args.first().and_then(|term| decode_color(*term).ok())",
-             [{:call, "surface.canvas()", :clear, ["color"]}]}
+             [{:call, "canvas", :clear, ["color"]}]}
           ]
         ],
         native_refs: ["skia_safe::Canvas::clear"]
@@ -28,7 +28,7 @@ defmodule Skia.CommandSpec.Shapes do
             {:let, "rect", "Rect::from_xywh(opts.x, opts.y, opts.width, opts.height)"},
             {:let, "radius", "opts.radius.unwrap_or(0.0)"}
           ],
-          body: paint_shape_body({:stmt, "draw_rect_shape(surface, rect, radius, &paint)"})
+          body: paint_shape_body({:stmt, "draw_rect_shape(canvas, rect, radius, &paint)"})
         ],
         native_refs: ["skia_safe::Canvas::draw_rect", "skia_safe::Canvas::draw_rrect"]
       ],
@@ -38,7 +38,7 @@ defmodule Skia.CommandSpec.Shapes do
         opts: T.rect_opts() ++ T.paint_opts(),
         shape_draw: [
           setup: [{:let, "rect", "Rect::from_xywh(opts.x, opts.y, opts.width, opts.height)"}],
-          body: paint_shape_body({:call, "surface.canvas()", :draw_oval, ["rect", "&paint"]})
+          body: paint_shape_body({:call, "canvas", :draw_oval, ["rect", "&paint"]})
         ],
         native_refs: ["skia_safe::Canvas::draw_oval"]
       ],
@@ -60,7 +60,7 @@ defmodule Skia.CommandSpec.Shapes do
           ],
           body:
             paint_shape_body(
-              {:call, "surface.canvas()", :draw_arc,
+              {:call, "canvas", :draw_arc,
                ["rect", "opts.start_degrees", "opts.sweep_degrees", "use_center", "&paint"]}
             )
         ],
@@ -78,9 +78,7 @@ defmodule Skia.CommandSpec.Shapes do
         shape_draw: [
           setup: [{:let, "center", "Point::new(opts.x, opts.y)"}],
           body:
-            paint_shape_body(
-              {:call, "surface.canvas()", :draw_circle, ["center", "opts.radius", "&paint"]}
-            )
+            paint_shape_body({:call, "canvas", :draw_circle, ["center", "opts.radius", "&paint"]})
         ],
         native_refs: ["skia_safe::Canvas::draw_circle"]
       ],
@@ -101,7 +99,7 @@ defmodule Skia.CommandSpec.Shapes do
           body: [
             {:let, "color", "decode_color(opts.stroke)?"},
             {:let, "paint", "stroke_paint(color, opts.stroke_width.unwrap_or(1.0), raw_opts)?"},
-            {:call, "surface.canvas()", :draw_line,
+            {:call, "canvas", :draw_line,
              ["point_from_term(opts.from)?", "point_from_term(opts.to)?", "&paint"]}
           ]
         ],

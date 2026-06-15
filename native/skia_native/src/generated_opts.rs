@@ -247,6 +247,22 @@ pub fn decode_image_opts<'a>(opts: &[(Atom, Term<'a>)]) -> NifResult<ImageOpts<'
         _phantom: std::marker::PhantomData,
     })
 }
+pub struct PictureOpts<'a> {
+    pub x: Option<f32>,
+    pub y: Option<f32>,
+    pub opacity: Option<f32>,
+    pub blend_mode: Option<Atom>,
+    _phantom: std::marker::PhantomData<&'a ()>,
+}
+pub fn decode_picture_opts<'a>(opts: &[(Atom, Term<'a>)]) -> NifResult<PictureOpts<'a>> {
+    Ok(PictureOpts {
+        x: opt_f32_option(opts, atoms::x())?,
+        y: opt_f32_option(opts, atoms::y())?,
+        opacity: opt_f32_option(opts, atoms::opacity())?,
+        blend_mode: opt_atom_option(opts, atoms::blend_mode())?,
+        _phantom: std::marker::PhantomData,
+    })
+}
 pub struct SaveLayerOpts<'a> {
     pub opacity: Option<f32>,
     pub bounds: Option<Term<'a>>,
