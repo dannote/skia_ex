@@ -12,6 +12,25 @@ defmodule Skia.Shader.RadialGradient do
   defstruct [:center, :radius, :colors]
 end
 
+defmodule Skia.Shader.SweepGradient do
+  @moduledoc "Sweep/conic gradient paint source."
+
+  @type t :: %__MODULE__{
+          center: {float(), float()},
+          start_degrees: float(),
+          end_degrees: float(),
+          colors: [term()]
+        }
+  defstruct [:center, :start_degrees, :end_degrees, :colors]
+end
+
+defmodule Skia.Shader.GradientStop do
+  @moduledoc "Color stop with explicit position in a gradient."
+
+  @type t :: %__MODULE__{color: term(), position: float()}
+  defstruct [:color, :position]
+end
+
 defmodule Skia.Paint do
   @moduledoc "Reusable paint description for future paint-focused APIs."
 

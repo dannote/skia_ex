@@ -27,6 +27,23 @@ defmodule Skia do
   def radial_gradient(center, radius, colors),
     do: %Skia.Shader.RadialGradient{center: center, radius: radius, colors: colors}
 
+  @doc "Creates a sweep/conic gradient paint value."
+  @spec sweep_gradient({number(), number()}, number(), number(), [term()]) ::
+          Skia.Shader.SweepGradient.t()
+  def sweep_gradient(center, start_degrees, end_degrees, colors) do
+    %Skia.Shader.SweepGradient{
+      center: center,
+      start_degrees: start_degrees,
+      end_degrees: end_degrees,
+      colors: colors
+    }
+  end
+
+  @doc "Creates a positioned gradient stop."
+  @spec gradient_stop(term(), number()) :: Skia.Shader.GradientStop.t()
+  def gradient_stop(color, position),
+    do: %Skia.Shader.GradientStop{color: color, position: position}
+
   @doc "Measures text using the native text engine."
   @spec measure_text(String.t(), keyword()) ::
           {:ok, %{width: float(), bounds: {float(), float(), float(), float()}}}
@@ -167,9 +184,23 @@ defmodule Skia do
 
   defp apply_group_opts(%Document{} = document, opts) do
     Enum.reduce(opts, document, fn
-      {:translate, {x, y}}, acc -> append_command(acc, :translate, [], x: x, y: y)
-      {:rotate, degrees}, acc -> append_command(acc, :rotate, [], degrees: degrees)
-      {key, _value}, _acc -> raise ArgumentError, "unsupported group option #{inspect(key)}"
+      {:translate, {x, y}}, acc ->
+        append_command(acc, :translate, [], x: x, y: y)
+
+      {:scale, {x, y}}, acc ->
+        append_command(acc, :scale, [], x: x, y: y)
+
+      {:rotate, degrees}, acc ->
+        append_command(acc, :rotate, [], degrees: degrees)
+
+      {:rotate_at, {degrees, x, y}}, acc ->
+        append_command(acc, :rotate_at, [], degrees: degrees, x: x, y: y)
+
+      {:concat, matrix}, acc ->
+        append_command(acc, :concat, [], matrix: matrix)
+
+      {key, _value}, _acc ->
+        raise ArgumentError, "unsupported group option #{inspect(key)}"
     end)
   end
 end

@@ -1,6 +1,7 @@
 use RustQ.Config
 
 require_file("lib/skia/command_spec.ex")
+require_file("lib/skia/codegen/skia_safe.ex")
 require_file("lib/skia/codegen.ex")
 
 generate :native, "lib/skia/native.ex" do
@@ -41,6 +42,14 @@ end
 
 generate :generated_style_helpers, "native/skia_native/src/generated_style_helpers.rs" do
   build(&Skia.Codegen.generated_style_helpers/0)
+end
+
+generate :generated_paint, "native/skia_native/src/generated_paint.rs" do
+  build(&Skia.Codegen.generated_paint/0)
+end
+
+generate :generated_path, "native/skia_native/src/generated_path.rs" do
+  build(&Skia.Codegen.generated_path/0)
 end
 
 generate :command_docs, "docs/commands.md" do

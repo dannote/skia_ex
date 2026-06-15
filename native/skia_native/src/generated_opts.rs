@@ -35,6 +35,72 @@ pub fn decode_rect_opts<'a>(opts: &[(Atom, Term<'a>)]) -> NifResult<RectOpts<'a>
         _phantom: std::marker::PhantomData,
     })
 }
+pub struct OvalOpts<'a> {
+    pub x: f32,
+    pub y: f32,
+    pub width: f32,
+    pub height: f32,
+    pub fill: Option<Term<'a>>,
+    pub stroke: Option<Term<'a>>,
+    pub stroke_width: Option<f32>,
+    pub stroke_cap: Option<Atom>,
+    pub stroke_join: Option<Atom>,
+    pub stroke_miter: Option<f32>,
+    pub blend_mode: Option<Atom>,
+    _phantom: std::marker::PhantomData<&'a ()>,
+}
+pub fn decode_oval_opts<'a>(opts: &[(Atom, Term<'a>)]) -> NifResult<OvalOpts<'a>> {
+    Ok(OvalOpts {
+        x: opt_f32(opts, atoms::x())?,
+        y: opt_f32(opts, atoms::y())?,
+        width: opt_f32(opts, atoms::width())?,
+        height: opt_f32(opts, atoms::height())?,
+        fill: opt_term(opts, atoms::fill()),
+        stroke: opt_term(opts, atoms::stroke()),
+        stroke_width: opt_f32_option(opts, atoms::stroke_width())?,
+        stroke_cap: opt_atom_option(opts, atoms::stroke_cap())?,
+        stroke_join: opt_atom_option(opts, atoms::stroke_join())?,
+        stroke_miter: opt_f32_option(opts, atoms::stroke_miter())?,
+        blend_mode: opt_atom_option(opts, atoms::blend_mode())?,
+        _phantom: std::marker::PhantomData,
+    })
+}
+pub struct ArcOpts<'a> {
+    pub x: f32,
+    pub y: f32,
+    pub width: f32,
+    pub height: f32,
+    pub start_degrees: f32,
+    pub sweep_degrees: f32,
+    pub use_center: Option<bool>,
+    pub fill: Option<Term<'a>>,
+    pub stroke: Option<Term<'a>>,
+    pub stroke_width: Option<f32>,
+    pub stroke_cap: Option<Atom>,
+    pub stroke_join: Option<Atom>,
+    pub stroke_miter: Option<f32>,
+    pub blend_mode: Option<Atom>,
+    _phantom: std::marker::PhantomData<&'a ()>,
+}
+pub fn decode_arc_opts<'a>(opts: &[(Atom, Term<'a>)]) -> NifResult<ArcOpts<'a>> {
+    Ok(ArcOpts {
+        x: opt_f32(opts, atoms::x())?,
+        y: opt_f32(opts, atoms::y())?,
+        width: opt_f32(opts, atoms::width())?,
+        height: opt_f32(opts, atoms::height())?,
+        start_degrees: opt_f32(opts, atoms::start_degrees())?,
+        sweep_degrees: opt_f32(opts, atoms::sweep_degrees())?,
+        use_center: opt_bool_option(opts, atoms::use_center())?,
+        fill: opt_term(opts, atoms::fill()),
+        stroke: opt_term(opts, atoms::stroke()),
+        stroke_width: opt_f32_option(opts, atoms::stroke_width())?,
+        stroke_cap: opt_atom_option(opts, atoms::stroke_cap())?,
+        stroke_join: opt_atom_option(opts, atoms::stroke_join())?,
+        stroke_miter: opt_f32_option(opts, atoms::stroke_miter())?,
+        blend_mode: opt_atom_option(opts, atoms::blend_mode())?,
+        _phantom: std::marker::PhantomData,
+    })
+}
 pub struct CircleOpts<'a> {
     pub x: f32,
     pub y: f32,
@@ -90,16 +156,20 @@ pub fn decode_line_opts<'a>(opts: &[(Atom, Term<'a>)]) -> NifResult<LineOpts<'a>
 pub struct TextOpts<'a> {
     pub x: f32,
     pub y: f32,
+    pub width: Option<f32>,
     pub size: Option<f32>,
     pub fill: Option<Term<'a>>,
     pub font: Option<Term<'a>>,
     pub weight: Option<i64>,
+    pub align: Option<Atom>,
+    pub direction: Option<Atom>,
     _phantom: std::marker::PhantomData<&'a ()>,
 }
 pub fn decode_text_opts<'a>(opts: &[(Atom, Term<'a>)]) -> NifResult<TextOpts<'a>> {
     Ok(TextOpts {
         x: opt_f32(opts, atoms::x())?,
         y: opt_f32(opts, atoms::y())?,
+        width: opt_f32_option(opts, atoms::width())?,
         size: opt_f32_option(opts, atoms::size())?,
         fill: opt_term(opts, atoms::fill()),
         font: opt_term(opts, atoms::font()),
@@ -107,6 +177,8 @@ pub fn decode_text_opts<'a>(opts: &[(Atom, Term<'a>)]) -> NifResult<TextOpts<'a>
             Some(term) => Some(term.decode::<i64>()?),
             None => None,
         },
+        align: opt_atom_option(opts, atoms::align())?,
+        direction: opt_atom_option(opts, atoms::direction())?,
         _phantom: std::marker::PhantomData,
     })
 }
@@ -136,6 +208,9 @@ pub fn decode_image_opts<'a>(opts: &[(Atom, Term<'a>)]) -> NifResult<ImageOpts<'
 }
 pub struct SaveLayerOpts<'a> {
     pub opacity: Option<f32>,
+    pub bounds: Option<Term<'a>>,
+    pub blend_mode: Option<Atom>,
+    pub blur: Option<f32>,
     _phantom: std::marker::PhantomData<&'a ()>,
 }
 pub fn decode_save_layer_opts<'a>(
@@ -143,6 +218,9 @@ pub fn decode_save_layer_opts<'a>(
 ) -> NifResult<SaveLayerOpts<'a>> {
     Ok(SaveLayerOpts {
         opacity: opt_f32_option(opts, atoms::opacity())?,
+        bounds: opt_term(opts, atoms::bounds()),
+        blend_mode: opt_atom_option(opts, atoms::blend_mode())?,
+        blur: opt_f32_option(opts, atoms::blur())?,
         _phantom: std::marker::PhantomData,
     })
 }
@@ -160,6 +238,18 @@ pub fn decode_translate_opts<'a>(
         _phantom: std::marker::PhantomData,
     })
 }
+pub struct ScaleOpts<'a> {
+    pub x: f32,
+    pub y: f32,
+    _phantom: std::marker::PhantomData<&'a ()>,
+}
+pub fn decode_scale_opts<'a>(opts: &[(Atom, Term<'a>)]) -> NifResult<ScaleOpts<'a>> {
+    Ok(ScaleOpts {
+        x: opt_f32(opts, atoms::x())?,
+        y: opt_f32(opts, atoms::y())?,
+        _phantom: std::marker::PhantomData,
+    })
+}
 pub struct RotateOpts<'a> {
     pub degrees: f32,
     _phantom: std::marker::PhantomData<&'a ()>,
@@ -167,6 +257,32 @@ pub struct RotateOpts<'a> {
 pub fn decode_rotate_opts<'a>(opts: &[(Atom, Term<'a>)]) -> NifResult<RotateOpts<'a>> {
     Ok(RotateOpts {
         degrees: opt_f32(opts, atoms::degrees())?,
+        _phantom: std::marker::PhantomData,
+    })
+}
+pub struct RotateAtOpts<'a> {
+    pub degrees: f32,
+    pub x: f32,
+    pub y: f32,
+    _phantom: std::marker::PhantomData<&'a ()>,
+}
+pub fn decode_rotate_at_opts<'a>(
+    opts: &[(Atom, Term<'a>)],
+) -> NifResult<RotateAtOpts<'a>> {
+    Ok(RotateAtOpts {
+        degrees: opt_f32(opts, atoms::degrees())?,
+        x: opt_f32(opts, atoms::x())?,
+        y: opt_f32(opts, atoms::y())?,
+        _phantom: std::marker::PhantomData,
+    })
+}
+pub struct ConcatOpts<'a> {
+    pub matrix: Term<'a>,
+    _phantom: std::marker::PhantomData<&'a ()>,
+}
+pub fn decode_concat_opts<'a>(opts: &[(Atom, Term<'a>)]) -> NifResult<ConcatOpts<'a>> {
+    Ok(ConcatOpts {
+        matrix: opt_term(opts, atoms::matrix()).ok_or(rustler::Error::BadArg)?,
         _phantom: std::marker::PhantomData,
     })
 }
@@ -202,6 +318,32 @@ pub fn decode_path_opts<'a>(opts: &[(Atom, Term<'a>)]) -> NifResult<PathOpts<'a>
         stroke_join: opt_atom_option(opts, atoms::stroke_join())?,
         stroke_miter: opt_f32_option(opts, atoms::stroke_miter())?,
         blend_mode: opt_atom_option(opts, atoms::blend_mode())?,
+        fill_rule: opt_atom_option(opts, atoms::fill_rule())?,
+        _phantom: std::marker::PhantomData,
+    })
+}
+pub struct PathOpOpts<'a> {
+    pub fill: Option<Term<'a>>,
+    pub stroke: Option<Term<'a>>,
+    pub stroke_width: Option<f32>,
+    pub stroke_cap: Option<Atom>,
+    pub stroke_join: Option<Atom>,
+    pub stroke_miter: Option<f32>,
+    pub blend_mode: Option<Atom>,
+    pub path_op: Atom,
+    pub fill_rule: Option<Atom>,
+    _phantom: std::marker::PhantomData<&'a ()>,
+}
+pub fn decode_path_op_opts<'a>(opts: &[(Atom, Term<'a>)]) -> NifResult<PathOpOpts<'a>> {
+    Ok(PathOpOpts {
+        fill: opt_term(opts, atoms::fill()),
+        stroke: opt_term(opts, atoms::stroke()),
+        stroke_width: opt_f32_option(opts, atoms::stroke_width())?,
+        stroke_cap: opt_atom_option(opts, atoms::stroke_cap())?,
+        stroke_join: opt_atom_option(opts, atoms::stroke_join())?,
+        stroke_miter: opt_f32_option(opts, atoms::stroke_miter())?,
+        blend_mode: opt_atom_option(opts, atoms::blend_mode())?,
+        path_op: opt_atom_option(opts, atoms::path_op())?.ok_or(rustler::Error::BadArg)?,
         fill_rule: opt_atom_option(opts, atoms::fill_rule())?,
         _phantom: std::marker::PhantomData,
     })

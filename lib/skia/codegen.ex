@@ -2,6 +2,7 @@ defmodule Skia.Codegen do
   @moduledoc false
 
   alias RustQ.Rust
+  alias Skia.Codegen.SkiaSafe
 
   @spec generated_targets() :: [{atom(), keyword()}]
   def generated_targets do
@@ -23,39 +24,17 @@ defmodule Skia.Codegen do
         path: "native/skia_native/src/generated_resources.rs",
         build: &generated_resources/0
       ],
+      generated_paint: [
+        path: "native/skia_native/src/generated_paint.rs",
+        build: &generated_paint/0
+      ],
+      generated_path: [path: "native/skia_native/src/generated_path.rs", build: &generated_path/0],
       command_docs: [path: "docs/commands.md", build: &generated_docs/0]
     ]
   end
 
-  @enum_atoms %{
-    sampling: [:nearest, :linear],
-    stroke_cap: [:butt, :round, :square],
-    stroke_join: [:miter, :round, :bevel],
-    fill_rule: [:winding, :even_odd],
-    blend_mode: [:src_over, :multiply, :screen, :overlay, :darken, :lighten, :clear_mode]
-  }
-
-  @enum_decoders %{
-    sampling: [type: :FilterMode, variants: [nearest: :Nearest, linear: :Linear]],
-    stroke_cap: [type: "paint::Cap", variants: [butt: :Butt, round: :Round, square: :Square]],
-    stroke_join: [type: "paint::Join", variants: [miter: :Miter, round: :Round, bevel: :Bevel]],
-    fill_rule: [type: :PathFillType, variants: [winding: :Winding, even_odd: :EvenOdd]],
-    encoded_image_format: [
-      type: :EncodedImageFormat,
-      variants: [png: :PNG, jpeg: :JPEG, webp: :WEBP]
-    ],
-    blend_mode: [
-      type: :BlendMode,
-      variants: [
-        src_over: :SrcOver,
-        multiply: :Multiply,
-        screen: :Screen,
-        overlay: :Overlay,
-        darken: :Darken,
-        lighten: :Lighten,
-        clear_mode: :Clear
-      ]
-    ]
+  @extra_enum_specs %{
+    encoded_image_format: [skia: "SkEncodedImageFormat", rust: :EncodedImageFormat]
   }
 
   @native_atoms [
@@ -77,6 +56,15 @@ defmodule Skia.Codegen do
     :rgba,
     :linear_gradient,
     :radial_gradient,
+    :sweep_gradient,
+    :gradient_stop,
+    :matrix,
+    :left,
+    :center,
+    :right,
+    :justify,
+    :ltr,
+    :rtl,
     :segments,
     :move_to,
     :line_to,
@@ -138,42 +126,6 @@ defmodule Skia.Codegen do
     ]
   ]
 
-  @draw_handlers %{
-    clear: :draw_clear,
-    rect: :draw_rect,
-    circle: :draw_circle,
-    line: :draw_line,
-    text: :draw_text,
-    image: :draw_image,
-    path: :draw_path,
-    clip_rect: :clip_rect,
-    clip_circle: :clip_circle,
-    clip_path: :clip_path,
-    save: :draw_save,
-    save_layer: :draw_save_layer,
-    restore: :draw_restore,
-    translate: :draw_translate,
-    rotate: :draw_rotate
-  }
-
-  @draw_handler_specs %{
-    draw_clear: [args: true],
-    draw_rect: [opts: :rect],
-    draw_circle: [opts: :circle],
-    draw_line: [opts: :line],
-    draw_text: [args: true, opts: :text],
-    draw_image: [args: true, opts: :image],
-    draw_path: [args: true, opts: :path],
-    clip_rect: [opts: :clip_rect],
-    clip_circle: [opts: :clip_circle],
-    clip_path: [args: true, opts: :clip_path],
-    draw_save: [],
-    draw_save_layer: [opts: :save_layer],
-    draw_restore: [],
-    draw_translate: [opts: :translate],
-    draw_rotate: [opts: :rotate]
-  }
-
   @paint_enum_options [
     [name: :blend_mode, setter: :set_blend_mode, decoder: :decode_blend_mode]
   ]
@@ -186,33 +138,6 @@ defmodule Skia.Codegen do
   @path_enum_options [
     [name: :fill_rule, setter: :set_fill_type, decoder: :decode_fill_rule]
   ]
-
-  @native_refs %{
-    rect: ["skia_safe::Canvas::draw_rect", "skia_safe::Canvas::draw_rrect"],
-    circle: ["skia_safe::Canvas::draw_circle"],
-    line: ["skia_safe::Canvas::draw_line"],
-    text: ["skia_safe::Canvas::draw_str", "skia_safe::Font::measure_str"],
-    image: [
-      "skia_safe::Canvas::draw_image_with_sampling_options",
-      "skia_safe::Canvas::draw_image_rect_with_sampling_options"
-    ],
-    path: ["skia_safe::Canvas::draw_path"],
-    clip_rect: ["skia_safe::Canvas::clip_rect", "skia_safe::Canvas::clip_rrect"],
-    clip_circle: ["skia_safe::Canvas::clip_path"],
-    clip_path: ["skia_safe::Canvas::clip_path"],
-    save: ["skia_safe::Canvas::save"],
-    save_layer: ["skia_safe::Canvas::save_layer_alpha_f"],
-    restore: ["skia_safe::Canvas::restore"],
-    translate: ["skia_safe::Canvas::translate"],
-    rotate: ["skia_safe::Canvas::rotate"],
-    background: ["skia_safe::Canvas::clear"]
-  }
-
-  defp render_template(name, assigns) do
-    name
-    |> template_path()
-    |> EEx.eval_file(assigns: assigns)
-  end
 
   defp template_path(name) do
     __DIR__
@@ -277,7 +202,7 @@ defmodule Skia.Codegen do
         [name, Keyword.get(spec, :op) | option_atoms ++ arg_atoms]
       end)
       |> Kernel.++(@native_atoms)
-      |> Kernel.++(@enum_atoms |> Map.values() |> List.flatten())
+      |> Kernel.++(enum_atoms())
       |> Enum.reject(&is_nil/1)
       |> Enum.map(&to_string/1)
       |> Enum.uniq()
@@ -294,16 +219,18 @@ defmodule Skia.Codegen do
   @spec generated_enums() :: String.t()
   def generated_enums do
     entries =
-      @enum_atoms
+      enum_defs()
       |> Enum.sort_by(&elem(&1, 0))
-      |> Enum.map(fn {name, values} ->
+      |> Enum.map(fn {name, spec} ->
+        values = spec |> Keyword.fetch!(:variants) |> Enum.map(&elem(&1, 0))
+
         Rust.const(enum_const_name(name), {:raw, "&[&str]"}, Rust.expr(enum_values(values)),
           vis: :pub
         )
       end)
 
     decoders =
-      @enum_decoders
+      enum_defs()
       |> Enum.sort_by(&elem(&1, 0))
       |> Enum.map(fn {name, spec} -> enum_decoder(name, spec) end)
 
@@ -324,6 +251,35 @@ defmodule Skia.Codegen do
     |> RustQ.render!(file, preamble: generated_rust_preamble(), splice: [items: items])
   end
 
+  defp enum_atoms do
+    enum_defs()
+    |> Enum.flat_map(fn {_name, spec} ->
+      spec |> Keyword.fetch!(:variants) |> Enum.map(&elem(&1, 0))
+    end)
+  end
+
+  defp enum_defs do
+    specs =
+      Skia.CommandSpec.all()
+      |> Enum.flat_map(fn {_name, spec} -> Keyword.get(spec, :opts, []) end)
+      |> Enum.flat_map(fn opt -> opt |> Keyword.fetch!(:type) |> enum_type_spec() end)
+      |> Kernel.++(Map.to_list(@extra_enum_specs))
+
+    specs
+    |> Enum.uniq_by(&elem(&1, 0))
+    |> Map.new(fn {name, spec} ->
+      variants =
+        spec
+        |> Keyword.fetch!(:skia)
+        |> SkiaSafe.enum_variants()
+
+      {name, Keyword.put(spec, :variants, variants)}
+    end)
+  end
+
+  defp enum_type_spec({:enum, name, opts}), do: [{name, opts}]
+  defp enum_type_spec(_type), do: []
+
   defp enum_const_name(name) do
     rust_name = name |> Atom.to_string() |> Macro.camelize()
     "#{Macro.underscore(rust_name) |> String.upcase()}S"
@@ -335,7 +291,7 @@ defmodule Skia.Codegen do
   end
 
   defp enum_decoder(name, spec) do
-    type = Keyword.fetch!(spec, :type)
+    type = Keyword.fetch!(spec, :rust)
 
     cases =
       spec
@@ -347,17 +303,16 @@ defmodule Skia.Codegen do
 
   @spec generated_dispatch() :: String.t()
   def generated_dispatch do
-    handled_ops =
-      Skia.CommandSpec.all()
-      |> Enum.map(fn {name, spec} -> Keyword.get(spec, :op, name) end)
-      |> Enum.uniq()
-      |> Enum.filter(&Map.has_key?(@draw_handlers, &1))
-      |> Enum.sort()
-
     cases =
-      Enum.map(handled_ops, fn op ->
-        {op, "#{Map.fetch!(@draw_handlers, op)}(surface, command)"}
+      Skia.CommandSpec.all()
+      |> Enum.flat_map(fn {name, spec} ->
+        case Keyword.fetch(spec, :handler) do
+          {:ok, handler} -> [{Keyword.get(spec, :op, name), "#{handler}(surface, command)"}]
+          :error -> []
+        end
       end)
+      |> Enum.uniq()
+      |> Enum.sort()
 
     item =
       RustQ.Rustler.atom_dispatch(:draw_command,
@@ -385,37 +340,23 @@ defmodule Skia.Codegen do
   end
 
   defp enum_option_applicator(name, target_name, target_type, options) do
-    Rust.fn(name,
-      args: [{target_name, target_type}, {:opts, "&[(Atom, Term<'a>)]"}],
-      returns: "NifResult<()>",
-      lifetime: :a,
-      body: option_applicator_body(target_name, options)
+    "enum_option_applicator.rs"
+    |> template_path()
+    |> RustQ.render_file!(
+      bind: [function: name],
+      splice: [
+        args: [Rust.arg(target_name, target_type), Rust.arg(:opts, "&[(Atom, Term<'a>)]")],
+        options: enum_option_lines(target_name, options)
+      ]
     )
+    |> Rust.item()
   end
 
   defp stroke_options_applicator do
-    body =
-      :paint
-      |> enum_option_lines(@stroke_enum_options)
-      |> Kernel.++([
-        "if let Some(miter) = opt_f32_option(opts, atoms::stroke_miter())? { paint.set_stroke_miter(miter); }",
-        "Ok(())"
-      ])
-      |> Enum.join("\n")
-
-    Rust.fn(:apply_stroke_options,
-      args: [paint: "&mut Paint", opts: "&[(Atom, Term<'a>)]"],
-      returns: "NifResult<()>",
-      lifetime: :a,
-      body: body
-    )
-  end
-
-  defp option_applicator_body(target_name, options) do
-    target_name
-    |> enum_option_lines(options)
-    |> Kernel.++(["Ok(())"])
-    |> Enum.join("\n")
+    "stroke_options_applicator.rs"
+    |> template_path()
+    |> RustQ.render_file!(splice: [options: enum_option_lines(:paint, @stroke_enum_options)])
+    |> Rust.item()
   end
 
   defp enum_option_lines(target_name, options) do
@@ -424,22 +365,35 @@ defmodule Skia.Codegen do
       setter = Keyword.fetch!(option, :setter)
       decoder = Keyword.fetch!(option, :decoder)
 
-      "if let Some(term) = opt_term(opts, atoms::#{name}()) { #{target_name}.#{setter}(generated_enums::#{decoder}(term.decode::<Atom>()?)?); }"
+      Rust.stmt(
+        "if let Some(term) = opt_term(opts, atoms::#{name}()) { #{target_name}.#{setter}(generated_enums::#{decoder}(term.decode::<Atom>()?)?); }"
+      )
     end)
   end
 
   @spec generated_handlers() :: String.t()
   def generated_handlers do
     handlers =
-      @draw_handlers
-      |> Map.values()
-      |> Enum.uniq()
-      |> Enum.sort()
-      |> Enum.map(fn name -> draw_handler(name, Map.fetch!(@draw_handler_specs, name)) end)
+      Skia.CommandSpec.all()
+      |> Enum.flat_map(fn {name, spec} ->
+        case Keyword.fetch(spec, :handler) do
+          {:ok, handler} -> [{handler, draw_handler_spec(name, spec)}]
+          :error -> []
+        end
+      end)
+      |> Enum.uniq_by(&elem(&1, 0))
+      |> Enum.sort_by(&elem(&1, 0))
+      |> Enum.map(fn {name, spec} -> draw_handler(name, spec) end)
 
     "generated_handlers.rs"
     |> template_path()
     |> RustQ.render_file!(preamble: generated_rust_preamble(), splice: [items: handlers])
+  end
+
+  defp draw_handler_spec(command_name, spec) do
+    []
+    |> append_if(Keyword.get(spec, :args, []) != [], {:args, true})
+    |> append_if(Keyword.get(spec, :opts, []) != [], {:opts, command_name})
   end
 
   defp draw_handler(name, spec) do
@@ -469,14 +423,9 @@ defmodule Skia.Codegen do
       |> Enum.reject(&(&1 == ""))
       |> Enum.map(&Rust.stmt/1)
 
-    RustQ.render!(
-      """
-      fn __rq_handler<'a>(__rq_args: ()) -> NifResult<()> {
-          __rq_setup!();
-          __rq_call!()
-      }
-      """,
-      "handler_shell.rs",
+    "handler_shell.rs"
+    |> template_path()
+    |> RustQ.render_file!(
       bind: [handler: name, call: Rust.expr("#{name}_impl(#{call_args})")],
       splice: [
         args: [
@@ -523,6 +472,20 @@ defmodule Skia.Codegen do
     |> RustQ.render_file!(preamble: generated_rust_preamble(), splice: [items: resources])
   end
 
+  @spec generated_paint() :: String.t()
+  def generated_paint do
+    "generated_paint.rs"
+    |> template_path()
+    |> RustQ.render_file!(preamble: generated_rust_preamble())
+  end
+
+  @spec generated_path() :: String.t()
+  def generated_path do
+    "generated_path.rs"
+    |> template_path()
+    |> RustQ.render_file!(preamble: generated_rust_preamble())
+  end
+
   @spec generated_opts() :: String.t()
   def generated_opts do
     commands =
@@ -557,16 +520,32 @@ defmodule Skia.Codegen do
       end)
 
     enums =
-      @enum_atoms
+      enum_defs()
       |> Enum.sort_by(&elem(&1, 0))
-      |> Enum.map_join("\n", fn {name, values} ->
-        values = Enum.map_join(values, ", ", &"`:#{&1}`")
+      |> Enum.map_join("\n", fn {name, spec} ->
+        values =
+          spec
+          |> Keyword.fetch!(:variants)
+          |> Enum.map(&elem(&1, 0))
+          |> Enum.map_join(", ", &"`:#{&1}`")
+
         "- `#{name}`: #{values}"
       end)
 
     rust_docs = generated_rust_doc_section()
 
-    render_template("commands.md.eex", rows: rows, enums: enums, rust_docs: rust_docs)
+    IO.iodata_to_binary([
+      "<!-- Generated by mix skia.codegen. Do not edit by hand. -->\n\n",
+      "# Skia command reference\n\n",
+      "| Command | Args | Options | Defaults | Native references |\n",
+      "| --- | --- | --- | --- | --- |\n",
+      rows,
+      "\n\n## Enums\n\n",
+      enums,
+      "\n\n",
+      rust_docs,
+      "\n"
+    ])
   end
 
   defp opts_decoder_field(opt) do
@@ -586,6 +565,7 @@ defmodule Skia.Codegen do
   defp rust_required_type(:number), do: "f32"
   defp rust_required_type(:boolean), do: "bool"
   defp rust_required_type(:atom), do: "Atom"
+  defp rust_required_type({:enum, _name, _opts}), do: "Atom"
   defp rust_required_type(:integer), do: "i64"
   defp rust_required_type(:string), do: "String"
   defp rust_required_type(type) when type in [:color, :path, :image, :font, :term], do: "Term<'a>"
@@ -594,6 +574,7 @@ defmodule Skia.Codegen do
   defp rust_optional_type(:number), do: "Option<f32>"
   defp rust_optional_type(:boolean), do: "Option<bool>"
   defp rust_optional_type(:atom), do: "Option<Atom>"
+  defp rust_optional_type({:enum, _name, _opts}), do: "Option<Atom>"
   defp rust_optional_type(:integer), do: "Option<i64>"
   defp rust_optional_type(:string), do: "Option<String>"
 
@@ -622,6 +603,9 @@ defmodule Skia.Codegen do
   defp required_decoder(:atom, atom),
     do: "opt_atom_option(opts, #{atom})?.ok_or(rustler::Error::BadArg)?"
 
+  defp required_decoder({:enum, _name, _opts}, atom),
+    do: "opt_atom_option(opts, #{atom})?.ok_or(rustler::Error::BadArg)?"
+
   defp required_decoder(:integer, atom),
     do: "opt_term(opts, #{atom}).ok_or(rustler::Error::BadArg)?.decode::<i64>()?"
 
@@ -637,6 +621,7 @@ defmodule Skia.Codegen do
   defp optional_decoder(:number, atom), do: "opt_f32_option(opts, #{atom})?"
   defp optional_decoder(:boolean, atom), do: "opt_bool_option(opts, #{atom})?"
   defp optional_decoder(:atom, atom), do: "opt_atom_option(opts, #{atom})?"
+  defp optional_decoder({:enum, _name, _opts}, atom), do: "opt_atom_option(opts, #{atom})?"
 
   defp optional_decoder(:integer, atom),
     do:
@@ -677,7 +662,12 @@ defmodule Skia.Codegen do
     |> Enum.map_join("<br>", fn {name, value} -> "`#{name}: #{inspect(value)}`" end)
   end
 
-  defp native_refs(command), do: Map.get(@native_refs, command, [])
+  defp native_refs(command) do
+    command
+    |> Skia.CommandSpec.fetch!()
+    |> Keyword.get(:native_refs, [])
+    |> Enum.filter(&SkiaSafe.native_ref_exists?/1)
+  end
 
   defp format_native_refs([]), do: "—"
 
@@ -688,9 +678,9 @@ defmodule Skia.Codegen do
 
   defp generated_rust_doc_section do
     docs =
-      @native_refs
-      |> Map.values()
-      |> List.flatten()
+      Skia.CommandSpec.all()
+      |> Enum.flat_map(fn {_name, spec} -> Keyword.get(spec, :native_refs, []) end)
+      |> Enum.filter(&SkiaSafe.native_ref_exists?/1)
       |> Enum.uniq()
       |> Enum.sort()
       |> Enum.flat_map(&rust_doc_entry/1)
@@ -703,73 +693,13 @@ defmodule Skia.Codegen do
   end
 
   defp rust_doc_entry(ref) do
-    case rust_doc_snippet(ref) do
+    case SkiaSafe.rust_doc_snippet(ref) do
       nil -> []
       snippet -> ["### `#{ref}`\n\n#{snippet}"]
     end
   end
 
-  defp rust_doc_snippet("skia_safe::" <> path) do
-    [module, function] = String.split(path, "::", parts: 2)
-
-    with {:ok, source} <- rust_source(module),
-         {:ok, docs} <- extract_rust_docs(source, function) do
-      docs
-      |> Enum.take(4)
-      |> Enum.map_join("\n", &"> #{&1}")
-    else
-      _ -> nil
-    end
-  end
-
-  defp rust_source("Canvas"), do: read_skia_safe_source("core/canvas.rs")
-  defp rust_source("Font"), do: read_skia_safe_source("core/font.rs")
-  defp rust_source(_module), do: :error
-
-  defp read_skia_safe_source(relative_path) do
-    pattern =
-      Path.join([
-        System.user_home!(),
-        ".cargo/registry/src/*/skia-safe-*/src",
-        relative_path
-      ])
-
-    pattern
-    |> Path.wildcard()
-    |> Enum.sort(:desc)
-    |> List.first()
-    |> case do
-      nil -> :error
-      path -> File.read(path)
-    end
-  end
-
-  defp extract_rust_docs(source, function) do
-    lines = String.split(source, "\n")
-    index = Enum.find_index(lines, &String.contains?(&1, "fn #{function}"))
-
-    if index do
-      docs =
-        lines
-        |> Enum.take(index)
-        |> Enum.reverse()
-        |> Enum.take_while(&(String.trim_leading(&1) |> String.starts_with?("///")))
-        |> Enum.reverse()
-        |> Enum.map(&clean_rust_doc_line/1)
-        |> Enum.reject(&(&1 == ""))
-
-      if docs == [], do: :error, else: {:ok, docs}
-    else
-      :error
-    end
-  end
-
-  defp clean_rust_doc_line(line) do
-    line
-    |> String.trim_leading()
-    |> String.replace_prefix("///", "")
-    |> String.trim()
-  end
+  defp format_type({:enum, name, _opts}), do: name
 
   defp format_type({:tuple, types}) do
     inner = Enum.map_join(types, ", ", &format_type/1)

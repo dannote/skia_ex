@@ -10,4 +10,4 @@ crate-type = ["cdylib"]
 
 [dependencies]
 rustler = "0.38.0"
-skia-safe = "0.97.2"
+skia-safe = { version = "0.97.2", features = ["textlayout"] }

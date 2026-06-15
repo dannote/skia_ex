@@ -2,38 +2,121 @@
 
 #![allow(dead_code)]
 use rustler::{Atom, NifResult};
-use skia_safe::{paint, BlendMode, EncodedImageFormat, FilterMode, PathFillType};
+use skia_safe::{paint, BlendMode, EncodedImageFormat, FilterMode, PathFillType, PathOp};
 use super::atoms;
 pub const BLEND_MODES: &[&str] = &[
+    "clear",
+    "src",
+    "dst",
     "src_over",
-    "multiply",
+    "dst_over",
+    "src_in",
+    "dst_in",
+    "src_out",
+    "dst_out",
+    "src_a_top",
+    "dst_a_top",
+    "xor",
+    "plus",
+    "modulate",
     "screen",
     "overlay",
     "darken",
     "lighten",
-    "clear_mode",
+    "color_dodge",
+    "color_burn",
+    "hard_light",
+    "soft_light",
+    "difference",
+    "exclusion",
+    "multiply",
+    "hue",
+    "saturation",
+    "color",
+    "luminosity",
 ];
-pub const FILL_RULES: &[&str] = &["winding", "even_odd"];
+pub const ENCODED_IMAGE_FORMATS: &[&str] = &[
+    "bmp",
+    "gif",
+    "ico",
+    "jpeg",
+    "png",
+    "wbmp",
+    "webp",
+    "pkm",
+    "ktx",
+    "astc",
+    "dng",
+    "heif",
+    "avif",
+    "jpegxl",
+];
+pub const FILL_RULES: &[&str] = &[
+    "winding",
+    "even_odd",
+    "inverse_winding",
+    "inverse_even_odd",
+];
+pub const PATH_OPS: &[&str] = &[
+    "difference",
+    "intersect",
+    "union",
+    "xor",
+    "reverse_difference",
+];
 pub const SAMPLINGS: &[&str] = &["nearest", "linear"];
 pub const STROKE_CAPS: &[&str] = &["butt", "round", "square"];
 pub const STROKE_JOINS: &[&str] = &["miter", "round", "bevel"];
 pub fn decode_blend_mode(value: Atom) -> NifResult<BlendMode> {
     match value {
+        value if value == atoms::clear() => Ok(BlendMode::Clear),
+        value if value == atoms::src() => Ok(BlendMode::Src),
+        value if value == atoms::dst() => Ok(BlendMode::Dst),
         value if value == atoms::src_over() => Ok(BlendMode::SrcOver),
-        value if value == atoms::multiply() => Ok(BlendMode::Multiply),
+        value if value == atoms::dst_over() => Ok(BlendMode::DstOver),
+        value if value == atoms::src_in() => Ok(BlendMode::SrcIn),
+        value if value == atoms::dst_in() => Ok(BlendMode::DstIn),
+        value if value == atoms::src_out() => Ok(BlendMode::SrcOut),
+        value if value == atoms::dst_out() => Ok(BlendMode::DstOut),
+        value if value == atoms::src_a_top() => Ok(BlendMode::SrcATop),
+        value if value == atoms::dst_a_top() => Ok(BlendMode::DstATop),
+        value if value == atoms::xor() => Ok(BlendMode::Xor),
+        value if value == atoms::plus() => Ok(BlendMode::Plus),
+        value if value == atoms::modulate() => Ok(BlendMode::Modulate),
         value if value == atoms::screen() => Ok(BlendMode::Screen),
         value if value == atoms::overlay() => Ok(BlendMode::Overlay),
         value if value == atoms::darken() => Ok(BlendMode::Darken),
         value if value == atoms::lighten() => Ok(BlendMode::Lighten),
-        value if value == atoms::clear_mode() => Ok(BlendMode::Clear),
+        value if value == atoms::color_dodge() => Ok(BlendMode::ColorDodge),
+        value if value == atoms::color_burn() => Ok(BlendMode::ColorBurn),
+        value if value == atoms::hard_light() => Ok(BlendMode::HardLight),
+        value if value == atoms::soft_light() => Ok(BlendMode::SoftLight),
+        value if value == atoms::difference() => Ok(BlendMode::Difference),
+        value if value == atoms::exclusion() => Ok(BlendMode::Exclusion),
+        value if value == atoms::multiply() => Ok(BlendMode::Multiply),
+        value if value == atoms::hue() => Ok(BlendMode::Hue),
+        value if value == atoms::saturation() => Ok(BlendMode::Saturation),
+        value if value == atoms::color() => Ok(BlendMode::Color),
+        value if value == atoms::luminosity() => Ok(BlendMode::Luminosity),
         _ => Err(rustler::Error::BadArg),
     }
 }
 pub fn decode_encoded_image_format(value: Atom) -> NifResult<EncodedImageFormat> {
     match value {
-        value if value == atoms::png() => Ok(EncodedImageFormat::PNG),
+        value if value == atoms::bmp() => Ok(EncodedImageFormat::BMP),
+        value if value == atoms::gif() => Ok(EncodedImageFormat::GIF),
+        value if value == atoms::ico() => Ok(EncodedImageFormat::ICO),
         value if value == atoms::jpeg() => Ok(EncodedImageFormat::JPEG),
+        value if value == atoms::png() => Ok(EncodedImageFormat::PNG),
+        value if value == atoms::wbmp() => Ok(EncodedImageFormat::WBMP),
         value if value == atoms::webp() => Ok(EncodedImageFormat::WEBP),
+        value if value == atoms::pkm() => Ok(EncodedImageFormat::PKM),
+        value if value == atoms::ktx() => Ok(EncodedImageFormat::KTX),
+        value if value == atoms::astc() => Ok(EncodedImageFormat::ASTC),
+        value if value == atoms::dng() => Ok(EncodedImageFormat::DNG),
+        value if value == atoms::heif() => Ok(EncodedImageFormat::HEIF),
+        value if value == atoms::avif() => Ok(EncodedImageFormat::AVIF),
+        value if value == atoms::jpegxl() => Ok(EncodedImageFormat::JPEGXL),
         _ => Err(rustler::Error::BadArg),
     }
 }
@@ -41,6 +124,18 @@ pub fn decode_fill_rule(value: Atom) -> NifResult<PathFillType> {
     match value {
         value if value == atoms::winding() => Ok(PathFillType::Winding),
         value if value == atoms::even_odd() => Ok(PathFillType::EvenOdd),
+        value if value == atoms::inverse_winding() => Ok(PathFillType::InverseWinding),
+        value if value == atoms::inverse_even_odd() => Ok(PathFillType::InverseEvenOdd),
+        _ => Err(rustler::Error::BadArg),
+    }
+}
+pub fn decode_path_op(value: Atom) -> NifResult<PathOp> {
+    match value {
+        value if value == atoms::difference() => Ok(PathOp::Difference),
+        value if value == atoms::intersect() => Ok(PathOp::Intersect),
+        value if value == atoms::union() => Ok(PathOp::Union),
+        value if value == atoms::xor() => Ok(PathOp::XOR),
+        value if value == atoms::reverse_difference() => Ok(PathOp::ReverseDifference),
         _ => Err(rustler::Error::BadArg),
     }
 }

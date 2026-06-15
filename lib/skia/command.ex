@@ -69,6 +69,10 @@ defmodule Skia.Command do
   defp normalize_value!(_name, _key, :integer, value) when is_integer(value), do: value
   defp normalize_value!(_name, _key, :string, value) when is_binary(value), do: value
   defp normalize_value!(_name, _key, :atom, value) when is_atom(value), do: value
+
+  defp normalize_value!(_command, _key, {:enum, _enum_name, _opts}, value) when is_atom(value),
+    do: value
+
   defp normalize_value!(_name, _key, :boolean, value) when is_boolean(value), do: value
   defp normalize_value!(_name, _key, :term, value), do: value
   defp normalize_value!(_name, _key, :color, value), do: normalize_color!(value)
@@ -109,6 +113,23 @@ defmodule Skia.Command do
     normalize_color!({:radial_gradient, center, radius, colors})
   end
 
+  defp normalize_color!(%Skia.Shader.SweepGradient{
+         center: center,
+         start_degrees: start_degrees,
+         end_degrees: end_degrees,
+         colors: colors
+       }) do
+    normalize_color!({:sweep_gradient, center, start_degrees, end_degrees, colors})
+  end
+
+  defp normalize_color!(%Skia.Shader.GradientStop{color: color, position: position}) do
+    normalize_color!({:gradient_stop, color, position})
+  end
+
+  defp normalize_color!({:gradient_stop, color, position}) do
+    {:gradient_stop, normalize_color!(color), normalize_number!(position)}
+  end
+
   defp normalize_color!({:linear_gradient, from, to, colors}) when is_list(colors) do
     {:linear_gradient, normalize_point!(from), normalize_point!(to),
      Enum.map(colors, &normalize_color!/1)}
@@ -117,6 +138,12 @@ defmodule Skia.Command do
   defp normalize_color!({:radial_gradient, center, radius, colors}) when is_list(colors) do
     {:radial_gradient, normalize_point!(center), normalize_number!(radius),
      Enum.map(colors, &normalize_color!/1)}
+  end
+
+  defp normalize_color!({:sweep_gradient, center, start_degrees, end_degrees, colors})
+       when is_list(colors) do
+    {:sweep_gradient, normalize_point!(center), normalize_number!(start_degrees),
+     normalize_number!(end_degrees), Enum.map(colors, &normalize_color!/1)}
   end
 
   defp normalize_color!({:rgba, red, green, blue, alpha}) do

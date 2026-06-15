@@ -2,8 +2,11 @@
 
 use rustler::{Atom, Binary, Encoder, Env, NifResult, OwnedBinary, ResourceArc, Term};
 use skia_safe::{
-    surfaces, AlphaType, Color, ColorType, Data, EncodedImageFormat, FilterMode, Font, FontMgr,
-    FontStyle, IPoint, Image, ImageInfo, Paint, PaintStyle, PathBuilder, Point, RRect, Rect,
+    canvas::SaveLayerRec,
+    image_filters, surfaces,
+    textlayout::{FontCollection, ParagraphBuilder, ParagraphStyle, TextAlign, TextDirection, TextStyle},
+    AlphaType, Color, ColorType, Data, EncodedImageFormat, FilterMode, Font, FontMgr, FontStyle,
+    IPoint, Image, ImageInfo, Matrix, Paint, PaintStyle, PathBuilder, Point, RRect, Rect,
     SamplingOptions, Shader, TileMode,
 };
 
@@ -247,6 +250,8 @@ fn render_surface(batch: Term) -> NifResult<Result<skia_safe::Surface, Atom>> {
 include!("generated_dispatch.rs");
 include!("generated_handlers.rs");
 include!("generated_style_helpers.rs");
+include!("generated_path.rs");
+include!("generated_paint.rs");
 
 fn draw_save_impl(surface: &mut skia_safe::Surface) -> NifResult<()> {
     surface.canvas().save();
@@ -256,11 +261,26 @@ fn draw_save_impl(surface: &mut skia_safe::Surface) -> NifResult<()> {
 fn draw_save_layer_impl<'a>(
     surface: &mut skia_safe::Surface,
     layer_opts: generated_opts::SaveLayerOpts<'a>,
-    _opts: &[(Atom, Term<'a>)],
+    opts: &[(Atom, Term<'a>)],
 ) -> NifResult<()> {
-    surface
-        .canvas()
-        .save_layer_alpha_f(None, layer_opts.opacity.unwrap_or(1.0).clamp(0.0, 1.0));
+    let bounds = match layer_opts.bounds {
+        Some(term) => Some(rect_from_term(term)?),
+        None => None,
+    };
+    let mut paint = Paint::default();
+    paint.set_alpha((layer_opts.opacity.unwrap_or(1.0).clamp(0.0, 1.0) * 255.0).round() as u8);
+    apply_blend_mode(&mut paint, opts)?;
+    if let Some(sigma) = layer_opts.blur {
+        if let Some(filter) = image_filters::blur((sigma, sigma), TileMode::Decal, None, None) {
+            paint.set_image_filter(filter);
+        }
+    }
+
+    let mut rec = SaveLayerRec::default().paint(&paint);
+    if let Some(ref bounds) = bounds {
+        rec = rec.bounds(bounds);
+    }
+    surface.canvas().save_layer(&rec);
     Ok(())
 }
 
@@ -289,6 +309,36 @@ fn draw_rotate_impl<'a>(
     Ok(())
 }
 
+fn draw_rotate_at_impl<'a>(
+    surface: &mut skia_safe::Surface,
+    rotate_opts: generated_opts::RotateAtOpts<'a>,
+    _opts: &[(Atom, Term<'a>)],
+) -> NifResult<()> {
+    surface
+        .canvas()
+        .rotate(rotate_opts.degrees, Some(Point::new(rotate_opts.x, rotate_opts.y)));
+    Ok(())
+}
+
+fn draw_scale_impl<'a>(
+    surface: &mut skia_safe::Surface,
+    scale_opts: generated_opts::ScaleOpts<'a>,
+    _opts: &[(Atom, Term<'a>)],
+) -> NifResult<()> {
+    surface.canvas().scale((scale_opts.x, scale_opts.y));
+    Ok(())
+}
+
+fn draw_concat_impl<'a>(
+    surface: &mut skia_safe::Surface,
+    concat_opts: generated_opts::ConcatOpts<'a>,
+    _opts: &[(Atom, Term<'a>)],
+) -> NifResult<()> {
+    let matrix = matrix_from_term(concat_opts.matrix)?;
+    surface.canvas().concat(&matrix);
+    Ok(())
+}
+
 fn draw_clear_impl<'a>(surface: &mut skia_safe::Surface, args: Vec<Term<'a>>) -> NifResult<()> {
 
     if let Some(color) = args.first().and_then(|term| decode_color(*term).ok()) {
@@ -305,6 +355,59 @@ fn draw_rect_impl<'a>(
 ) -> NifResult<()> {
     let rect = Rect::from_xywh(rect_opts.x, rect_opts.y, rect_opts.width, rect_opts.height);
     draw_rect_shape(surface, rect, rect_opts.radius.unwrap_or(0.0), &opts)
+}
+
+fn draw_oval_impl<'a>(
+    surface: &mut skia_safe::Surface,
+    oval_opts: generated_opts::OvalOpts<'a>,
+    opts: &[(Atom, Term<'a>)],
+) -> NifResult<()> {
+    let rect = Rect::from_xywh(oval_opts.x, oval_opts.y, oval_opts.width, oval_opts.height);
+
+    if let Some(mut paint) = opt_fill_paint(opts, atoms::fill())? {
+        apply_blend_mode(&mut paint, opts)?;
+        surface.canvas().draw_oval(rect, &paint);
+    }
+
+    if let Some(color) = opt_color(opts, atoms::stroke())? {
+        let paint = stroke_paint(color, oval_opts.stroke_width.unwrap_or(1.0), opts)?;
+        surface.canvas().draw_oval(rect, &paint);
+    }
+
+    Ok(())
+}
+
+fn draw_arc_impl<'a>(
+    surface: &mut skia_safe::Surface,
+    arc_opts: generated_opts::ArcOpts<'a>,
+    opts: &[(Atom, Term<'a>)],
+) -> NifResult<()> {
+    let rect = Rect::from_xywh(arc_opts.x, arc_opts.y, arc_opts.width, arc_opts.height);
+    let use_center = arc_opts.use_center.unwrap_or(false);
+
+    if let Some(mut paint) = opt_fill_paint(opts, atoms::fill())? {
+        apply_blend_mode(&mut paint, opts)?;
+        surface.canvas().draw_arc(
+            rect,
+            arc_opts.start_degrees,
+            arc_opts.sweep_degrees,
+            use_center,
+            &paint,
+        );
+    }
+
+    if let Some(color) = opt_color(opts, atoms::stroke())? {
+        let paint = stroke_paint(color, arc_opts.stroke_width.unwrap_or(1.0), opts)?;
+        surface.canvas().draw_arc(
+            rect,
+            arc_opts.start_degrees,
+            arc_opts.sweep_degrees,
+            use_center,
+            &paint,
+        );
+    }
+
+    Ok(())
 }
 
 fn draw_circle_impl<'a>(
@@ -367,10 +470,72 @@ fn draw_text_impl<'a>(
         None => fill_paint(Color::BLACK),
     };
 
-    surface
-        .canvas()
-        .draw_str(text, (text_opts.x, text_opts.y), &font, &paint);
+    if let Some(width) = text_opts.width {
+        draw_paragraph_text(surface, &text, text_opts.x, text_opts.y, width, size, &paint, &text_opts)?;
+    } else {
+        surface
+            .canvas()
+            .draw_str(text, (text_opts.x, text_opts.y), &font, &paint);
+    }
     Ok(())
+}
+
+fn draw_paragraph_text<'a>(
+    surface: &mut skia_safe::Surface,
+    text: &str,
+    x: f32,
+    y: f32,
+    width: f32,
+    size: f32,
+    paint: &Paint,
+    text_opts: &generated_opts::TextOpts<'a>,
+) -> NifResult<()> {
+    let mut text_style = TextStyle::new();
+    text_style.set_font_size(size);
+    text_style.set_color(paint.color());
+
+    let mut paragraph_style = ParagraphStyle::new();
+    paragraph_style.set_text_style(&text_style);
+    if let Some(align) = text_opts.align {
+        paragraph_style.set_text_align(decode_text_align(align)?);
+    }
+    if let Some(direction) = text_opts.direction {
+        paragraph_style.set_text_direction(decode_text_direction(direction)?);
+    }
+
+    let mut font_collection = FontCollection::new();
+    font_collection.set_default_font_manager(FontMgr::default(), None);
+    let mut paragraph_builder = ParagraphBuilder::new(&paragraph_style, font_collection);
+    paragraph_builder.push_style(&text_style);
+    paragraph_builder.add_text(text);
+    let mut paragraph = paragraph_builder.build();
+    paragraph.layout(width);
+    paragraph.paint(surface.canvas(), Point::new(x, y));
+    Ok(())
+}
+
+fn decode_text_align(value: Atom) -> NifResult<TextAlign> {
+    if value == atoms::center() {
+        Ok(TextAlign::Center)
+    } else if value == atoms::right() {
+        Ok(TextAlign::Right)
+    } else if value == atoms::justify() {
+        Ok(TextAlign::Justify)
+    } else if value == atoms::left() {
+        Ok(TextAlign::Left)
+    } else {
+        Err(rustler::Error::BadArg)
+    }
+}
+
+fn decode_text_direction(value: Atom) -> NifResult<TextDirection> {
+    if value == atoms::rtl() {
+        Ok(TextDirection::RTL)
+    } else if value == atoms::ltr() {
+        Ok(TextDirection::LTR)
+    } else {
+        Err(rustler::Error::BadArg)
+    }
 }
 
 fn draw_image_impl<'a>(
@@ -458,6 +623,38 @@ fn draw_path_impl<'a>(
     Ok(())
 }
 
+fn draw_path_op_impl<'a>(
+    surface: &mut skia_safe::Surface,
+    args: Vec<Term<'a>>,
+    path_opts: generated_opts::PathOpOpts<'a>,
+    opts: &[(Atom, Term<'a>)],
+) -> NifResult<()> {
+    let a = build_path(*args.first().ok_or(rustler::Error::BadArg)?)?;
+    let b = build_path(*args.get(1).ok_or(rustler::Error::BadArg)?)?;
+    let op = generated_enums::decode_path_op(path_opts.path_op)?;
+    let mut path = a.op(&b, op).ok_or(rustler::Error::BadArg)?;
+    apply_fill_rule(&mut path, opts)?;
+
+    if let Some(fill) = path_opts.fill {
+        let mut paint = decode_paint(fill)?;
+        apply_blend_mode(&mut paint, opts)?;
+        surface.canvas().draw_path(&path, &paint);
+    }
+
+    if let Some(stroke) = path_opts.stroke {
+        surface.canvas().draw_path(
+            &path,
+            &stroke_paint(
+                decode_color(stroke)?,
+                path_opts.stroke_width.unwrap_or(1.0),
+                opts,
+            )?,
+        );
+    }
+
+    Ok(())
+}
+
 fn clip_rect_impl<'a>(
     surface: &mut skia_safe::Surface,
     clip_opts: generated_opts::ClipRectOpts<'a>,
@@ -503,43 +700,6 @@ fn clip_path_impl<'a>(
         .canvas()
         .clip_path(&path, None, clip_opts.antialias.unwrap_or(true));
     Ok(())
-}
-
-fn build_path(path_term: Term) -> NifResult<skia_safe::Path> {
-    let segments = path_term
-        .map_get(atoms::segments())?
-        .decode::<Vec<Term>>()?;
-    let mut builder = PathBuilder::new();
-
-    for segment in segments.into_iter().rev() {
-        if let Ok(op) = segment.decode::<Atom>() {
-            if op == atoms::close() {
-                builder.close();
-            }
-        } else if let Ok((op, x, y)) = segment.decode::<(Atom, f64, f64)>() {
-            if op == atoms::move_to() {
-                builder.move_to((x as f32, y as f32));
-            } else if op == atoms::line_to() {
-                builder.line_to((x as f32, y as f32));
-            }
-        } else if let Ok((op, cx, cy, x, y)) = segment.decode::<(Atom, f64, f64, f64, f64)>() {
-            if op == atoms::quad_to() {
-                builder.quad_to((cx as f32, cy as f32), (x as f32, y as f32));
-            }
-        } else if let Ok((op, c1x, c1y, c2x, c2y, x, y)) =
-            segment.decode::<(Atom, f64, f64, f64, f64, f64, f64)>()
-        {
-            if op == atoms::cubic_to() {
-                builder.cubic_to(
-                    (c1x as f32, c1y as f32),
-                    (c2x as f32, c2y as f32),
-                    (x as f32, y as f32),
-                );
-            }
-        }
-    }
-
-    Ok(builder.detach())
 }
 
 fn draw_rect_shape(
@@ -613,6 +773,13 @@ fn point_from_term(term: Term) -> NifResult<Point> {
     Ok(Point::new(x as f32, y as f32))
 }
 
+fn matrix_from_term(term: Term) -> NifResult<Matrix> {
+    let (m00, m01, m02, m10, m11, m12) = term.decode::<(f64, f64, f64, f64, f64, f64)>()?;
+    Ok(Matrix::new_all(
+        m00 as f32, m01 as f32, m02 as f32, m10 as f32, m11 as f32, m12 as f32, 0.0, 0.0, 1.0,
+    ))
+}
+
 fn rect_from_term(term: Term) -> NifResult<Rect> {
     let (x, y, width, height) = term.decode::<(f64, f64, f64, f64)>()?;
     Ok(Rect::from_xywh(
@@ -659,68 +826,6 @@ fn font_from_term(term: Term, size: f32) -> NifResult<Font> {
         .new_from_data(&font_ref.bytes, None)
         .ok_or(rustler::Error::BadArg)?;
     Ok(Font::new(typeface, size))
-}
-
-fn decode_paint(term: Term) -> NifResult<Paint> {
-    if let Ok(color) = decode_color(term) {
-        return Ok(fill_paint(color));
-    }
-
-    if let Ok((tag, from, to, colors)) = term.decode::<(Atom, (f64, f64), (f64, f64), Vec<Term>)>()
-    {
-        if tag == atoms::linear_gradient() {
-            let colors = decode_colors(colors)?;
-            let mut paint = Paint::default();
-            paint.set_anti_alias(true).set_style(PaintStyle::Fill);
-            if let Some(shader) = Shader::linear_gradient(
-                ((from.0 as f32, from.1 as f32), (to.0 as f32, to.1 as f32)),
-                colors.as_slice(),
-                None,
-                TileMode::Clamp,
-                None,
-                None,
-            ) {
-                paint.set_shader(shader);
-            }
-            return Ok(paint);
-        }
-    }
-
-    if let Ok((tag, center, radius, colors)) = term.decode::<(Atom, (f64, f64), f64, Vec<Term>)>() {
-        if tag == atoms::radial_gradient() {
-            let colors = decode_colors(colors)?;
-            let mut paint = Paint::default();
-            paint.set_anti_alias(true).set_style(PaintStyle::Fill);
-            if let Some(shader) = Shader::radial_gradient(
-                (center.0 as f32, center.1 as f32),
-                radius as f32,
-                colors.as_slice(),
-                None,
-                TileMode::Clamp,
-                None,
-                None,
-            ) {
-                paint.set_shader(shader);
-            }
-            return Ok(paint);
-        }
-    }
-
-    Err(rustler::Error::BadArg)
-}
-
-fn decode_colors(colors: Vec<Term>) -> NifResult<Vec<Color>> {
-    colors.into_iter().map(decode_color).collect()
-}
-
-fn decode_color(term: Term) -> NifResult<Color> {
-    let (tag, red, green, blue, alpha) = term.decode::<(Atom, u8, u8, u8, u8)>()?;
-
-    if tag == atoms::rgba() {
-        Ok(Color::from_argb(alpha, red, green, blue))
-    } else {
-        Err(rustler::Error::BadArg)
-    }
 }
 
 rustler::init!("Elixir.Skia.Native");

@@ -5,27 +5,35 @@
 | Command | Args | Options | Defaults | Native references |
 | --- | --- | --- | --- | --- |
 | `background` | `color: color` | — | — | `skia_safe::Canvas::clear` |
-| `rect` | — | `x: number` required<br>`y: number` required<br>`width: number` required<br>`height: number` required<br>`radius: number`<br>`fill: color`<br>`stroke: color`<br>`stroke_width: number`<br>`stroke_cap: atom`<br>`stroke_join: atom`<br>`stroke_miter: number`<br>`blend_mode: atom` | `radius: 0` | `skia_safe::Canvas::draw_rect`<br>`skia_safe::Canvas::draw_rrect` |
-| `circle` | — | `x: number` required<br>`y: number` required<br>`radius: number` required<br>`fill: color`<br>`stroke: color`<br>`stroke_width: number`<br>`stroke_cap: atom`<br>`stroke_join: atom`<br>`stroke_miter: number`<br>`blend_mode: atom` | — | `skia_safe::Canvas::draw_circle` |
-| `line` | — | `from: {number, number}` required<br>`to: {number, number}` required<br>`stroke: color` required<br>`stroke_width: number`<br>`stroke_cap: atom`<br>`stroke_join: atom`<br>`stroke_miter: number`<br>`blend_mode: atom` | — | `skia_safe::Canvas::draw_line` |
-| `text` | `text: string` | `x: number` required<br>`y: number` required<br>`size: number`<br>`fill: color`<br>`font: font`<br>`weight: integer` | `size: 16`<br>`fill: :black` | `skia_safe::Canvas::draw_str`<br>`skia_safe::Font::measure_str` |
-| `image` | `image: image` | `x: number` required<br>`y: number` required<br>`width: number`<br>`height: number`<br>`source: {number, number, number, number}`<br>`opacity: number`<br>`sampling: atom`<br>`blend_mode: atom` | — | `skia_safe::Canvas::draw_image_with_sampling_options`<br>`skia_safe::Canvas::draw_image_rect_with_sampling_options` |
+| `rect` | — | `x: number` required<br>`y: number` required<br>`width: number` required<br>`height: number` required<br>`radius: number`<br>`fill: color`<br>`stroke: color`<br>`stroke_width: number`<br>`stroke_cap: stroke_cap`<br>`stroke_join: stroke_join`<br>`stroke_miter: number`<br>`blend_mode: blend_mode` | `radius: 0` | `skia_safe::Canvas::draw_rect`<br>`skia_safe::Canvas::draw_rrect` |
+| `oval` | — | `x: number` required<br>`y: number` required<br>`width: number` required<br>`height: number` required<br>`fill: color`<br>`stroke: color`<br>`stroke_width: number`<br>`stroke_cap: stroke_cap`<br>`stroke_join: stroke_join`<br>`stroke_miter: number`<br>`blend_mode: blend_mode` | — | `skia_safe::Canvas::draw_oval` |
+| `arc` | — | `x: number` required<br>`y: number` required<br>`width: number` required<br>`height: number` required<br>`start_degrees: number` required<br>`sweep_degrees: number` required<br>`use_center: boolean`<br>`fill: color`<br>`stroke: color`<br>`stroke_width: number`<br>`stroke_cap: stroke_cap`<br>`stroke_join: stroke_join`<br>`stroke_miter: number`<br>`blend_mode: blend_mode` | `use_center: false` | `skia_safe::Canvas::draw_arc` |
+| `circle` | — | `x: number` required<br>`y: number` required<br>`radius: number` required<br>`fill: color`<br>`stroke: color`<br>`stroke_width: number`<br>`stroke_cap: stroke_cap`<br>`stroke_join: stroke_join`<br>`stroke_miter: number`<br>`blend_mode: blend_mode` | — | `skia_safe::Canvas::draw_circle` |
+| `line` | — | `from: {number, number}` required<br>`to: {number, number}` required<br>`stroke: color` required<br>`stroke_width: number`<br>`stroke_cap: stroke_cap`<br>`stroke_join: stroke_join`<br>`stroke_miter: number`<br>`blend_mode: blend_mode` | — | `skia_safe::Canvas::draw_line` |
+| `text` | `text: string` | `x: number` required<br>`y: number` required<br>`width: number`<br>`size: number`<br>`fill: color`<br>`font: font`<br>`weight: integer`<br>`align: atom`<br>`direction: atom` | `size: 16`<br>`fill: :black` | `skia_safe::Canvas::draw_str`<br>`skia_safe::Font::measure_str` |
+| `image` | `image: image` | `x: number` required<br>`y: number` required<br>`width: number`<br>`height: number`<br>`source: {number, number, number, number}`<br>`opacity: number`<br>`sampling: sampling`<br>`blend_mode: blend_mode` | — | `skia_safe::Canvas::draw_image_with_sampling_options`<br>`skia_safe::Canvas::draw_image_rect_with_sampling_options` |
 | `save` | — | — | — | `skia_safe::Canvas::save` |
-| `save_layer` | — | `opacity: number` | `opacity: 1.0` | `skia_safe::Canvas::save_layer_alpha_f` |
+| `save_layer` | — | `opacity: number`<br>`bounds: {number, number, number, number}`<br>`blend_mode: blend_mode`<br>`blur: number` | `opacity: 1.0` | `skia_safe::Canvas::save_layer`<br>`skia_safe::ImageFilter::blur` |
 | `restore` | — | — | — | `skia_safe::Canvas::restore` |
 | `translate` | — | `x: number` required<br>`y: number` required | — | `skia_safe::Canvas::translate` |
+| `scale` | — | `x: number` required<br>`y: number` required | — | `skia_safe::Canvas::scale` |
 | `rotate` | — | `degrees: number` required | — | `skia_safe::Canvas::rotate` |
+| `rotate_at` | — | `degrees: number` required<br>`x: number` required<br>`y: number` required | — | `skia_safe::Canvas::rotate` |
+| `concat` | — | `matrix: {number, number, number, number, number, number}` required | — | `skia_safe::Canvas::concat` |
 | `push_style` | — | `style: term` required | — | — |
 | `pop_style` | — | — | — | — |
-| `path` | `path: path` | `fill: color`<br>`stroke: color`<br>`stroke_width: number`<br>`stroke_cap: atom`<br>`stroke_join: atom`<br>`stroke_miter: number`<br>`blend_mode: atom`<br>`fill_rule: atom` | — | `skia_safe::Canvas::draw_path` |
+| `path` | `path: path` | `fill: color`<br>`stroke: color`<br>`stroke_width: number`<br>`stroke_cap: stroke_cap`<br>`stroke_join: stroke_join`<br>`stroke_miter: number`<br>`blend_mode: blend_mode`<br>`fill_rule: fill_rule` | — | `skia_safe::Canvas::draw_path` |
+| `path_op` | `a: path`<br>`b: path` | `fill: color`<br>`stroke: color`<br>`stroke_width: number`<br>`stroke_cap: stroke_cap`<br>`stroke_join: stroke_join`<br>`stroke_miter: number`<br>`blend_mode: blend_mode`<br>`path_op: path_op` required<br>`fill_rule: fill_rule` | — | `skia_safe::pathops::op`<br>`skia_safe::Canvas::draw_path` |
 | `clip_rect` | — | `x: number` required<br>`y: number` required<br>`width: number` required<br>`height: number` required<br>`radius: number`<br>`antialias: boolean` | `radius: 0`<br>`antialias: true` | `skia_safe::Canvas::clip_rect`<br>`skia_safe::Canvas::clip_rrect` |
 | `clip_circle` | — | `x: number` required<br>`y: number` required<br>`radius: number` required<br>`antialias: boolean` | `antialias: true` | `skia_safe::Canvas::clip_path` |
-| `clip_path` | `path: path` | `antialias: boolean`<br>`fill_rule: atom` | `antialias: true`<br>`fill_rule: :winding` | `skia_safe::Canvas::clip_path` |
+| `clip_path` | `path: path` | `antialias: boolean`<br>`fill_rule: fill_rule` | `antialias: true`<br>`fill_rule: :winding` | `skia_safe::Canvas::clip_path` |
 
 ## Enums
 
-- `blend_mode`: `:src_over`, `:multiply`, `:screen`, `:overlay`, `:darken`, `:lighten`, `:clear_mode`
-- `fill_rule`: `:winding`, `:even_odd`
+- `blend_mode`: `:clear`, `:src`, `:dst`, `:src_over`, `:dst_over`, `:src_in`, `:dst_in`, `:src_out`, `:dst_out`, `:src_a_top`, `:dst_a_top`, `:xor`, `:plus`, `:modulate`, `:screen`, `:overlay`, `:darken`, `:lighten`, `:color_dodge`, `:color_burn`, `:hard_light`, `:soft_light`, `:difference`, `:exclusion`, `:multiply`, `:hue`, `:saturation`, `:color`, `:luminosity`
+- `encoded_image_format`: `:bmp`, `:gif`, `:ico`, `:jpeg`, `:png`, `:wbmp`, `:webp`, `:pkm`, `:ktx`, `:astc`, `:dng`, `:heif`, `:avif`, `:jpegxl`
+- `fill_rule`: `:winding`, `:even_odd`, `:inverse_winding`, `:inverse_even_odd`
+- `path_op`: `:difference`, `:intersect`, `:union`, `:xor`, `:reverse_difference`
 - `sampling`: `:nearest`, `:linear`
 - `stroke_cap`: `:butt`, `:round`, `:square`
 - `stroke_join`: `:miter`, `:round`, `:bevel`
@@ -59,6 +67,20 @@
 > `rrect` is transformed by [`Matrix`]
 > before it is combined with clip.
 
+### `skia_safe::Canvas::concat`
+
+> Replaces [`Matrix`] with matrix premultiplied with existing [`Matrix`].
+> This has the effect of transforming the drawn geometry by matrix, before transforming the
+> result with existing [`Matrix`].
+> - `matrix` matrix to premultiply with existing [`Matrix`]
+
+### `skia_safe::Canvas::draw_arc`
+
+> Draws arc using clip, [`Matrix`], and [`Paint`] paint.
+> Arc is part of oval bounded by oval, sweeping from `start_angle` to `start_angle` plus
+> `sweep_angle`. `start_angle` and `sweep_angle` are in degrees.
+> `start_angle` of zero places start point at the right middle edge of oval.
+
 ### `skia_safe::Canvas::draw_circle`
 
 > Draws circle at center with radius using clip, [`Matrix`], and [`Paint`] `paint`.
@@ -72,6 +94,13 @@
 > In paint: [`Paint`] stroke width describes the line thickness;
 > [`crate::paint::Cap`] draws the end rounded or square;
 > [`crate::paint::Style`] is ignored, as if were set to [`crate::paint::Style::Stroke`].
+
+### `skia_safe::Canvas::draw_oval`
+
+> Draws oval oval using clip, [`Matrix`], and [`Paint`].
+> In `paint`: [`crate::paint::Style`] determines if oval is stroked or filled;
+> if stroked, [`Paint`] stroke width describes the line thickness.
+> - `oval` [`Rect`] bounds of oval
 
 ### `skia_safe::Canvas::draw_path`
 
@@ -122,12 +151,19 @@
 > restoring the [`Matrix`] and clip to their state when [`Self::save()`] was called.
 > [`Matrix`] may be changed by [`Self::translate()`], [`Self::scale()`], [`Self::rotate()`],
 
-### `skia_safe::Canvas::save_layer_alpha_f`
+### `skia_safe::Canvas::save_layer`
 
 > Saves [`Matrix`] and clip, and allocates [`Surface`] for subsequent drawing.
 > Calling [`Self::restore()`] discards changes to [`Matrix`] and clip, and blends layer with
 > alpha opacity onto prior layer.
 > [`Matrix`] may be changed by [`Self::translate()`], [`Self::scale()`], [`Self::rotate()`],
+
+### `skia_safe::Canvas::scale`
+
+> Scales [`Matrix`] by `sx` on the x-axis and `sy` on the y-axis.
+> Mathematically, replaces [`Matrix`] with a scale matrix premultiplied with [`Matrix`].
+> This has the effect of scaling the drawing by `(sx, sy)` before transforming the result with
+> [`Matrix`].
 
 ### `skia_safe::Canvas::translate`
 
@@ -135,3 +171,10 @@
 > Mathematically, replaces [`Matrix`] with a translation matrix premultiplied with [`Matrix`].
 > This has the effect of moving the drawing by `(d.x, d.y)` before transforming the result
 > with [`Matrix`].
+
+### `skia_safe::ImageFilter::blur`
+
+> Create a filter that blurs its input by the separate X and Y sigmas. The provided tile mode
+> is used when the blur kernel goes outside the input image.
+> * `sigma_x` - The Gaussian sigma value for blurring along the X axis.
+> * `sigma_y` - The Gaussian sigma value for blurring along the Y axis.

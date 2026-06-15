@@ -19,6 +19,11 @@ fn clip_rect<'a>(surface: &mut skia_safe::Surface, command: Term<'a>) -> NifResu
     let decoded_opts = generated_opts::decode_clip_rect_opts(&opts)?;
     clip_rect_impl(surface, decoded_opts, &opts)
 }
+fn draw_arc<'a>(surface: &mut skia_safe::Surface, command: Term<'a>) -> NifResult<()> {
+    let opts = decode_opts(command)?;
+    let decoded_opts = generated_opts::decode_arc_opts(&opts)?;
+    draw_arc_impl(surface, decoded_opts, &opts)
+}
 fn draw_circle<'a>(
     surface: &mut skia_safe::Surface,
     command: Term<'a>,
@@ -31,6 +36,14 @@ fn draw_clear<'a>(surface: &mut skia_safe::Surface, command: Term<'a>) -> NifRes
     let args = command.map_get(atoms::args())?.decode::<Vec<Term>>()?;
     draw_clear_impl(surface, args)
 }
+fn draw_concat<'a>(
+    surface: &mut skia_safe::Surface,
+    command: Term<'a>,
+) -> NifResult<()> {
+    let opts = decode_opts(command)?;
+    let decoded_opts = generated_opts::decode_concat_opts(&opts)?;
+    draw_concat_impl(surface, decoded_opts, &opts)
+}
 fn draw_image<'a>(surface: &mut skia_safe::Surface, command: Term<'a>) -> NifResult<()> {
     let args = command.map_get(atoms::args())?.decode::<Vec<Term>>()?;
     let opts = decode_opts(command)?;
@@ -42,11 +55,25 @@ fn draw_line<'a>(surface: &mut skia_safe::Surface, command: Term<'a>) -> NifResu
     let decoded_opts = generated_opts::decode_line_opts(&opts)?;
     draw_line_impl(surface, decoded_opts, &opts)
 }
+fn draw_oval<'a>(surface: &mut skia_safe::Surface, command: Term<'a>) -> NifResult<()> {
+    let opts = decode_opts(command)?;
+    let decoded_opts = generated_opts::decode_oval_opts(&opts)?;
+    draw_oval_impl(surface, decoded_opts, &opts)
+}
 fn draw_path<'a>(surface: &mut skia_safe::Surface, command: Term<'a>) -> NifResult<()> {
     let args = command.map_get(atoms::args())?.decode::<Vec<Term>>()?;
     let opts = decode_opts(command)?;
     let decoded_opts = generated_opts::decode_path_opts(&opts)?;
     draw_path_impl(surface, args, decoded_opts, &opts)
+}
+fn draw_path_op<'a>(
+    surface: &mut skia_safe::Surface,
+    command: Term<'a>,
+) -> NifResult<()> {
+    let args = command.map_get(atoms::args())?.decode::<Vec<Term>>()?;
+    let opts = decode_opts(command)?;
+    let decoded_opts = generated_opts::decode_path_op_opts(&opts)?;
+    draw_path_op_impl(surface, args, decoded_opts, &opts)
 }
 fn draw_rect<'a>(surface: &mut skia_safe::Surface, command: Term<'a>) -> NifResult<()> {
     let opts = decode_opts(command)?;
@@ -67,6 +94,14 @@ fn draw_rotate<'a>(
     let decoded_opts = generated_opts::decode_rotate_opts(&opts)?;
     draw_rotate_impl(surface, decoded_opts, &opts)
 }
+fn draw_rotate_at<'a>(
+    surface: &mut skia_safe::Surface,
+    command: Term<'a>,
+) -> NifResult<()> {
+    let opts = decode_opts(command)?;
+    let decoded_opts = generated_opts::decode_rotate_at_opts(&opts)?;
+    draw_rotate_at_impl(surface, decoded_opts, &opts)
+}
 fn draw_save<'a>(surface: &mut skia_safe::Surface, _command: Term<'a>) -> NifResult<()> {
     draw_save_impl(surface)
 }
@@ -77,6 +112,11 @@ fn draw_save_layer<'a>(
     let opts = decode_opts(command)?;
     let decoded_opts = generated_opts::decode_save_layer_opts(&opts)?;
     draw_save_layer_impl(surface, decoded_opts, &opts)
+}
+fn draw_scale<'a>(surface: &mut skia_safe::Surface, command: Term<'a>) -> NifResult<()> {
+    let opts = decode_opts(command)?;
+    let decoded_opts = generated_opts::decode_scale_opts(&opts)?;
+    draw_scale_impl(surface, decoded_opts, &opts)
 }
 fn draw_text<'a>(surface: &mut skia_safe::Surface, command: Term<'a>) -> NifResult<()> {
     let args = command.map_get(atoms::args())?.decode::<Vec<Term>>()?;

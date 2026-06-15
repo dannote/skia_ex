@@ -267,6 +267,96 @@ defmodule SkiaTest do
     assert raw.data == <<255, 0, 0, 255, 255, 0, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0>>
   end
 
+  test "supports expanded transforms and layer options" do
+    document =
+      Skia.canvas(4, 4)
+      |> Skia.group([translate: {1, 1}, scale: {2, 2}], fn doc ->
+        Skia.rect(doc, x: 0, y: 0, width: 1, height: 1, fill: :red)
+      end)
+      |> Skia.group([rotate_at: {45, 2, 2}], fn doc ->
+        Skia.oval(doc, x: 1, y: 1, width: 2, height: 2, fill: :blue)
+      end)
+      |> Skia.layer(
+        [opacity: 0.8, bounds: {0, 0, 4, 4}, blend_mode: :src_over, blur: 0.1],
+        fn doc ->
+          Skia.arc(doc,
+            x: 0,
+            y: 0,
+            width: 4,
+            height: 4,
+            start_degrees: 0,
+            sweep_degrees: 180,
+            stroke: :green,
+            stroke_width: 1
+          )
+        end
+      )
+
+    assert {:ok, raw} = Skia.to_raw(document)
+    assert byte_size(raw.data) == 64
+  end
+
+  test "supports inferred blend modes and positioned sweep gradients" do
+    document =
+      Skia.canvas(4, 4)
+      |> Skia.rect(
+        x: 0,
+        y: 0,
+        width: 4,
+        height: 4,
+        fill:
+          Skia.sweep_gradient({2, 2}, 0, 360, [
+            Skia.gradient_stop(:red, 0),
+            Skia.gradient_stop(:blue, 1)
+          ])
+      )
+      |> Skia.rect(x: 0, y: 0, width: 2, height: 2, fill: :white, blend_mode: :soft_light)
+
+    assert {:ok, raw} = Skia.to_raw(document)
+    assert byte_size(raw.data) == 64
+  end
+
+  test "supports path boolean operations" do
+    a =
+      Skia.Path.new()
+      |> Skia.Path.move_to(0, 0)
+      |> Skia.Path.line_to(3, 0)
+      |> Skia.Path.line_to(3, 3)
+      |> Skia.Path.line_to(0, 3)
+      |> Skia.Path.close()
+
+    b =
+      Skia.Path.new()
+      |> Skia.Path.move_to(1, 1)
+      |> Skia.Path.line_to(4, 1)
+      |> Skia.Path.line_to(4, 4)
+      |> Skia.Path.line_to(1, 4)
+      |> Skia.Path.close()
+
+    document =
+      Skia.canvas(4, 4)
+      |> Skia.path_op(a, b, path_op: :intersect, fill: :red)
+
+    assert {:ok, raw} = Skia.to_raw(document)
+    assert byte_size(raw.data) == 64
+  end
+
+  test "supports paragraph text layout options" do
+    document =
+      Skia.canvas(96, 48)
+      |> Skia.text("Hello wrapped world",
+        x: 0,
+        y: 0,
+        width: 48,
+        size: 12,
+        align: :center,
+        direction: :ltr
+      )
+
+    assert {:ok, png} = Skia.to_png(document)
+    assert <<137, 80, 78, 71, 13, 10, 26, 10, _rest::binary>> = png
+  end
+
   test "renders a PNG through the native batch boundary" do
     document =
       Skia.canvas(32, 32)
