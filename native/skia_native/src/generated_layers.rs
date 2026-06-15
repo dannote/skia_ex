@@ -6,20 +6,17 @@ fn draw_save_impl(surface: &mut skia_safe::Surface) -> NifResult<()> {
 }
 fn draw_save_layer_impl<'a>(
     surface: &mut skia_safe::Surface,
-    layer_opts: generated_opts::SaveLayerOpts<'a>,
-    opts: &[(Atom, Term<'a>)],
+    opts: generated_opts::SaveLayerOpts<'a>,
+    raw_opts: &[(Atom, Term<'a>)],
 ) -> NifResult<()> {
-    let bounds = match layer_opts.bounds {
+    let bounds = match opts.bounds {
         Some(term) => Some(rect_from_term(term)?),
         None => None,
     };
     let mut paint = Paint::default();
-    paint
-        .set_alpha(
-            (layer_opts.opacity.unwrap_or(1.0).clamp(0.0, 1.0) * 255.0).round() as u8,
-        );
-    apply_blend_mode(&mut paint, opts)?;
-    if let Some(sigma) = layer_opts.blur {
+    paint.set_alpha((opts.opacity.unwrap_or(1.0).clamp(0.0, 1.0) * 255.0).round() as u8);
+    apply_blend_mode(&mut paint, raw_opts)?;
+    if let Some(sigma) = opts.blur {
         if let Some(filter) = image_filters::blur(
             (sigma, sigma),
             TileMode::Decal,

@@ -5,7 +5,13 @@ defmodule Skia.CommandSpec.Layers do
 
   def commands do
     [
-      save: [handler: :draw_save, args: [], opts: [], native_refs: ["skia_safe::Canvas::save"]],
+      save: [
+        handler: :draw_save,
+        args: [],
+        opts: [],
+        layer: [body: ["surface.canvas().save();"]],
+        native_refs: ["skia_safe::Canvas::save"]
+      ],
       save_layer: [
         handler: :draw_save_layer,
         args: [],
@@ -16,12 +22,25 @@ defmodule Skia.CommandSpec.Layers do
           [name: :blend_mode, type: T.blend_mode()],
           [name: :blur, type: :number]
         ],
+        layer: [
+          setup: [
+            "let bounds = match opts.bounds { Some(term) => Some(rect_from_term(term)?), None => None };",
+            "let mut paint = Paint::default();",
+            "paint.set_alpha((opts.opacity.unwrap_or(1.0).clamp(0.0, 1.0) * 255.0).round() as u8);",
+            "apply_blend_mode(&mut paint, raw_opts)?;",
+            "if let Some(sigma) = opts.blur { if let Some(filter) = image_filters::blur((sigma, sigma), TileMode::Decal, None, None) { paint.set_image_filter(filter); } }",
+            "let mut rec = SaveLayerRec::default().paint(&paint);",
+            "if let Some(ref bounds) = bounds { rec = rec.bounds(bounds); }"
+          ],
+          body: ["surface.canvas().save_layer(&rec);"]
+        ],
         native_refs: ["skia_safe::Canvas::save_layer", "skia_safe::ImageFilter::blur"]
       ],
       restore: [
         handler: :draw_restore,
         args: [],
         opts: [],
+        layer: [body: ["surface.canvas().restore();"]],
         native_refs: ["skia_safe::Canvas::restore"]
       ],
       push_style: [args: [], opts: [[name: :style, type: :term, required: true]]],

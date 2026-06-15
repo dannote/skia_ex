@@ -5,6 +5,7 @@ defmodule Skia.Codegen do
   alias Skia.Codegen.SkiaSafe
   alias Skia.CommandSpec.Clips
   alias Skia.CommandSpec.Images
+  alias Skia.CommandSpec.Layers
   alias Skia.CommandSpec.Shapes
   alias Skia.CommandSpec.Transforms
 
@@ -510,7 +511,53 @@ defmodule Skia.Codegen do
   end
 
   @spec generated_layers() :: String.t()
-  def generated_layers, do: render_template_file("generated_layers.rs")
+  def generated_layers do
+    Layers.commands()
+    |> generated_layer_impls()
+    |> render_items("generated_layers.rs")
+  end
+
+  defp generated_layer_impls(commands) do
+    commands
+    |> Enum.filter(fn {_name, spec} -> Keyword.has_key?(spec, :layer) end)
+    |> Enum.map(fn {name, spec} -> layer_impl(name, spec) end)
+  end
+
+  defp layer_impl(name, spec) do
+    handler = Keyword.fetch!(spec, :handler)
+    layer = Keyword.fetch!(spec, :layer)
+    setup = layer |> Keyword.get(:setup, []) |> Enum.join("\n    ")
+    body = layer |> Keyword.fetch!(:body) |> Enum.join("\n    ")
+
+    case Keyword.get(spec, :opts, []) do
+      [] ->
+        Rust.item("""
+        fn #{handler}_impl(surface: &mut skia_safe::Surface) -> NifResult<()> {
+            #{body}
+            Ok(())
+        }
+        """)
+
+      _opts ->
+        opts_type = name |> Atom.to_string() |> Macro.camelize() |> Kernel.<>("Opts")
+
+        raw_opts_name =
+          if String.contains?(setup <> body, "raw_opts"), do: "raw_opts", else: "_raw_opts"
+
+        setup = if setup == "", do: "", else: setup <> "\n\n    "
+
+        Rust.item("""
+        fn #{handler}_impl<'a>(
+            surface: &mut skia_safe::Surface,
+            opts: generated_opts::#{opts_type}<'a>,
+            #{raw_opts_name}: &[(Atom, Term<'a>)],
+        ) -> NifResult<()> {
+            #{setup}#{body}
+            Ok(())
+        }
+        """)
+    end
+  end
 
   @spec generated_transforms() :: String.t()
   def generated_transforms do
