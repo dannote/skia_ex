@@ -10,4 +10,3 @@ jobs:
     uses: elixir-vibe/actions/.github/workflows/elixir-rustler-release.yml@v1
     with:
       project-name: skia_native
-      apt-packages: libfontconfig1-dev libfreetype6-dev
