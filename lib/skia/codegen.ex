@@ -150,6 +150,11 @@ defmodule Skia.Codegen do
     :r_quad_to,
     :r_conic_to,
     :r_cubic_to,
+    :arc_to,
+    :r_arc_to,
+    :rrect,
+    :cw,
+    :ccw,
     :close
   ]
 

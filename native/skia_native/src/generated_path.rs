@@ -49,6 +49,59 @@ fn build_path(path_term: Term) -> NifResult<skia_safe::Path> {
                         weight as f32,
                     );
             }
+        } else if let Ok((op, x, y, width, height, start, arc_opts)) = segment
+            .decode::<(Atom, f64, f64, f64, f64, f64, Term)>()
+        {
+            if op == atoms::arc_to() {
+                let (sweep, force_move_to) = arc_opts.decode::<(f64, bool)>()?;
+                builder
+                    .arc_to(
+                        Rect::from_xywh(x as f32, y as f32, width as f32, height as f32),
+                        start as f32,
+                        sweep as f32,
+                        force_move_to,
+                    );
+            }
+        } else if let Ok((op, rx, ry, x_axis_rotate, arc_opts)) = segment
+            .decode::<(Atom, f64, f64, f64, Term)>()
+        {
+            if op == atoms::r_arc_to() {
+                let (large_arc, sweep, dx, dy) = arc_opts
+                    .decode::<(bool, Atom, f64, f64)>()?;
+                let arc_size = if large_arc {
+                    skia_safe::path_builder::ArcSize::Large
+                } else {
+                    skia_safe::path_builder::ArcSize::Small
+                };
+                builder
+                    .r_arc_to(
+                        (rx as f32, ry as f32),
+                        x_axis_rotate as f32,
+                        arc_size,
+                        decode_path_direction(sweep)?,
+                        (dx as f32, dy as f32),
+                    );
+            }
+        } else if let Ok((op, x, y, width, height, rx, ry)) = segment
+            .decode::<(Atom, f64, f64, f64, f64, f64, f64)>()
+        {
+            if op == atoms::rrect() {
+                builder
+                    .add_rrect(
+                        RRect::new_rect_xy(
+                            Rect::from_xywh(
+                                x as f32,
+                                y as f32,
+                                width as f32,
+                                height as f32,
+                            ),
+                            rx as f32,
+                            ry as f32,
+                        ),
+                        None,
+                        None,
+                    );
+            }
         } else if let Ok((op, c1x, c1y, c2x, c2y, x, y)) = segment
             .decode::<(Atom, f64, f64, f64, f64, f64, f64)>()
         {
@@ -70,4 +123,13 @@ fn build_path(path_term: Term) -> NifResult<skia_safe::Path> {
         }
     }
     Ok(builder.detach())
+}
+fn decode_path_direction(value: Atom) -> NifResult<PathDirection> {
+    if value == atoms::cw() {
+        Ok(PathDirection::CW)
+    } else if value == atoms::ccw() {
+        Ok(PathDirection::CCW)
+    } else {
+        Err(rustler::Error::BadArg)
+    }
 }

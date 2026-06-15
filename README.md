@@ -19,7 +19,8 @@ document =
   end)
 
 {:ok, png} = Skia.to_png(document)
-{:ok, %{width: width, height: height, stride: stride, data: rgba}} = Skia.to_raw(document)
+{:ok, png} = Skia.render(document, format: :png)
+{:ok, %{width: width, height: height, stride: stride, data: rgba}} = Skia.render(document, Skia.RenderOptions.new(format: :raw))
 ```
 
 ## Paint sources and shaders
@@ -109,6 +110,8 @@ path =
   |> Skia.Path.move_to(0, 0)
   |> Skia.Path.r_line_to(40, 0)
   |> Skia.Path.conic_to(60, 20, 40, 40, 0.5)
+  |> Skia.Path.arc_to({0, 0, 80, 80}, 0, 180, force_move_to: false)
+  |> Skia.Path.rrect({10, 10, 40, 24}, 6)
   |> Skia.Path.close()
 
 svg_path = Skia.Path.from_svg("M0 0L100 0L100 100Z")

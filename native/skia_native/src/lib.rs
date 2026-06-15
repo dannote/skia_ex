@@ -7,8 +7,8 @@ use skia_safe::{
     textlayout::{FontCollection, ParagraphBuilder, ParagraphStyle, TextAlign, TextDirection, TextStyle},
     color_filters, AlphaType, Color, ColorFilter, ColorType, CubicResampler, Data,
     EncodedImageFormat, FilterMode, Font, FontMgr, FontStyle, IPoint, Image, ImageInfo, Matrix,
-    Paint, PaintStyle,
-    PathBuilder, PathEffect, Point, RRect, Rect, SamplingOptions, Shader, TileMode,
+    Paint, PaintStyle, PathBuilder, PathDirection, PathEffect, Point, RRect, Rect, SamplingOptions,
+    Shader, TileMode,
 };
 
 include!("generated_resources.rs");

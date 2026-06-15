@@ -16,6 +16,9 @@ defmodule Skia.Path do
           | {:r_quad_to, number(), number(), number(), number()}
           | {:r_conic_to, number(), number(), number(), number(), number()}
           | {:r_cubic_to, number(), number(), number(), number(), number(), number()}
+          | {:arc_to, number(), number(), number(), number(), number(), {number(), boolean()}}
+          | {:r_arc_to, number(), number(), number(), {boolean(), atom(), number(), number()}}
+          | {:rrect, number(), number(), number(), number(), number(), number()}
           | :close
 
   @type t :: %__MODULE__{segments: [segment()], svg: String.t() | nil}
@@ -69,6 +72,33 @@ defmodule Skia.Path do
     append(path, {:r_cubic_to, f(dc1x), f(dc1y), f(dc2x), f(dc2y), f(dx), f(dy)})
   end
 
+  @spec arc_to(t(), tuple(), number(), number(), keyword()) :: t()
+  def arc_to(
+        %__MODULE__{} = path,
+        {x, y, width, height},
+        start_degrees,
+        sweep_degrees,
+        opts \\ []
+      ) do
+    append(
+      path,
+      {:arc_to, f(x), f(y), f(width), f(height), f(start_degrees),
+       {f(sweep_degrees), Keyword.get(opts, :force_move_to, false)}}
+    )
+  end
+
+  @spec r_arc_to(t(), {number(), number()}, number(), boolean(), atom(), {number(), number()}) ::
+          t()
+  def r_arc_to(%__MODULE__{} = path, {rx, ry}, x_axis_rotate, large_arc, sweep, {dx, dy}) do
+    append(path, {:r_arc_to, f(rx), f(ry), f(x_axis_rotate), {large_arc, sweep, f(dx), f(dy)}})
+  end
+
+  @spec rrect(t(), tuple(), number() | {number(), number()}) :: t()
+  def rrect(%__MODULE__{} = path, {x, y, width, height}, radius) do
+    {rx, ry} = radius_pair(radius)
+    append(path, {:rrect, f(x), f(y), f(width), f(height), f(rx), f(ry)})
+  end
+
   @spec close(t()) :: t()
   def close(%__MODULE__{} = path), do: append(path, :close)
 
@@ -79,6 +109,9 @@ defmodule Skia.Path do
     do: %{path | segments: [segment | path.segments]}
 
   defp append(%__MODULE__{} = path, segment), do: %{path | svg: nil, segments: [segment]}
+
+  defp radius_pair({rx, ry}), do: {rx, ry}
+  defp radius_pair(radius), do: {radius, radius}
 
   defp f(value), do: :erlang.float(value)
 

@@ -216,24 +216,43 @@ defmodule Skia do
     %{width: document.width, height: document.height, commands: commands(document)}
   end
 
+  @doc "Renders the document according to `Skia.RenderOptions`."
+  @spec render(Document.t(), keyword() | Skia.RenderOptions.t()) ::
+          {:ok, binary() | map()} | {:error, atom(), map()}
+  def render(%Document{} = document, opts \\ []) do
+    options = if is_list(opts), do: Skia.RenderOptions.new(opts), else: opts
+
+    case options.format do
+      :png -> to_png(document)
+      :jpeg -> to_jpeg(document, quality: options.quality || 90)
+      :webp -> to_webp(document, quality: options.quality || 90)
+      :raw -> to_raw(document)
+      format -> {:error, :unsupported_format, %{format: format}}
+    end
+  end
+
   @doc "Renders the document to PNG through the native renderer."
   @spec to_png(Document.t()) :: {:ok, binary()} | {:error, atom(), map()}
   def to_png(%Document{} = document) do
-    render(document, &Skia.Native.render_png/1)
+    with :ok <- validate(document), do: render_native(document, &Skia.Native.render_png/1)
   end
 
   @doc "Renders the document to JPEG through the native renderer."
   @spec to_jpeg(Document.t(), keyword()) :: {:ok, binary()} | {:error, atom(), map()}
   def to_jpeg(%Document{} = document, opts \\ []) do
     quality = Keyword.get(opts, :quality, 90)
-    render(document, &Skia.Native.render_jpeg(&1, quality))
+
+    with :ok <- validate(document),
+         do: render_native(document, &Skia.Native.render_jpeg(&1, quality))
   end
 
   @doc "Renders the document to WEBP through the native renderer."
   @spec to_webp(Document.t(), keyword()) :: {:ok, binary()} | {:error, atom(), map()}
   def to_webp(%Document{} = document, opts \\ []) do
     quality = Keyword.get(opts, :quality, 90)
-    render(document, &Skia.Native.render_webp(&1, quality))
+
+    with :ok <- validate(document),
+         do: render_native(document, &Skia.Native.render_webp(&1, quality))
   end
 
   @doc "Encodes the normalized command batch as an Erlang external term binary."
@@ -247,18 +266,52 @@ defmodule Skia do
            %{width: pos_integer(), height: pos_integer(), stride: pos_integer(), data: binary()}}
           | {:error, atom(), map()}
   def to_raw(%Document{} = document) do
-    batch = to_batch(document)
+    with :ok <- validate(document) do
+      batch = to_batch(document)
 
-    case Skia.Native.render_rgba(batch) do
-      {:ok, {width, height, stride, data}} ->
-        {:ok, %{width: width, height: height, stride: stride, data: data}}
+      case Skia.Native.render_rgba(batch) do
+        {:ok, {width, height, stride, data}} ->
+          {:ok, %{width: width, height: height, stride: stride, data: data}}
 
-      {:error, reason} ->
-        {:error, reason, batch}
+        {:error, reason} ->
+          {:error, reason, batch}
+      end
     end
   end
 
-  defp render(%Document{} = document, render_fun) when is_function(render_fun, 1) do
+  @doc "Validates the document before handing it to native code."
+  @spec validate(Document.t()) :: :ok | {:error, atom(), map()}
+  def validate(%Document{width: width, height: height}) when width <= 0 or height <= 0 do
+    {:error, :invalid_document, %{width: width, height: height}}
+  end
+
+  def validate(%Document{} = document) do
+    document
+    |> commands()
+    |> Enum.reduce_while(:ok, &reduce_validation/2)
+  end
+
+  defp reduce_validation(command, :ok) do
+    case validate_command(command) do
+      :ok -> {:cont, :ok}
+      {:error, reason, meta} -> {:halt, {:error, reason, meta}}
+    end
+  end
+
+  defp validate_command(%Command{op: op, opts: opts}) do
+    cond do
+      Keyword.has_key?(opts, :path_effect) and not Keyword.has_key?(opts, :stroke) ->
+        {:error, :path_effect_requires_stroke, %{op: op}}
+
+      Keyword.has_key?(opts, :stroke_width) and Keyword.get(opts, :stroke_width) < 0 ->
+        {:error, :invalid_stroke_width, %{op: op, stroke_width: Keyword.get(opts, :stroke_width)}}
+
+      true ->
+        :ok
+    end
+  end
+
+  defp render_native(%Document{} = document, render_fun) when is_function(render_fun, 1) do
     batch = to_batch(document)
 
     case render_fun.(batch) do

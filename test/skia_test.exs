@@ -625,6 +625,21 @@ defmodule SkiaTest do
     assert byte_size(raw.data) == 128
   end
 
+  test "supports arc and rounded-rect path helpers" do
+    path =
+      Skia.Path.new()
+      |> Skia.Path.arc_to({0, 0, 6, 6}, 0, 180, force_move_to: true)
+      |> Skia.Path.r_arc_to({2, 2}, 0, false, :cw, {3, 0})
+      |> Skia.Path.rrect({1, 1, 4, 3}, {1, 1})
+
+    document =
+      Skia.canvas(8, 8)
+      |> Skia.path(path, fill: :blue, stroke: :red, stroke_width: 1)
+
+    assert {:ok, raw} = Skia.to_raw(document)
+    assert byte_size(raw.data) == 256
+  end
+
   test "supports conic, relative, and SVG paths" do
     path =
       Skia.Path.new()
@@ -645,6 +660,68 @@ defmodule SkiaTest do
 
     assert {:ok, raw} = Skia.to_raw(document)
     assert byte_size(raw.data) == 64
+  end
+
+  test "supports render options and preflight validation" do
+    document = Skia.canvas(4, 4) |> Skia.rect(x: 0, y: 0, width: 4, height: 4, fill: :red)
+    assert {:ok, png} = Skia.render(document, format: :png)
+    assert <<137, 80, 78, 71, 13, 10, 26, 10, _rest::binary>> = png
+    assert {:ok, %{data: data}} = Skia.render(document, Skia.RenderOptions.new(format: :raw))
+    assert byte_size(data) == 64
+
+    invalid =
+      Skia.canvas(4, 4) |> Skia.line(from: {0, 0}, to: {4, 4}, stroke: :red, stroke_width: -1)
+
+    assert {:error, :invalid_stroke_width, %{}} = Skia.to_png(invalid)
+  end
+
+  test "supports golden hashes for expanded rendering features" do
+    fixtures = [
+      conical:
+        Skia.canvas(8, 8)
+        |> Skia.rect(
+          x: 0,
+          y: 0,
+          width: 8,
+          height: 8,
+          fill: Skia.two_point_conical_gradient({2, 2}, 0.5, {6, 6}, 4, [:red, :blue])
+        ),
+      paint:
+        Skia.canvas(8, 8)
+        |> Skia.rect(
+          x: 0,
+          y: 0,
+          width: 8,
+          height: 8,
+          paint: Skia.Paint.new(fill: :red, color_filter: Skia.ColorFilter.blend(:blue, :src_in))
+        ),
+      svg:
+        Skia.canvas(8, 8)
+        |> Skia.path(Skia.Path.from_svg("M0 0L8 0L8 8Z"), fill: :green),
+      spans:
+        Skia.canvas(64, 24)
+        |> Skia.text("",
+          x: 0,
+          y: 0,
+          paragraph_style: Skia.ParagraphStyle.new(width: 64),
+          spans: [
+            Skia.TextSpan.new("A", fill: :red, size: 14),
+            Skia.TextSpan.new("B", fill: :blue, size: 14)
+          ]
+        )
+    ]
+
+    expected = %{
+      conical: "031e470625b7a589e6cbc7dc6ed257ba168fc4ca102ccada064666f78585d979",
+      paint: "a2cd62e99d4bd43d248f0f19b5394bbf1da38dc03528bd0cdf99cc2817d12fe4",
+      svg: "ad31af7254ede9fba37933385a8b877baafe5c63ac2e67b4784be3907f0ad180",
+      spans: "8b0a9b450966731eacd9ed94881dceb1aab53baa5d5ce1dcd3022798b774e7f4"
+    }
+
+    for {name, document} <- fixtures do
+      assert {:ok, png} = Skia.to_png(document)
+      assert Base.encode16(:crypto.hash(:sha256, png), case: :lower) == expected[name]
+    end
   end
 
   test "supports styled text spans" do
