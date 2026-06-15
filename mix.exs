@@ -41,6 +41,7 @@ defmodule Skia.MixProject do
       {:ex_dna, "~> 1.0", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.0", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.0", only: [:dev, :test], runtime: false},
+      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:rustler_precompiled, "~> 0.8"},
       {:rustler, "~> 0.38.0", optional: true, runtime: false},
       {:rustq, "~> 0.5", only: [:dev, :test], runtime: false},
