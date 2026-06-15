@@ -141,6 +141,29 @@ defmodule SkiaTest do
     assert %{width: 8, height: 8, commands: [%Skia.Command{op: :clear}]} = batch
   end
 
+  test "renders runtime SkSL shaders" do
+    assert {:ok, effect} =
+             Skia.RuntimeEffect.compile("""
+             uniform float red;
+             half4 main(vec2 p) { return half4(red, 0.0, 1.0 - red, 1.0); }
+             """)
+
+    document =
+      Skia.canvas(4, 4)
+      |> Skia.rect(
+        x: 0,
+        y: 0,
+        width: 4,
+        height: 4,
+        fill: Skia.RuntimeEffect.shader(effect, uniforms: %{red: 1.0})
+      )
+
+    assert {:ok, raw} = Skia.to_raw(document)
+    assert <<255, 0, 0, 255, _::binary>> = raw.data
+    assert {:error, error} = Skia.RuntimeEffect.compile("not sksl")
+    assert is_binary(error)
+  end
+
   test "renders vertices meshes" do
     vertices =
       Skia.Vertices.new([{1, 1}, {7, 1}, {4, 7}],

@@ -256,6 +256,11 @@ defmodule Skia.Command do
     )
   end
 
+  defp normalize_color!(%Skia.Shader.RuntimeEffect{} = shader) do
+    {:runtime_effect_shader, shader.effect, normalize_uniforms!(shader.uniforms),
+     normalize_optional_matrix!(shader.matrix)}
+  end
+
   defp normalize_color!(%Skia.Shader.ImageShader{} = shader) do
     {:image_shader, shader.image, shader.tile_x, shader.tile_y,
      normalize_sampling_options!(shader.sampling), normalize_optional_matrix!(shader.matrix)}
@@ -268,6 +273,13 @@ defmodule Skia.Command do
 
   defp normalize_color!(%Skia.Shader.GradientStop{color: color, position: position}) do
     normalize_color!({:gradient_stop, color, position})
+  end
+
+  defp normalize_color!(
+         {:runtime_effect_shader, %Skia.RuntimeEffect{} = effect, uniforms, matrix}
+       ) do
+    {:runtime_effect_shader, effect, normalize_uniforms!(uniforms),
+     normalize_optional_matrix!(matrix)}
   end
 
   defp normalize_color!({:image_shader, %Skia.Image{} = image, tile_x, tile_y, sampling, matrix})
@@ -405,6 +417,21 @@ defmodule Skia.Command do
   end
 
   defp normalize_color!(color), do: raise(ArgumentError, "invalid color #{inspect(color)}")
+
+  defp normalize_uniforms!(uniforms) when is_map(uniforms),
+    do: uniforms |> Map.to_list() |> normalize_uniforms!()
+
+  defp normalize_uniforms!(uniforms) when is_list(uniforms) do
+    Enum.map(uniforms, fn {name, value} -> {to_string(name), normalize_uniform_value!(value)} end)
+  end
+
+  defp normalize_uniform_value!(value) when is_number(value), do: [normalize_number!(value)]
+
+  defp normalize_uniform_value!(tuple) when is_tuple(tuple),
+    do: tuple |> Tuple.to_list() |> normalize_uniform_value!()
+
+  defp normalize_uniform_value!(values) when is_list(values),
+    do: Enum.map(values, &normalize_number!/1)
 
   defp normalize_color_filter!(%Skia.ColorFilter.Blend{color: color, blend_mode: blend_mode})
        when is_atom(blend_mode) do

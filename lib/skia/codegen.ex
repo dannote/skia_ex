@@ -87,6 +87,7 @@ defmodule Skia.Codegen do
     :invalid_font,
     :invalid_picture,
     :invalid_text_blob,
+    :invalid_runtime_effect,
     "nil",
     :render_failed,
     :unsupported_format,
@@ -104,6 +105,7 @@ defmodule Skia.Codegen do
     :gradient_stop,
     :image_shader,
     :picture_shader,
+    :runtime_effect_shader,
     :two_point_conical_gradient,
     :color_shader,
     :blur_filter,
@@ -173,6 +175,11 @@ defmodule Skia.Codegen do
   ]
 
   @native_nifs [
+    compile_runtime_effect: [
+      args: [env: "Env<'a>", source: :String],
+      returns: "NifResult<Term<'a>>",
+      lifetime: :a
+    ],
     render_png: [
       args: [env: "Env<'a>", batch: "Term<'a>"],
       returns: "NifResult<Term<'a>>",
@@ -734,6 +741,10 @@ defmodule Skia.Codegen do
         RustQ.Rustler.resource_handle(:EncodedTextBlob,
           fields: [blob: "TextBlob"],
           decoder: :decode_encoded_text_blob_ref
+        ),
+        RustQ.Rustler.resource_handle(:EncodedRuntimeEffect,
+          fields: [source: "String"],
+          decoder: :decode_encoded_runtime_effect_ref
         )
       ]
       |> List.flatten()

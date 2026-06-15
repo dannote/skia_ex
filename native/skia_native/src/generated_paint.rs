@@ -108,6 +108,32 @@ fn decode_paint(term: Term) -> NifResult<Paint> {
             return Ok(paint);
         }
     }
+    if let Ok((tag, effect_term, uniforms, matrix_term)) = term
+        .decode::<(Atom, Term, Vec<(String, Vec<f64>)>, Term)>()
+    {
+        if tag == atoms::runtime_effect_shader() {
+            let effect = runtime_effect_from_term(effect_term)?;
+            let mut builder = skia_safe::runtime_effect::RuntimeShaderBuilder::new(
+                effect,
+            );
+            for (name, values) in uniforms {
+                let values: Vec<f32> = values
+                    .into_iter()
+                    .map(|value| value as f32)
+                    .collect();
+                builder
+                    .set_uniform_float(name, &values)
+                    .map_err(|_| rustler::Error::BadArg)?;
+            }
+            let matrix = optional_matrix_from_term(matrix_term)?
+                .unwrap_or_else(Matrix::default);
+            let mut paint = Paint::default();
+            paint.set_anti_alias(true).set_style(PaintStyle::Fill);
+            paint
+                .set_shader(builder.make_shader(&matrix).ok_or(rustler::Error::BadArg)?);
+            return Ok(paint);
+        }
+    }
     if let Ok((tag, image_term, tile_x, tile_y, sampling_term, matrix_term)) = term
         .decode::<(Atom, Term, Atom, Atom, Term, Term)>()
     {

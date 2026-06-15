@@ -11,7 +11,7 @@ use skia_safe::{
     color_filters, AlphaType, Color, ColorFilter, ColorType, CubicResampler, Data,
     ClipOp, EncodedImageFormat, FilterMode, Font, FontMgr, FontStyle, IPoint, Image, ImageInfo, MaskFilter, Matrix,
     Paint, PaintStyle, PathBuilder, PathDirection, PathEffect, Picture, PictureRecorder, Point, RRect,
-    Rect, SamplingOptions, Shader, TextBlob, TileMode, Vertices,
+    Rect, RuntimeEffect, SamplingOptions, Shader, TextBlob, TileMode, Vertices,
 };
 
 include!("generated_resources.rs");
@@ -24,6 +24,13 @@ mod generated_enums;
 mod generated_opts;
 
 include!("generated_nifs.rs");
+
+fn compile_runtime_effect_impl<'a>(env: Env<'a>, source: String) -> NifResult<Term<'a>> {
+    match RuntimeEffect::make_for_shader(&source, None) {
+        Ok(_) => Ok((atoms::ok(), ResourceArc::new(EncodedRuntimeEffect { source })).encode(env)),
+        Err(error) => Ok((atoms::error(), error).encode(env)),
+    }
+}
 
 fn render_png_impl<'a>(env: Env<'a>, batch: Term<'a>) -> NifResult<Term<'a>> {
     encode_rendered(env, batch, EncodedImageFormat::PNG, 100)
@@ -434,6 +441,11 @@ fn picture_from_term(picture_term: Term) -> NifResult<Picture> {
 fn text_blob_from_term(blob_term: Term) -> NifResult<TextBlob> {
     let blob_ref = decode_encoded_text_blob_ref(blob_term)?;
     Ok(blob_ref.blob.clone())
+}
+
+fn runtime_effect_from_term(effect_term: Term) -> NifResult<RuntimeEffect> {
+    let effect_ref = decode_encoded_runtime_effect_ref(effect_term)?;
+    RuntimeEffect::make_for_shader(&effect_ref.source, None).map_err(|_| rustler::Error::BadArg)
 }
 
 fn vertices_from_term(term: Term) -> NifResult<Vertices> {

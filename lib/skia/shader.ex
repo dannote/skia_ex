@@ -94,6 +94,17 @@ defmodule Skia.Shader.PictureShader do
   ]
 end
 
+defmodule Skia.Shader.RuntimeEffect do
+  @moduledoc "Runtime SkSL shader paint source."
+
+  @type t :: %__MODULE__{
+          effect: Skia.RuntimeEffect.t(),
+          uniforms: map() | keyword(),
+          matrix: tuple() | nil
+        }
+  defstruct [:effect, uniforms: %{}, matrix: nil]
+end
+
 defmodule Skia.Shader.GradientStop do
   @moduledoc "Color stop with explicit position in a gradient."
 
@@ -170,6 +181,11 @@ defmodule Skia.Shader do
   @doc "Creates a positioned gradient stop."
   @spec stop(term(), number()) :: Skia.Shader.GradientStop.t()
   def stop(color, position), do: %Skia.Shader.GradientStop{color: color, position: position}
+
+  @doc "Creates a runtime SkSL shader from a compiled effect."
+  @spec runtime_effect(Skia.RuntimeEffect.t(), keyword()) :: Skia.Shader.RuntimeEffect.t()
+  def runtime_effect(%Skia.RuntimeEffect{} = effect, opts \\ []),
+    do: Skia.RuntimeEffect.shader(effect, opts)
 
   @doc "Creates an image shader paint value."
   @spec image(Skia.Image.t(), keyword()) :: Skia.Shader.ImageShader.t()

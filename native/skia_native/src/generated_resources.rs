@@ -41,3 +41,14 @@ fn decode_encoded_text_blob_ref<'a>(
     term.map_get(Atom::from_bytes(term.get_env(), b"ref")?)?
         .decode::<ResourceArc<EncodedTextBlob>>()
 }
+struct EncodedRuntimeEffect {
+    pub source: String,
+}
+#[rustler::resource_impl]
+impl rustler::Resource for EncodedRuntimeEffect {}
+fn decode_encoded_runtime_effect_ref<'a>(
+    term: Term<'a>,
+) -> NifResult<ResourceArc<EncodedRuntimeEffect>> {
+    term.map_get(Atom::from_bytes(term.get_env(), b"ref")?)?
+        .decode::<ResourceArc<EncodedRuntimeEffect>>()
+}

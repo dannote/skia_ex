@@ -179,6 +179,26 @@ Skia.text(doc, "", x: 0, y: 32, paragraph_style: paragraph, spans: spans)
 Skia.text_blob(doc, blob, x: 0, y: 64, fill: :black)
 ```
 
+## Runtime effects / SkSL
+
+Compile reusable SkSL shader effects and pass uniforms from Elixir:
+
+```elixir
+{:ok, effect} =
+  Skia.RuntimeEffect.compile("""
+  uniform float time;
+  uniform vec2 resolution;
+
+  half4 main(vec2 p) {
+    vec2 uv = p / resolution;
+    return half4(uv.x, 0.5 + 0.5 * sin(time + uv.x * 20.0), uv.y, 1.0);
+  }
+  """)
+
+shader = Skia.RuntimeEffect.shader(effect, uniforms: %{time: 1.2, resolution: {800, 600}})
+Skia.rect(doc, x: 0, y: 0, width: 800, height: 600, fill: shader)
+```
+
 ## Vertices
 
 Draw triangle meshes with per-vertex colors:

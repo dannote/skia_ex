@@ -19,6 +19,7 @@ defmodule Skia.Native do
     ),
     version: version
 
+  def compile_runtime_effect(_source), do: :erlang.nif_error(:nif_not_loaded)
   def render_png(_batch), do: :erlang.nif_error(:nif_not_loaded)
   def render_rgba(_batch), do: :erlang.nif_error(:nif_not_loaded)
   def render_compact_png(_batch), do: :erlang.nif_error(:nif_not_loaded)
