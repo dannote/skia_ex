@@ -12,16 +12,18 @@ defmodule Skia.Codegen.Defrust do
     handler_definition(name, opts)
   end
 
-  defmacro defhandlers(specs_ast) do
-    {specs, _binding} = Code.eval_quoted(specs_ast, [], __CALLER__)
+  defmacro defhandlers(opts) when is_list(opts) do
+    from_ast = Keyword.fetch!(opts, :from)
+    {commands, _binding} = Code.eval_quoted(from_ast, [], __CALLER__)
 
-    specs
+    commands
+    |> handler_specs()
     |> Enum.map(fn {name, opts} -> handler_definition(name, opts) end)
     |> then(&{:__block__, [], &1})
   end
 
-  def handler_specs do
-    Skia.CommandSpec.all()
+  defp handler_specs(commands) do
+    commands
     |> Enum.flat_map(fn {command_name, spec} ->
       case Keyword.fetch(spec, :handler) do
         {:ok, handler} ->

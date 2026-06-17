@@ -1,0 +1,30 @@
+defmodule Skia.CodegenDefrustTest do
+  use ExUnit.Case, async: true
+
+  alias RustQ.Rust.AST
+
+  test "generated handlers are real defrust functions" do
+    handlers = Skia.Codegen.GeneratedHandlers.__rustq_asts__()
+    names = handlers |> Enum.map(& &1.name) |> MapSet.new()
+
+    assert MapSet.member?(names, :draw_save)
+    assert MapSet.member?(names, :draw_path)
+
+    assert %AST.Function{
+             args: [%AST.FunctionArg{name: :canvas}, %AST.FunctionArg{name: :_command}]
+           } =
+             Enum.find(handlers, &(&1.name == :draw_save))
+
+    assert %AST.Function{body: draw_path_body} = Enum.find(handlers, &(&1.name == :draw_path))
+
+    assert Enum.any?(draw_path_body, fn
+             %AST.Let{pattern: %AST.PatVar{name: :args}} -> true
+             _other -> false
+           end)
+
+    assert Enum.any?(draw_path_body, fn
+             %AST.Let{pattern: %AST.PatVar{name: :decoded_opts}} -> true
+             _other -> false
+           end)
+  end
+end
