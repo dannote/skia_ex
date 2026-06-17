@@ -452,41 +452,8 @@ defmodule Skia.Codegen do
     |> RustQ.render!(file, preamble: generated_rust_preamble(), splice: [items: items])
   end
 
-  defp render_rustq_item(ast) do
-    ast
-    |> normalize_external_rust_paths()
-    |> RustQ.Rust.AST.Render.render_item()
-    |> Rust.item()
-  end
-
-  defp normalize_external_rust_paths(%AST.Path{parts: parts} = path),
-    do: %{path | parts: normalize_external_rust_path(parts)}
-
-  defp normalize_external_rust_paths(%AST.TypePath{parts: parts} = path),
-    do: %{path | parts: normalize_external_rust_path(parts)}
-
-  defp normalize_external_rust_paths(%{__struct__: module} = struct) do
-    if module |> Atom.to_string() |> String.starts_with?("Elixir.RustQ.Rust.AST.") do
-      struct
-      |> Map.from_struct()
-      |> Map.new(fn {key, value} -> {key, normalize_external_rust_paths(value)} end)
-      |> then(&struct(module, &1))
-    else
-      struct
-    end
-  end
-
-  defp normalize_external_rust_paths(values) when is_list(values),
-    do: Enum.map(values, &normalize_external_rust_paths/1)
-
-  defp normalize_external_rust_paths(tuple) when is_tuple(tuple),
-    do: tuple |> Tuple.to_list() |> normalize_external_rust_paths() |> List.to_tuple()
-
-  defp normalize_external_rust_paths(value), do: value
-
-  defp normalize_external_rust_path([:Atoms | rest]), do: [:atoms | rest]
-  defp normalize_external_rust_path([:GeneratedOpts | rest]), do: [:generated_opts | rest]
-  defp normalize_external_rust_path(parts), do: parts
+  defp render_rustq_item(ast),
+    do: ast |> RustQ.Rust.AST.Render.render_item() |> Rust.item()
 
   defp enum_atoms do
     enum_defs()
@@ -758,9 +725,52 @@ defmodule Skia.Codegen do
 
   @spec generated_transforms() :: String.t()
   def generated_transforms do
-    Transforms.commands()
-    |> generated_body_impls(:transform)
-    |> render_items("generated_transforms.rs")
+    defrust_items = [render_rustq_item(generated_translate_impl_ast())]
+
+    legacy_items =
+      Transforms.commands()
+      |> Keyword.drop([:translate])
+      |> generated_body_impls(:transform)
+
+    render_items(defrust_items ++ legacy_items, "generated_transforms.rs")
+  end
+
+  @doc false
+  @spec generated_translate_impl_ast() :: AST.Function.t()
+  def generated_translate_impl_ast do
+    %AST.Function{
+      name: :draw_translate_impl,
+      lifetime: :a,
+      args: [
+        %AST.FunctionArg{
+          name: :canvas,
+          type: %AST.TypeRef{inner: %AST.TypePath{parts: [:skia_safe, :Canvas]}}
+        },
+        %AST.FunctionArg{
+          name: :opts,
+          type: %AST.TypePath{parts: [:generated_opts, :TranslateOpts], lifetimes: [:a]}
+        },
+        %AST.FunctionArg{name: :_raw_opts, type: "&[(Atom, Term<'a>)]"}
+      ],
+      returns: %AST.TypeNifResult{inner: %AST.TypeUnit{}},
+      body: [
+        %AST.ExprStmt{
+          expr: %AST.MethodCall{
+            receiver: %AST.Var{name: :canvas},
+            method: :translate,
+            args: [
+              %AST.Tuple{
+                values: [
+                  %AST.Field{receiver: %AST.Var{name: :opts}, field: :x},
+                  %AST.Field{receiver: %AST.Var{name: :opts}, field: :y}
+                ]
+              }
+            ]
+          }
+        },
+        %AST.Return{expr: %AST.Ok{}}
+      ]
+    }
   end
 
   @spec generated_shapes() :: String.t()

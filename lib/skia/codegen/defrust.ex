@@ -1,6 +1,9 @@
 defmodule Skia.Codegen.Defrust do
   @moduledoc false
 
+  alias RustQ.Rust
+  alias RustQ.Rust.AST
+
   defmacro __using__(_opts) do
     quote do
       import Skia.Codegen.Defrust
@@ -9,7 +12,20 @@ defmodule Skia.Codegen.Defrust do
   end
 
   defmacro defhandler(name, opts) do
-    handler_definition(name, opts)
+    ast = handler_ast(name, opts)
+    item = Rust.item(RustQ.Rust.AST.Render.render_item(ast))
+    source = RustQ.Rust.AST.Render.render_item(ast)
+
+    quote do
+      @doc false
+      def __rustq_asts__, do: [unquote(Macro.escape(ast))]
+
+      @doc false
+      def __rustq_items__, do: [unquote(Macro.escape(item))]
+
+      @doc false
+      def __rustq_source__, do: unquote(source)
+    end
   end
 
   defmacro defimpl_handler(name, do: body) do
@@ -36,11 +52,25 @@ defmodule Skia.Codegen.Defrust do
     from_ast = Keyword.fetch!(opts, :from)
     {commands, _binding} = Code.eval_quoted(from_ast, [], __CALLER__)
 
-    commands
-    |> select_commands(opts)
-    |> handler_specs()
-    |> Enum.map(fn {name, opts} -> handler_definition(name, opts) end)
-    |> then(&{:__block__, [], &1})
+    asts =
+      commands
+      |> select_commands(opts)
+      |> handler_specs()
+      |> Enum.map(fn {name, opts} -> handler_ast(name, opts) end)
+
+    items = Enum.map(asts, &Rust.item(RustQ.Rust.AST.Render.render_item(&1)))
+    source = Enum.map_join(asts, "\n\n", &RustQ.Rust.AST.Render.render_item/1)
+
+    quote do
+      @doc false
+      def __rustq_asts__, do: unquote(Macro.escape(asts))
+
+      @doc false
+      def __rustq_items__, do: unquote(Macro.escape(items))
+
+      @doc false
+      def __rustq_source__, do: unquote(source)
+    end
   end
 
   defp handler_specs(commands) do
@@ -118,17 +148,93 @@ defmodule Skia.Codegen.Defrust do
   defp block_expressions({:__block__, _, expressions}), do: expressions
   defp block_expressions(expression), do: [expression]
 
-  defp handler_definition(name, opts) do
+  defp handler_ast(name, opts) do
     impl = Keyword.fetch!(opts, :impl)
     args? = Keyword.get(opts, :args?, false)
     opts_name = Keyword.get(opts, :opts)
     command_arg = if args? or opts_name, do: :command, else: :_command
-    body = handler_body(impl, args?, opts_name)
+
+    %AST.Function{
+      name: name,
+      args: [
+        %AST.FunctionArg{
+          name: :canvas,
+          type: %AST.TypeRef{inner: %AST.TypePath{parts: [:Canvas]}}
+        },
+        %AST.FunctionArg{name: command_arg, type: term_type()}
+      ],
+      returns: %AST.TypeNifResult{inner: %AST.TypeUnit{}},
+      body: handler_ast_body(impl, args?, opts_name),
+      lifetime: :a
+    }
+  end
+
+  defp handler_ast_body(impl, args?, opts_name) do
+    []
+    |> append_if(args?, args_decode_stmt())
+    |> append_if(opts_name, opts_decode_stmts(opts_name))
+    |> List.flatten()
+    |> Kernel.++([impl_call_stmt(impl, args?, opts_name)])
+  end
+
+  defp term_type, do: %AST.TypePath{parts: [:Term], lifetimes: [:a]}
+
+  defp args_decode_stmt do
+    %AST.Let{
+      pattern: %AST.PatVar{name: :args},
+      expr: %AST.Try{
+        expr: %AST.MethodCall{
+          receiver: %AST.Try{
+            expr: %AST.MethodCall{
+              receiver: %AST.Var{name: :command},
+              method: :map_get,
+              args: [%AST.PathCall{path: %AST.Path{parts: [:atoms, :args]}}]
+            }
+          },
+          method: :decode,
+          generics: [%AST.TypeVec{inner: term_type()}]
+        }
+      }
+    }
+  end
+
+  defp opts_decode_stmts(opts_name) do
+    decoder = String.to_atom("decode_#{opts_name}_opts")
+
+    [
+      %AST.Let{
+        pattern: %AST.PatVar{name: :opts},
+        expr: %AST.Try{expr: %AST.LocalCall{name: :decode_opts, args: [%AST.Var{name: :command}]}}
+      },
+      %AST.Let{
+        pattern: %AST.PatVar{name: :decoded_opts},
+        expr: %AST.Try{
+          expr: %AST.PathCall{
+            path: %AST.Path{parts: [:generated_opts, decoder]},
+            args: [%AST.Ref{expr: %AST.Var{name: :opts}}]
+          }
+        }
+      }
+    ]
+  end
+
+  defp impl_call_stmt(impl, args?, opts_name) do
+    args =
+      [%AST.Var{name: :canvas}]
+      |> append_if(args?, %AST.Var{name: :args})
+      |> append_if(opts_name, %AST.Var{name: :decoded_opts})
+      |> append_if(opts_name, %AST.Ref{expr: %AST.Var{name: :opts}})
+
+    %AST.Return{expr: %AST.LocalCall{name: impl, args: args}}
+  end
+
+  defp handler_definition(name, opts) do
+    impl = Keyword.fetch!(opts, :impl)
 
     quote do
       @spec unquote(name)(R.ref(Canvas.t()), term()) :: R.nif_result(R.unit())
-      defrust unquote(name)(canvas, unquote(Macro.var(command_arg, nil))) do
-        unquote(body)
+      defrust unquote(name)(canvas, _command) do
+        unquote(impl)(canvas)
       end
     end
   end
@@ -140,53 +246,6 @@ defmodule Skia.Codegen.Defrust do
         unquote(body)
       end
     end
-  end
-
-  defp handler_body(impl, args?, opts_name) do
-    setup =
-      []
-      |> append_if(args?, args_decode_ast())
-      |> append_if(opts_name, opts_decode_ast(opts_name))
-      |> List.flatten()
-
-    {:__block__, [], setup ++ [impl_call_ast(impl, args?, opts_name)]}
-  end
-
-  defp args_decode_ast do
-    quote do
-      args = decode_as!(unwrap!(command.map_get(Atoms.args())), R.vec(term()))
-    end
-  end
-
-  defp opts_decode_ast(opts_name) do
-    decoder = String.to_atom("decode_#{opts_name}_opts")
-
-    [
-      quote do
-        opts = unwrap!(decode_opts(command))
-      end,
-      {:=, [],
-       [
-         Macro.var(:decoded_opts, nil),
-         {:unwrap!, [],
-          [
-            {{:., [], [{:__aliases__, [], [:GeneratedOpts]}, decoder]}, [],
-             [
-               {:ref, [], [Macro.var(:opts, nil)]}
-             ]}
-          ]}
-       ]}
-    ]
-  end
-
-  defp impl_call_ast(impl, args?, opts_name) do
-    args =
-      [Macro.var(:canvas, nil)]
-      |> append_if(args?, Macro.var(:args, nil))
-      |> append_if(opts_name, Macro.var(:decoded_opts, nil))
-      |> append_if(opts_name, {:ref, [], [Macro.var(:opts, nil)]})
-
-    {impl, [], args}
   end
 
   def append_if_for_generated(values, nil, _value), do: values

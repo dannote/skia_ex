@@ -34,7 +34,7 @@ defmodule Skia.CodegenDefrustTest do
     assert Skia.Codegen.GeneratedLayers.__rustq_asts__() == []
   end
 
-  test "generated handlers are real defrust functions" do
+  test "generated handlers use direct Rust paths" do
     handlers = Skia.Codegen.GeneratedHandlers.__rustq_asts__()
     names = handlers |> Enum.map(& &1.name) |> MapSet.new()
 
@@ -45,13 +45,52 @@ defmodule Skia.CodegenDefrustTest do
     assert %AST.Function{body: draw_path_body} = Enum.find(handlers, &(&1.name == :draw_path))
 
     assert Enum.any?(draw_path_body, fn
-             %AST.Let{pattern: %AST.PatVar{name: :args}} -> true
-             _other -> false
+             %AST.Let{
+               pattern: %AST.PatVar{name: :args},
+               expr: %AST.Try{
+                 expr: %AST.MethodCall{
+                   receiver: %AST.Try{
+                     expr: %AST.MethodCall{
+                       args: [%AST.PathCall{path: %AST.Path{parts: [:atoms, :args]}}]
+                     }
+                   }
+                 }
+               }
+             } ->
+               true
+
+             _other ->
+               false
            end)
 
     assert Enum.any?(draw_path_body, fn
-             %AST.Let{pattern: %AST.PatVar{name: :decoded_opts}} -> true
-             _other -> false
+             %AST.Let{
+               pattern: %AST.PatVar{name: :decoded_opts},
+               expr: %AST.Try{
+                 expr: %AST.PathCall{path: %AST.Path{parts: [:generated_opts, :decode_path_opts]}}
+               }
+             } ->
+               true
+
+             _other ->
+               false
            end)
+  end
+
+  test "translate impl uses explicit generated opts Rust type" do
+    assert %AST.Function{
+             name: :draw_translate_impl,
+             args: [
+               %AST.FunctionArg{
+                 type: %AST.TypeRef{inner: %AST.TypePath{parts: [:skia_safe, :Canvas]}}
+               },
+               %AST.FunctionArg{
+                 name: :opts,
+                 type: %AST.TypePath{parts: [:generated_opts, :TranslateOpts], lifetimes: [:a]}
+               },
+               %AST.FunctionArg{name: :_raw_opts, type: "&[(Atom, Term<'a>)]"}
+             ],
+             body: [%AST.ExprStmt{expr: %AST.MethodCall{method: :translate}}, %AST.Return{}]
+           } = Skia.Codegen.generated_translate_impl_ast()
   end
 end
