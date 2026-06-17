@@ -729,7 +729,7 @@ defmodule Skia.Codegen do
 
     legacy_items =
       Transforms.commands()
-      |> Keyword.drop([:translate, :scale, :rotate, :rotate_at])
+      |> Keyword.drop([:translate, :scale, :rotate, :rotate_at, :concat])
       |> generated_body_impls(:transform)
 
     render_items(defrust_items ++ legacy_items, "generated_transforms.rs")
@@ -739,30 +739,25 @@ defmodule Skia.Codegen do
   @spec generated_transform_impl_asts() :: [AST.Function.t()]
   def generated_transform_impl_asts do
     Transforms.commands()
-    |> Keyword.take([:translate, :scale, :rotate, :rotate_at])
+    |> Keyword.take([:translate, :scale, :rotate, :rotate_at, :concat])
     |> Enum.map(fn {name, spec} -> generated_transform_impl_ast(name, spec) end)
   end
 
   defp generated_transform_impl_ast(name, spec) do
     handler = Keyword.fetch!(spec, :handler)
 
-    %AST.Function{
-      name: String.to_atom("#{handler}_impl"),
-      lifetime: :a,
+    RustQ.Meta.quoted(String.to_atom("#{handler}_impl"),
       args: command_impl_args(name),
       returns: A.nif_result_type(A.unit_type()),
-      body: [
-        %AST.ExprStmt{expr: transform_call_expr!(spec)},
-        %AST.Return{expr: A.ok()}
-      ]
-    }
+      do: transform_body_ast!(spec)
+    )
   end
 
   defp command_impl_args(name) do
     [
-      A.arg(:canvas, A.ref_type([:skia_safe, :Canvas])),
-      A.arg(:opts, generated_opts_type(name)),
-      A.arg(:_raw_opts, "&[(Atom, Term<'a>)]")
+      canvas: A.ref_type([:skia_safe, :Canvas]),
+      opts: generated_opts_type(name),
+      _raw_opts: "&[(Atom, Term<'a>)]"
     ]
   end
 
@@ -773,27 +768,58 @@ defmodule Skia.Codegen do
     A.type_path([:generated_opts, opts_name], lifetimes: [:a])
   end
 
-  defp transform_call_expr!(spec) do
-    case get_in(spec, [:transform, :body]) do
-      [{:call, "canvas", method, args}] ->
-        A.method(:canvas, method, Enum.map(args, &transform_arg!/1))
+  defp transform_body_ast!(spec) do
+    setup =
+      spec |> get_in([:transform, :setup]) |> List.wrap() |> Enum.map(&transform_setup_ast!/1)
 
-      other ->
-        raise ArgumentError, "unsupported generated transform body: #{inspect(other)}"
-    end
+    body =
+      case get_in(spec, [:transform, :body]) do
+        [{:call, "canvas", method, args}] ->
+          [
+            {{:., [], [Macro.var(:canvas, nil), method]}, [],
+             Enum.map(args, &transform_arg_ast!/1)},
+            :ok
+          ]
+
+        other ->
+          raise ArgumentError, "unsupported generated transform body: #{inspect(other)}"
+      end
+
+    {:__block__, [], setup ++ body}
   end
 
-  defp transform_arg!({:tuple, fields}), do: A.tuple(Enum.map(fields, &transform_arg!/1))
+  defp transform_setup_ast!({:let, "matrix", "matrix_from_term(opts.matrix)?"}) do
+    {:=, [],
+     [
+       Macro.var(:matrix, nil),
+       {:unwrap!, [], [{:matrix_from_term, [], [opts_field_ast(:matrix)]}]}
+     ]}
+  end
 
-  defp transform_arg!({:some, "Point::new(opts.x, opts.y)"}),
-    do: A.some(A.path_call([:Point, :new], [A.field(:opts, :x), A.field(:opts, :y)]))
+  defp transform_setup_ast!(other),
+    do: raise(ArgumentError, "unsupported generated transform setup: #{inspect(other)}")
 
-  defp transform_arg!(:none), do: A.none()
+  defp transform_arg_ast!({:tuple, fields}),
+    do: {:{}, [], Enum.map(fields, &transform_arg_ast!/1)}
 
-  defp transform_arg!("opts." <> field), do: A.field(:opts, String.to_atom(field))
+  defp transform_arg_ast!({:some, "Point::new(opts.x, opts.y)"}),
+    do:
+      {:some, [],
+       [
+         {{:., [], [{:__aliases__, [], [:Point]}, :new]}, [],
+          [opts_field_ast(:x), opts_field_ast(:y)]}
+       ]}
 
-  defp transform_arg!(other),
+  defp transform_arg_ast!(:none), do: {:none, [], []}
+  defp transform_arg_ast!("&matrix"), do: {:ref, [], [Macro.var(:matrix, nil)]}
+
+  defp transform_arg_ast!("opts." <> field), do: opts_field_ast(String.to_atom(field))
+
+  defp transform_arg_ast!(other),
     do: raise(ArgumentError, "unsupported generated transform argument: #{inspect(other)}")
+
+  defp opts_field_ast(field),
+    do: {{:., [], [Macro.var(:opts, nil), field]}, [no_parens: true], []}
 
   @spec generated_shapes() :: String.t()
   def generated_shapes do

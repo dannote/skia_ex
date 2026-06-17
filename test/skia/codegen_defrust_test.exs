@@ -87,7 +87,8 @@ defmodule Skia.CodegenDefrustTest do
                :draw_translate_impl,
                :draw_scale_impl,
                :draw_rotate_impl,
-               :draw_rotate_at_impl
+               :draw_rotate_at_impl,
+               :draw_concat_impl
              ])
            )
 
@@ -143,6 +144,30 @@ defmodule Skia.CodegenDefrustTest do
                %AST.Return{}
              ]
            } = Enum.find(impls, &(&1.name == :draw_rotate_at_impl))
+
+    assert %AST.Function{
+             args: [
+               %AST.FunctionArg{},
+               %AST.FunctionArg{
+                 name: :opts,
+                 type: %AST.TypePath{parts: [:generated_opts, :ConcatOpts], lifetimes: [:a]}
+               },
+               %AST.FunctionArg{name: :_raw_opts, type: "&[(Atom, Term<'a>)]"}
+             ],
+             body: [
+               %AST.Let{
+                 pattern: %AST.PatVar{name: :matrix},
+                 expr: %AST.Try{expr: %AST.LocalCall{name: :matrix_from_term}}
+               },
+               %AST.ExprStmt{
+                 expr: %AST.MethodCall{
+                   method: :concat,
+                   args: [%AST.Ref{expr: %AST.Var{name: :matrix}}]
+                 }
+               },
+               %AST.Return{}
+             ]
+           } = Enum.find(impls, &(&1.name == :draw_concat_impl))
   end
 
   defp assert_transform_impl(impls, name, opts_type, method) do
