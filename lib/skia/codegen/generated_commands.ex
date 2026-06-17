@@ -9,12 +9,5 @@ defmodule Skia.Codegen.GeneratedCommands do
     @type t :: term()
   end
 
-  defcommand :save do
-    handler(:draw_save)
-
-    impl do
-      canvas.save()
-      :ok
-    end
-  end
+  defcommands(from: Skia.CommandSpec.Layers.commands(), only: [:save, :restore])
 end

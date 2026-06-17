@@ -8,9 +8,4 @@ defmodule Skia.Codegen.GeneratedLayers do
     @moduledoc false
     @type t :: term()
   end
-
-  defimpl_handler :draw_restore_impl do
-    canvas.restore()
-    :ok
-  end
 end

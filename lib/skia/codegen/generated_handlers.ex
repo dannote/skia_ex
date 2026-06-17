@@ -12,5 +12,5 @@ defmodule Skia.Codegen.GeneratedHandlers do
   defrustmod(Atoms, as: :atoms)
   defrustmod(GeneratedOpts, as: :generated_opts)
 
-  defhandlers(from: Skia.CommandSpec.all(), except: [:save])
+  defhandlers(from: Skia.CommandSpec.all(), except: [:save, :restore])
 end

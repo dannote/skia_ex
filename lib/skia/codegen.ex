@@ -649,7 +649,7 @@ defmodule Skia.Codegen do
   def generated_handlers do
     command_handlers =
       Skia.Codegen.GeneratedCommands.__rustq_asts__()
-      |> Enum.filter(&(&1.name == :draw_save))
+      |> Enum.reject(&String.ends_with?(Atom.to_string(&1.name), "_impl"))
       |> Enum.map(&Rust.item(RustQ.Rust.AST.Render.render_item(&1)))
 
     handlers = command_handlers ++ Skia.Codegen.GeneratedHandlers.__rustq_items__()
@@ -704,7 +704,7 @@ defmodule Skia.Codegen do
   def generated_layers do
     command_impls =
       Skia.Codegen.GeneratedCommands.__rustq_asts__()
-      |> Enum.filter(&(&1.name == :draw_save_impl))
+      |> Enum.filter(&String.ends_with?(Atom.to_string(&1.name), "_impl"))
       |> Enum.map(&Rust.item(RustQ.Rust.AST.Render.render_item(&1)))
 
     defrust_items = command_impls ++ Skia.Codegen.GeneratedLayers.__rustq_items__()
