@@ -753,11 +753,11 @@ defmodule Skia.Codegen do
     )
   end
 
-  defp command_impl_args(name) do
+  defp command_impl_args(name, raw_opts_name \\ :_raw_opts) do
     [
-      canvas: A.ref_type([:skia_safe, :Canvas]),
-      opts: generated_opts_type(name),
-      _raw_opts: "&[(Atom, Term<'a>)]"
+      {:canvas, A.ref_type([:skia_safe, :Canvas])},
+      {:opts, generated_opts_type(name)},
+      {raw_opts_name, "&[(Atom, Term<'a>)]"}
     ]
   end
 
@@ -823,8 +823,49 @@ defmodule Skia.Codegen do
 
   @spec generated_shapes() :: String.t()
   def generated_shapes do
-    items = generated_body_impls(Shapes.commands(), :shape_draw) ++ [rect_shape_helper()]
-    render_items(items, "generated_shapes.rs")
+    defrust_items = Enum.map(generated_shape_impl_asts(), &render_rustq_item/1)
+
+    legacy_items =
+      Shapes.commands()
+      |> Keyword.drop([:line])
+      |> generated_body_impls(:shape_draw)
+
+    render_items(defrust_items ++ legacy_items ++ [rect_shape_helper()], "generated_shapes.rs")
+  end
+
+  @doc false
+  @spec generated_shape_impl_asts() :: [AST.Function.t()]
+  def generated_shape_impl_asts do
+    Shapes.commands()
+    |> Keyword.take([:line])
+    |> Enum.map(fn {name, spec} -> generated_shape_impl_ast(name, spec) end)
+  end
+
+  defp generated_shape_impl_ast(name, spec) do
+    handler = Keyword.fetch!(spec, :handler)
+
+    RustQ.Meta.quoted(String.to_atom("#{handler}_impl"),
+      args: command_impl_args(name, :raw_opts),
+      returns: A.nif_result_type(A.unit_type()),
+      do: line_shape_body_ast!()
+    )
+  end
+
+  defp line_shape_body_ast! do
+    quote do
+      color = unwrap!(decode_color(opts.stroke))
+
+      paint =
+        unwrap!(stroke_paint(color, opts.stroke_width.unwrap_or(1.0), raw_opts))
+
+      canvas.draw_line(
+        unwrap!(point_from_term(opts.from)),
+        unwrap!(point_from_term(opts.to)),
+        ref(paint)
+      )
+
+      :ok
+    end
   end
 
   defp rect_shape_helper do

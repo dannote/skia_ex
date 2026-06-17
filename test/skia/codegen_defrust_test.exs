@@ -170,6 +170,28 @@ defmodule Skia.CodegenDefrustTest do
            } = Enum.find(impls, &(&1.name == :draw_concat_impl))
   end
 
+  test "line shape impl is lowered through quoted Rusty Elixir" do
+    assert [
+             %AST.Function{
+               name: :draw_line_impl,
+               args: [
+                 %AST.FunctionArg{},
+                 %AST.FunctionArg{
+                   name: :opts,
+                   type: %AST.TypePath{parts: [:generated_opts, :LineOpts], lifetimes: [:a]}
+                 },
+                 %AST.FunctionArg{name: :raw_opts, type: "&[(Atom, Term<'a>)]"}
+               ],
+               body: [
+                 %AST.Let{pattern: %AST.PatVar{name: :color}},
+                 %AST.Let{pattern: %AST.PatVar{name: :paint}},
+                 %AST.ExprStmt{expr: %AST.MethodCall{method: :draw_line}},
+                 %AST.Return{}
+               ]
+             }
+           ] = Skia.Codegen.generated_shape_impl_asts()
+  end
+
   defp assert_transform_impl(impls, name, opts_type, method) do
     assert %AST.Function{
              args: [
