@@ -1208,10 +1208,9 @@ defmodule Skia.Codegen do
               :paint,
               :term
             ],
-       do: A.require_some(A.call(:opt_term, [:opts, A.atom(name)]))
+       do: A.required_term(:opts, name)
 
-  defp required_decoder({:tuple, _types}, name),
-    do: A.require_some(A.call(:opt_term, [:opts, A.atom(name)]))
+  defp required_decoder({:tuple, _types}, name), do: A.required_term(:opts, name)
 
   defp optional_decoder(:number, name), do: A.opt_decode(:opt_f32_option, :opts, name)
   defp optional_decoder(:boolean, name), do: A.opt_decode(:opt_bool_option, :opts, name)
@@ -1220,13 +1219,8 @@ defmodule Skia.Codegen do
   defp optional_decoder({:enum, _name, _opts}, name),
     do: A.opt_decode(:opt_atom_option, :opts, name)
 
-  defp optional_decoder(:integer, name),
-    do:
-      "match opt_term(opts, atoms::#{name}()) { Some(term) => Some(term.decode::<i64>()?), None => None }"
-
-  defp optional_decoder(:string, name),
-    do:
-      "match opt_term(opts, atoms::#{name}()) { Some(term) => Some(term.decode::<String>()?), None => None }"
+  defp optional_decoder(:integer, name), do: A.optional_term_decode(:opts, name, :i64)
+  defp optional_decoder(:string, name), do: A.optional_term_decode(:opts, name, :String)
 
   defp optional_decoder(type, name)
        when type in [
