@@ -2,6 +2,7 @@ defmodule Skia.Codegen do
   @moduledoc false
 
   alias RustQ.Rust
+  alias RustQ.Rust.AST.Builder, as: A
   alias Skia.Codegen.SkiaSafe
   alias Skia.CommandSpec.Clips
   alias Skia.CommandSpec.Images
@@ -1166,33 +1167,32 @@ defmodule Skia.Codegen do
   defp option_decoder(opt) do
     name = Keyword.fetch!(opt, :name)
     type = Keyword.fetch!(opt, :type)
-    atom = "atoms::#{name}()"
 
     if Keyword.get(opt, :required, false) do
-      required_decoder(type, atom)
+      required_decoder(type, name)
     else
-      optional_decoder(type, atom)
+      optional_decoder(type, name)
     end
   end
 
-  defp required_decoder(:number, atom), do: "opt_f32(opts, #{atom})?"
+  defp required_decoder(:number, name), do: A.opt_decode(:opt_f32, :opts, name)
 
-  defp required_decoder(:boolean, atom),
-    do: "opt_bool_option(opts, #{atom})?.ok_or(rustler::Error::BadArg)?"
+  defp required_decoder(:boolean, name),
+    do: A.required_opt_decode(:opt_bool_option, :opts, name)
 
-  defp required_decoder(:atom, atom),
-    do: "opt_atom_option(opts, #{atom})?.ok_or(rustler::Error::BadArg)?"
+  defp required_decoder(:atom, name),
+    do: A.required_opt_decode(:opt_atom_option, :opts, name)
 
-  defp required_decoder({:enum, _name, _opts}, atom),
-    do: "opt_atom_option(opts, #{atom})?.ok_or(rustler::Error::BadArg)?"
+  defp required_decoder({:enum, _name, _opts}, name),
+    do: A.required_opt_decode(:opt_atom_option, :opts, name)
 
-  defp required_decoder(:integer, atom),
-    do: "opt_term(opts, #{atom}).ok_or(rustler::Error::BadArg)?.decode::<i64>()?"
+  defp required_decoder(:integer, name),
+    do: A.required_term_decode(:opts, name, :i64)
 
-  defp required_decoder(:string, atom),
-    do: "opt_term(opts, #{atom}).ok_or(rustler::Error::BadArg)?.decode::<String>()?"
+  defp required_decoder(:string, name),
+    do: A.required_term_decode(:opts, name, :String)
 
-  defp required_decoder(type, atom)
+  defp required_decoder(type, name)
        when type in [
               :color,
               :path,
@@ -1208,25 +1208,27 @@ defmodule Skia.Codegen do
               :paint,
               :term
             ],
-       do: "opt_term(opts, #{atom}).ok_or(rustler::Error::BadArg)?"
+       do: A.require_some(A.call(:opt_term, [:opts, A.atom(name)]))
 
-  defp required_decoder({:tuple, _types}, atom),
-    do: "opt_term(opts, #{atom}).ok_or(rustler::Error::BadArg)?"
+  defp required_decoder({:tuple, _types}, name),
+    do: A.require_some(A.call(:opt_term, [:opts, A.atom(name)]))
 
-  defp optional_decoder(:number, atom), do: "opt_f32_option(opts, #{atom})?"
-  defp optional_decoder(:boolean, atom), do: "opt_bool_option(opts, #{atom})?"
-  defp optional_decoder(:atom, atom), do: "opt_atom_option(opts, #{atom})?"
-  defp optional_decoder({:enum, _name, _opts}, atom), do: "opt_atom_option(opts, #{atom})?"
+  defp optional_decoder(:number, name), do: A.opt_decode(:opt_f32_option, :opts, name)
+  defp optional_decoder(:boolean, name), do: A.opt_decode(:opt_bool_option, :opts, name)
+  defp optional_decoder(:atom, name), do: A.opt_decode(:opt_atom_option, :opts, name)
 
-  defp optional_decoder(:integer, atom),
+  defp optional_decoder({:enum, _name, _opts}, name),
+    do: A.opt_decode(:opt_atom_option, :opts, name)
+
+  defp optional_decoder(:integer, name),
     do:
-      "match opt_term(opts, #{atom}) { Some(term) => Some(term.decode::<i64>()?), None => None }"
+      "match opt_term(opts, atoms::#{name}()) { Some(term) => Some(term.decode::<i64>()?), None => None }"
 
-  defp optional_decoder(:string, atom),
+  defp optional_decoder(:string, name),
     do:
-      "match opt_term(opts, #{atom}) { Some(term) => Some(term.decode::<String>()?), None => None }"
+      "match opt_term(opts, atoms::#{name}()) { Some(term) => Some(term.decode::<String>()?), None => None }"
 
-  defp optional_decoder(type, atom)
+  defp optional_decoder(type, name)
        when type in [
               :color,
               :path,
@@ -1242,9 +1244,9 @@ defmodule Skia.Codegen do
               :paint,
               :term
             ],
-       do: "opt_term(opts, #{atom})"
+       do: A.call(:opt_term, [:opts, A.atom(name)])
 
-  defp optional_decoder({:tuple, _types}, atom), do: "opt_term(opts, #{atom})"
+  defp optional_decoder({:tuple, _types}, name), do: A.call(:opt_term, [:opts, A.atom(name)])
 
   defp format_args([]), do: "—"
 
