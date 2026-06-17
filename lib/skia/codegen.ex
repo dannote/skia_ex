@@ -647,76 +647,18 @@ defmodule Skia.Codegen do
 
   @spec generated_handlers() :: String.t()
   def generated_handlers do
-    handlers =
-      Skia.CommandSpec.all()
-      |> Enum.flat_map(fn {name, spec} ->
-        case Keyword.fetch(spec, :handler) do
-          {:ok, handler} -> [{handler, draw_handler_spec(name, spec)}]
-          :error -> []
-        end
-      end)
-      |> Enum.uniq_by(&elem(&1, 0))
-      |> Enum.sort_by(&elem(&1, 0))
-      |> Enum.map(fn {name, spec} -> draw_handler(name, spec) end)
+    handlers = Skia.Codegen.GeneratedHandlers.__rustq_items__()
 
     "generated_handlers.rs"
     |> template_path()
-    |> RustQ.render_file!(preamble: generated_rust_preamble(), splice: [items: handlers])
-  end
-
-  defp draw_handler_spec(command_name, spec) do
-    []
-    |> append_if(Keyword.get(spec, :args, []) != [], {:args, true})
-    |> append_if(Keyword.get(spec, :opts, []) != [], {:opts, command_name})
-  end
-
-  defp draw_handler(name, spec) do
-    args_decode =
-      if Keyword.get(spec, :args),
-        do: "let args = command.map_get(atoms::args())?.decode::<Vec<Term>>()?;",
-        else: ""
-
-    opts = Keyword.get(spec, :opts)
-
-    opts_decode =
-      if opts,
-        do:
-          "let opts = decode_opts(command)?;\nlet decoded_opts = generated_opts::decode_#{opts}_opts(&opts)?;",
-        else: ""
-
-    call_args =
-      ["canvas"]
-      |> append_if(Keyword.get(spec, :args), "args")
-      |> append_if(opts, "decoded_opts")
-      |> append_if(opts, "&opts")
-      |> Enum.join(", ")
-
-    setup =
-      [args_decode, opts_decode]
-      |> Enum.flat_map(fn block -> block |> String.split("\n") |> Enum.map(&String.trim/1) end)
-      |> Enum.reject(&(&1 == ""))
-      |> Enum.map(&Rust.stmt/1)
-
-    "handler_shell.rs"
-    |> template_path()
     |> RustQ.render_file!(
-      bind: [handler: name, call: Rust.expr("#{name}_impl(#{call_args})")],
-      splice: [
-        args: [
-          Rust.arg(:canvas, "&skia_safe::Canvas"),
-          Rust.arg(command_arg(spec), "Term<'a>")
-        ],
-        setup: setup
-      ]
+      preamble:
+        generated_rust_preamble() <>
+          "use skia_safe::Canvas;\nuse atoms as Atoms;\nuse generated_opts as GeneratedOpts;\n\n",
+      splice: [items: handlers]
     )
-    |> Rust.item()
   end
 
-  defp command_arg(spec) do
-    if Keyword.get(spec, :args) || Keyword.get(spec, :opts), do: :command, else: :_command
-  end
-
-  defp append_if(values, nil, _value), do: values
   defp append_if(values, false, _value), do: values
   defp append_if(values, _condition, value), do: values ++ [value]
 

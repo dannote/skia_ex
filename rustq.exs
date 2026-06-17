@@ -10,6 +10,8 @@ require_file("lib/skia/command_spec/paths.ex")
 require_file("lib/skia/command_spec/clips.ex")
 require_file("lib/skia/command_spec.ex")
 require_file("lib/skia/codegen/skia_safe.ex")
+require_file("lib/skia/codegen/rusty.ex")
+require_file("lib/skia/codegen/generated_handlers.ex")
 require_file("lib/skia/codegen.ex")
 
 generate :native, "lib/skia/native.ex" do
