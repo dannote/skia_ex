@@ -2,7 +2,7 @@ defmodule Skia.Codegen.GeneratedHandlers do
   @moduledoc false
 
   use RustQ.Meta
-  use Skia.Codegen.Rusty
+  use Skia.Codegen.Defrust
 
   defmodule Canvas do
     @moduledoc false
@@ -12,5 +12,5 @@ defmodule Skia.Codegen.GeneratedHandlers do
   defrustmod(Atoms, as: :atoms)
   defrustmod(GeneratedOpts, as: :generated_opts)
 
-  defhandlers(Skia.Codegen.Rusty.handler_specs())
+  defhandlers(Skia.Codegen.Defrust.handler_specs())
 end

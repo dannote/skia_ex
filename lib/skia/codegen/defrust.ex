@@ -1,9 +1,9 @@
-defmodule Skia.Codegen.Rusty do
+defmodule Skia.Codegen.Defrust do
   @moduledoc false
 
   defmacro __using__(_opts) do
     quote do
-      import Skia.Codegen.Rusty
+      import Skia.Codegen.Defrust
       alias RustQ.Type, as: R
     end
   end

@@ -3,7 +3,7 @@ defmodule Skia.Codegen do
 
   alias RustQ.Rust
   alias RustQ.Rust.AST.Builder, as: A
-  alias RustQ.Rustler.ASTBuilder, as: R
+  alias RustQ.Rustler.Decode, as: R
   alias Skia.Codegen.SkiaSafe
   alias Skia.CommandSpec.Clips
   alias Skia.CommandSpec.Images
