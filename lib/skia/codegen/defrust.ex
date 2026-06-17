@@ -3,6 +3,7 @@ defmodule Skia.Codegen.Defrust do
 
   alias RustQ.Rust
   alias RustQ.Rust.AST
+  alias RustQ.Rust.AST.Builder, as: A
 
   defmacro __using__(_opts) do
     quote do
@@ -157,13 +158,10 @@ defmodule Skia.Codegen.Defrust do
     %AST.Function{
       name: name,
       args: [
-        %AST.FunctionArg{
-          name: :canvas,
-          type: %AST.TypeRef{inner: %AST.TypePath{parts: [:Canvas]}}
-        },
-        %AST.FunctionArg{name: command_arg, type: term_type()}
+        A.arg(:canvas, A.ref_type(:Canvas)),
+        A.arg(command_arg, A.term_type())
       ],
-      returns: %AST.TypeNifResult{inner: %AST.TypeUnit{}},
+      returns: A.nif_result_type(A.unit_type()),
       body: handler_ast_body(impl, args?, opts_name),
       lifetime: :a
     }
@@ -176,8 +174,6 @@ defmodule Skia.Codegen.Defrust do
     |> List.flatten()
     |> Kernel.++([impl_call_stmt(impl, args?, opts_name)])
   end
-
-  defp term_type, do: %AST.TypePath{parts: [:Term], lifetimes: [:a]}
 
   defp args_decode_stmt do
     %AST.Let{
@@ -192,7 +188,7 @@ defmodule Skia.Codegen.Defrust do
             }
           },
           method: :decode,
-          generics: [%AST.TypeVec{inner: term_type()}]
+          generics: [%AST.TypeVec{inner: A.term_type()}]
         }
       }
     }

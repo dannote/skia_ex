@@ -742,17 +742,11 @@ defmodule Skia.Codegen do
       name: :draw_translate_impl,
       lifetime: :a,
       args: [
-        %AST.FunctionArg{
-          name: :canvas,
-          type: %AST.TypeRef{inner: %AST.TypePath{parts: [:skia_safe, :Canvas]}}
-        },
-        %AST.FunctionArg{
-          name: :opts,
-          type: %AST.TypePath{parts: [:generated_opts, :TranslateOpts], lifetimes: [:a]}
-        },
-        %AST.FunctionArg{name: :_raw_opts, type: "&[(Atom, Term<'a>)]"}
+        A.arg(:canvas, A.ref_type([:skia_safe, :Canvas])),
+        A.arg(:opts, A.type_path([:generated_opts, :TranslateOpts], lifetimes: [:a])),
+        A.arg(:_raw_opts, "&[(Atom, Term<'a>)]")
       ],
-      returns: %AST.TypeNifResult{inner: %AST.TypeUnit{}},
+      returns: A.nif_result_type(A.unit_type()),
       body: [
         %AST.ExprStmt{
           expr: %AST.MethodCall{
