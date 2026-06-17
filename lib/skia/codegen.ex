@@ -652,9 +652,7 @@ defmodule Skia.Codegen do
     "generated_handlers.rs"
     |> template_path()
     |> RustQ.render_file!(
-      preamble:
-        generated_rust_preamble() <>
-          "use skia_safe::Canvas;\nuse atoms as Atoms;\nuse generated_opts as GeneratedOpts;\n\n",
+      preamble: generated_rust_preamble() <> "use skia_safe::Canvas;\n\n",
       splice: [items: handlers]
     )
   end

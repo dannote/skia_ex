@@ -9,5 +9,8 @@ defmodule Skia.Codegen.GeneratedHandlers do
     @type t :: term()
   end
 
+  defrustmod(Atoms, as: :atoms)
+  defrustmod(GeneratedOpts, as: :generated_opts)
+
   defhandlers(Skia.Codegen.Rusty.handler_specs())
 end
