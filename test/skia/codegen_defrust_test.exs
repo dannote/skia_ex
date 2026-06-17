@@ -77,20 +77,54 @@ defmodule Skia.CodegenDefrustTest do
            end)
   end
 
-  test "translate impl uses explicit generated opts Rust type" do
+  test "transform impls use explicit generated opts Rust types" do
+    impls = Skia.Codegen.generated_transform_impl_asts()
+    names = impls |> Enum.map(& &1.name) |> MapSet.new()
+
+    assert MapSet.equal?(
+             names,
+             MapSet.new([:draw_translate_impl, :draw_scale_impl, :draw_rotate_impl])
+           )
+
+    assert_transform_impl(impls, :draw_translate_impl, :TranslateOpts, :translate)
+    assert_transform_impl(impls, :draw_scale_impl, :ScaleOpts, :scale)
+
     assert %AST.Function{
-             name: :draw_translate_impl,
              args: [
                %AST.FunctionArg{
                  type: %AST.TypeRef{inner: %AST.TypePath{parts: [:skia_safe, :Canvas]}}
                },
                %AST.FunctionArg{
                  name: :opts,
-                 type: %AST.TypePath{parts: [:generated_opts, :TranslateOpts], lifetimes: [:a]}
+                 type: %AST.TypePath{parts: [:generated_opts, :RotateOpts], lifetimes: [:a]}
                },
                %AST.FunctionArg{name: :_raw_opts, type: "&[(Atom, Term<'a>)]"}
              ],
-             body: [%AST.ExprStmt{expr: %AST.MethodCall{method: :translate}}, %AST.Return{}]
-           } = Skia.Codegen.generated_translate_impl_ast()
+             body: [
+               %AST.ExprStmt{
+                 expr: %AST.MethodCall{
+                   method: :rotate,
+                   args: [%AST.Field{field: :degrees}, %AST.None{}]
+                 }
+               },
+               %AST.Return{}
+             ]
+           } = Enum.find(impls, &(&1.name == :draw_rotate_impl))
+  end
+
+  defp assert_transform_impl(impls, name, opts_type, method) do
+    assert %AST.Function{
+             args: [
+               %AST.FunctionArg{
+                 type: %AST.TypeRef{inner: %AST.TypePath{parts: [:skia_safe, :Canvas]}}
+               },
+               %AST.FunctionArg{
+                 name: :opts,
+                 type: %AST.TypePath{parts: [:generated_opts, ^opts_type], lifetimes: [:a]}
+               },
+               %AST.FunctionArg{name: :_raw_opts, type: "&[(Atom, Term<'a>)]"}
+             ],
+             body: [%AST.ExprStmt{expr: %AST.MethodCall{method: ^method}}, %AST.Return{}]
+           } = Enum.find(impls, &(&1.name == name))
   end
 end

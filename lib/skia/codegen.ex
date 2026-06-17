@@ -725,47 +725,78 @@ defmodule Skia.Codegen do
 
   @spec generated_transforms() :: String.t()
   def generated_transforms do
-    defrust_items = [render_rustq_item(generated_translate_impl_ast())]
+    defrust_items = Enum.map(generated_transform_impl_asts(), &render_rustq_item/1)
 
     legacy_items =
       Transforms.commands()
-      |> Keyword.drop([:translate])
+      |> Keyword.drop([:translate, :scale, :rotate])
       |> generated_body_impls(:transform)
 
     render_items(defrust_items ++ legacy_items, "generated_transforms.rs")
   end
 
   @doc false
-  @spec generated_translate_impl_ast() :: AST.Function.t()
-  def generated_translate_impl_ast do
+  @spec generated_transform_impl_asts() :: [AST.Function.t()]
+  def generated_transform_impl_asts do
+    Transforms.commands()
+    |> Keyword.take([:translate, :scale, :rotate])
+    |> Enum.map(fn {name, spec} -> generated_transform_impl_ast(name, spec) end)
+  end
+
+  defp generated_transform_impl_ast(name, spec) do
+    handler = Keyword.fetch!(spec, :handler)
+
     %AST.Function{
-      name: :draw_translate_impl,
+      name: String.to_atom("#{handler}_impl"),
       lifetime: :a,
-      args: [
-        A.arg(:canvas, A.ref_type([:skia_safe, :Canvas])),
-        A.arg(:opts, A.type_path([:generated_opts, :TranslateOpts], lifetimes: [:a])),
-        A.arg(:_raw_opts, "&[(Atom, Term<'a>)]")
-      ],
+      args: command_impl_args(name),
       returns: A.nif_result_type(A.unit_type()),
       body: [
-        %AST.ExprStmt{
-          expr: %AST.MethodCall{
-            receiver: %AST.Var{name: :canvas},
-            method: :translate,
-            args: [
-              %AST.Tuple{
-                values: [
-                  %AST.Field{receiver: %AST.Var{name: :opts}, field: :x},
-                  %AST.Field{receiver: %AST.Var{name: :opts}, field: :y}
-                ]
-              }
-            ]
-          }
-        },
+        %AST.ExprStmt{expr: transform_call_expr!(spec)},
         %AST.Return{expr: %AST.Ok{}}
       ]
     }
   end
+
+  defp command_impl_args(name) do
+    [
+      A.arg(:canvas, A.ref_type([:skia_safe, :Canvas])),
+      A.arg(:opts, generated_opts_type(name)),
+      A.arg(:_raw_opts, "&[(Atom, Term<'a>)]")
+    ]
+  end
+
+  defp generated_opts_type(name) do
+    opts_name =
+      name |> Atom.to_string() |> Macro.camelize() |> Kernel.<>("Opts") |> String.to_atom()
+
+    A.type_path([:generated_opts, opts_name], lifetimes: [:a])
+  end
+
+  defp transform_call_expr!(spec) do
+    case get_in(spec, [:transform, :body]) do
+      [{:call, "canvas", method, args}] ->
+        %AST.MethodCall{
+          receiver: %AST.Var{name: :canvas},
+          method: method,
+          args: Enum.map(args, &transform_arg!/1)
+        }
+
+      other ->
+        raise ArgumentError, "unsupported generated transform body: #{inspect(other)}"
+    end
+  end
+
+  defp transform_arg!({:tuple, fields}),
+    do: %AST.Tuple{values: Enum.map(fields, &transform_arg!/1)}
+
+  defp transform_arg!(:none), do: %AST.None{}
+
+  defp transform_arg!("opts." <> field),
+    do: %AST.Field{receiver: %AST.Var{name: :opts}, field: String.to_atom(field)}
+
+  defp transform_arg!(other),
+    do: raise(ArgumentError, "unsupported generated transform argument: #{inspect(other)}")
 
   @spec generated_shapes() :: String.t()
   def generated_shapes do
