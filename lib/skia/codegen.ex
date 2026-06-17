@@ -3,6 +3,7 @@ defmodule Skia.Codegen do
 
   alias RustQ.Rust
   alias RustQ.Rust.AST.Builder, as: A
+  alias RustQ.Rustler.ASTBuilder, as: R
   alias Skia.Codegen.SkiaSafe
   alias Skia.CommandSpec.Clips
   alias Skia.CommandSpec.Images
@@ -1175,22 +1176,22 @@ defmodule Skia.Codegen do
     end
   end
 
-  defp required_decoder(:number, name), do: A.opt_decode(:opt_f32, :opts, name)
+  defp required_decoder(:number, name), do: R.opt_decode(:opt_f32, :opts, name)
 
   defp required_decoder(:boolean, name),
-    do: A.required_opt_decode(:opt_bool_option, :opts, name)
+    do: R.required_opt_decode(:opt_bool_option, :opts, name)
 
   defp required_decoder(:atom, name),
-    do: A.required_opt_decode(:opt_atom_option, :opts, name)
+    do: R.required_opt_decode(:opt_atom_option, :opts, name)
 
   defp required_decoder({:enum, _name, _opts}, name),
-    do: A.required_opt_decode(:opt_atom_option, :opts, name)
+    do: R.required_opt_decode(:opt_atom_option, :opts, name)
 
   defp required_decoder(:integer, name),
-    do: A.required_term_decode(:opts, name, :i64)
+    do: R.required_term_decode(:opts, name, :i64)
 
   defp required_decoder(:string, name),
-    do: A.required_term_decode(:opts, name, :String)
+    do: R.required_term_decode(:opts, name, :String)
 
   defp required_decoder(type, name)
        when type in [
@@ -1208,19 +1209,19 @@ defmodule Skia.Codegen do
               :paint,
               :term
             ],
-       do: A.required_term(:opts, name)
+       do: R.required_term(:opts, name)
 
-  defp required_decoder({:tuple, _types}, name), do: A.required_term(:opts, name)
+  defp required_decoder({:tuple, _types}, name), do: R.required_term(:opts, name)
 
-  defp optional_decoder(:number, name), do: A.opt_decode(:opt_f32_option, :opts, name)
-  defp optional_decoder(:boolean, name), do: A.opt_decode(:opt_bool_option, :opts, name)
-  defp optional_decoder(:atom, name), do: A.opt_decode(:opt_atom_option, :opts, name)
+  defp optional_decoder(:number, name), do: R.opt_decode(:opt_f32_option, :opts, name)
+  defp optional_decoder(:boolean, name), do: R.opt_decode(:opt_bool_option, :opts, name)
+  defp optional_decoder(:atom, name), do: R.opt_decode(:opt_atom_option, :opts, name)
 
   defp optional_decoder({:enum, _name, _opts}, name),
-    do: A.opt_decode(:opt_atom_option, :opts, name)
+    do: R.opt_decode(:opt_atom_option, :opts, name)
 
-  defp optional_decoder(:integer, name), do: A.optional_term_decode(:opts, name, :i64)
-  defp optional_decoder(:string, name), do: A.optional_term_decode(:opts, name, :String)
+  defp optional_decoder(:integer, name), do: R.optional_term_decode(:opts, name, :i64)
+  defp optional_decoder(:string, name), do: R.optional_term_decode(:opts, name, :String)
 
   defp optional_decoder(type, name)
        when type in [
