@@ -2,6 +2,7 @@ defmodule Skia.Codegen do
   @moduledoc false
 
   alias RustQ.Rust
+  alias RustQ.Rust.AST
   alias RustQ.Rust.AST.Builder, as: A
   alias RustQ.Rustler.Decode, as: R
   alias Skia.Codegen.SkiaSafe
@@ -451,6 +452,42 @@ defmodule Skia.Codegen do
     |> RustQ.render!(file, preamble: generated_rust_preamble(), splice: [items: items])
   end
 
+  defp render_rustq_item(ast) do
+    ast
+    |> normalize_external_rust_paths()
+    |> RustQ.Rust.AST.Render.render_item()
+    |> Rust.item()
+  end
+
+  defp normalize_external_rust_paths(%AST.Path{parts: parts} = path),
+    do: %{path | parts: normalize_external_rust_path(parts)}
+
+  defp normalize_external_rust_paths(%AST.TypePath{parts: parts} = path),
+    do: %{path | parts: normalize_external_rust_path(parts)}
+
+  defp normalize_external_rust_paths(%{__struct__: module} = struct) do
+    if module |> Atom.to_string() |> String.starts_with?("Elixir.RustQ.Rust.AST.") do
+      struct
+      |> Map.from_struct()
+      |> Map.new(fn {key, value} -> {key, normalize_external_rust_paths(value)} end)
+      |> then(&struct(module, &1))
+    else
+      struct
+    end
+  end
+
+  defp normalize_external_rust_paths(values) when is_list(values),
+    do: Enum.map(values, &normalize_external_rust_paths/1)
+
+  defp normalize_external_rust_paths(tuple) when is_tuple(tuple),
+    do: tuple |> Tuple.to_list() |> normalize_external_rust_paths() |> List.to_tuple()
+
+  defp normalize_external_rust_paths(value), do: value
+
+  defp normalize_external_rust_path([:Atoms | rest]), do: [:atoms | rest]
+  defp normalize_external_rust_path([:GeneratedOpts | rest]), do: [:generated_opts | rest]
+  defp normalize_external_rust_path(parts), do: parts
+
   defp enum_atoms do
     enum_defs()
     |> Enum.flat_map(fn {_name, spec} ->
@@ -650,9 +687,11 @@ defmodule Skia.Codegen do
     command_handlers =
       Skia.Codegen.GeneratedCommands.__rustq_asts__()
       |> Enum.reject(&String.ends_with?(Atom.to_string(&1.name), "_impl"))
-      |> Enum.map(&Rust.item(RustQ.Rust.AST.Render.render_item(&1)))
+      |> Enum.map(&render_rustq_item/1)
 
-    handlers = command_handlers ++ Skia.Codegen.GeneratedHandlers.__rustq_items__()
+    handlers =
+      command_handlers ++
+        (Skia.Codegen.GeneratedHandlers.__rustq_asts__() |> Enum.map(&render_rustq_item/1))
 
     "generated_handlers.rs"
     |> template_path()
@@ -705,7 +744,7 @@ defmodule Skia.Codegen do
     command_impls =
       Skia.Codegen.GeneratedCommands.__rustq_asts__()
       |> Enum.filter(&String.ends_with?(Atom.to_string(&1.name), "_impl"))
-      |> Enum.map(&Rust.item(RustQ.Rust.AST.Render.render_item(&1)))
+      |> Enum.map(&render_rustq_item/1)
 
     defrust_items = command_impls ++ Skia.Codegen.GeneratedLayers.__rustq_items__()
 

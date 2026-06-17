@@ -9,8 +9,5 @@ defmodule Skia.Codegen.GeneratedHandlers do
     @type t :: term()
   end
 
-  defrustmod(Atoms, as: :atoms)
-  defrustmod(GeneratedOpts, as: :generated_opts)
-
   defhandlers(from: Skia.CommandSpec.all(), except: [:save, :restore])
 end
