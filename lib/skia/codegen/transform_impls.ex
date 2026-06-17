@@ -1,5 +1,12 @@
 defmodule Skia.Codegen.TransformImpls do
-  @moduledoc false
+  @moduledoc """
+  RustQ-backed transform implementation generation.
+
+  Signatures use Skia-owned Rust type paths supplied through `ImplHelpers`; the
+  implementation bodies are lowered from valid Elixir via `RustQ.Meta.quoted/2`.
+  Keep Skia command semantics here and keep generic Rust syntax support in
+  RustQ.
+  """
 
   alias RustQ.Rust.AST
   alias RustQ.Rust.AST.Builder, as: A

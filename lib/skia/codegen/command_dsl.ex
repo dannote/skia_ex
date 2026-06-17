@@ -1,5 +1,12 @@
 defmodule Skia.Codegen.CommandDSL do
-  @moduledoc false
+  @moduledoc """
+  Small valid-Elixir command DSL for simple Skia commands.
+
+  This layer expands command declarations such as save/restore into real
+  `@spec` + `defrust` definitions. Use it when the command implementation is
+  naturally expressible as Rusty Elixir; use focused impl modules plus
+  `RustQ.Meta.quoted/2` when Skia must provide generated Rust signature types.
+  """
 
   defmacro __using__(_opts) do
     quote do

@@ -1,5 +1,11 @@
 defmodule Skia.Codegen.ShapeImpls do
-  @moduledoc false
+  @moduledoc """
+  RustQ-backed shape implementation generation.
+
+  This module is the shape-family equivalent of `Skia.Codegen.TransformImpls`:
+  Skia derives the generated Rust signature types, while RustQ lowers valid
+  Elixir bodies through `RustQ.Meta.quoted/2`.
+  """
 
   alias RustQ.Rust.AST
   alias RustQ.Rust.AST.Builder, as: A

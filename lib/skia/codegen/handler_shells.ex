@@ -1,5 +1,12 @@
 defmodule Skia.Codegen.HandlerShells do
-  @moduledoc false
+  @moduledoc """
+  Direct RustQ AST generation for Skia handler shells.
+
+  Handler shells are plumbing: decode command args/options with Skia-owned Rust
+  helpers such as `atoms::args()` and `generated_opts::decode_*_opts`, then call
+  the generated impl. They are intentionally direct AST, not `defrust`, because
+  they are repetitive Rustler glue rather than Rusty-Elixir command semantics.
+  """
 
   alias RustQ.Rust.AST
   alias RustQ.Rust.AST.Builder, as: A
