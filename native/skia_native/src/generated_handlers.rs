@@ -2,6 +2,9 @@
 
 use skia_safe::Canvas;
 
+fn draw_save<'a>(canvas: &Canvas, _command: Term<'a>) -> NifResult<()> {
+    draw_save_impl(canvas)
+}
 fn clip_circle<'a>(canvas: &Canvas, command: Term<'a>) -> NifResult<()> {
     let opts = decode_opts(command)?;
     let decoded_opts = generated_opts::decode_clip_circle_opts(&opts)?;
@@ -94,9 +97,6 @@ fn draw_rotate_at<'a>(canvas: &Canvas, command: Term<'a>) -> NifResult<()> {
     let opts = decode_opts(command)?;
     let decoded_opts = generated_opts::decode_rotate_at_opts(&opts)?;
     draw_rotate_at_impl(canvas, decoded_opts, &opts)
-}
-fn draw_save<'a>(canvas: &Canvas, _command: Term<'a>) -> NifResult<()> {
-    draw_save_impl(canvas)
 }
 fn draw_save_layer<'a>(canvas: &Canvas, command: Term<'a>) -> NifResult<()> {
     let opts = decode_opts(command)?;

@@ -13,11 +13,18 @@ defmodule Skia.Codegen.Defrust do
   end
 
   defmacro defimpl_handler(name, do: body) do
+    impl_definition(name, body)
+  end
+
+  defmacro defcommand(name, do: block) do
+    command = parse_command!(name, block)
+    handler = Keyword.fetch!(command, :handler)
+    impl = Keyword.get(command, :impl, String.to_atom("#{handler}_impl"))
+    body = Keyword.fetch!(command, :body)
+
     quote do
-      @spec unquote(name)(R.ref(Canvas.t())) :: R.nif_result(R.unit())
-      defrust unquote(name)(canvas) do
-        unquote(body)
-      end
+      unquote(handler_definition(handler, impl: impl))
+      unquote(impl_definition(impl, body))
     end
   end
 
@@ -25,7 +32,10 @@ defmodule Skia.Codegen.Defrust do
     from_ast = Keyword.fetch!(opts, :from)
     {commands, _binding} = Code.eval_quoted(from_ast, [], __CALLER__)
 
+    except = opts |> Keyword.get(:except, []) |> List.wrap()
+
     commands
+    |> Keyword.drop(except)
     |> handler_specs()
     |> Enum.map(fn {name, opts} -> handler_definition(name, opts) end)
     |> then(&{:__block__, [], &1})
@@ -52,6 +62,24 @@ defmodule Skia.Codegen.Defrust do
     |> Enum.sort_by(&elem(&1, 0))
   end
 
+  defp parse_command!(_name, block) do
+    block
+    |> block_expressions()
+    |> Enum.reduce([], fn
+      {:handler, _, [handler]}, acc ->
+        Keyword.put(acc, :handler, handler)
+
+      {:impl, _, [[do: body]]}, acc ->
+        Keyword.put(acc, :body, body)
+
+      other, _acc ->
+        raise ArgumentError, "unsupported defcommand entry: #{Macro.to_string(other)}"
+    end)
+  end
+
+  defp block_expressions({:__block__, _, expressions}), do: expressions
+  defp block_expressions(expression), do: [expression]
+
   defp handler_definition(name, opts) do
     impl = Keyword.fetch!(opts, :impl)
     args? = Keyword.get(opts, :args?, false)
@@ -62,6 +90,15 @@ defmodule Skia.Codegen.Defrust do
     quote do
       @spec unquote(name)(R.ref(Canvas.t()), term()) :: R.nif_result(R.unit())
       defrust unquote(name)(canvas, unquote(Macro.var(command_arg, nil))) do
+        unquote(body)
+      end
+    end
+  end
+
+  defp impl_definition(name, body) do
+    quote do
+      @spec unquote(name)(R.ref(Canvas.t())) :: R.nif_result(R.unit())
+      defrust unquote(name)(canvas) do
         unquote(body)
       end
     end

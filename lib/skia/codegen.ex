@@ -647,7 +647,12 @@ defmodule Skia.Codegen do
 
   @spec generated_handlers() :: String.t()
   def generated_handlers do
-    handlers = Skia.Codegen.GeneratedHandlers.__rustq_items__()
+    command_handlers =
+      Skia.Codegen.GeneratedCommands.__rustq_asts__()
+      |> Enum.filter(&(&1.name == :draw_save))
+      |> Enum.map(&Rust.item(RustQ.Rust.AST.Render.render_item(&1)))
+
+    handlers = command_handlers ++ Skia.Codegen.GeneratedHandlers.__rustq_items__()
 
     "generated_handlers.rs"
     |> template_path()
@@ -697,7 +702,12 @@ defmodule Skia.Codegen do
 
   @spec generated_layers() :: String.t()
   def generated_layers do
-    defrust_items = Skia.Codegen.GeneratedLayers.__rustq_items__()
+    command_impls =
+      Skia.Codegen.GeneratedCommands.__rustq_asts__()
+      |> Enum.filter(&(&1.name == :draw_save_impl))
+      |> Enum.map(&Rust.item(RustQ.Rust.AST.Render.render_item(&1)))
+
+    defrust_items = command_impls ++ Skia.Codegen.GeneratedLayers.__rustq_items__()
 
     legacy_items =
       Layers.commands()

@@ -1,4 +1,4 @@
-defmodule Skia.Codegen.GeneratedLayers do
+defmodule Skia.Codegen.GeneratedCommands do
   @moduledoc false
 
   use RustQ.Meta
@@ -9,8 +9,12 @@ defmodule Skia.Codegen.GeneratedLayers do
     @type t :: term()
   end
 
-  defimpl_handler :draw_restore_impl do
-    canvas.restore()
-    :ok
+  defcommand :save do
+    handler(:draw_save)
+
+    impl do
+      canvas.save()
+      :ok
+    end
   end
 end
