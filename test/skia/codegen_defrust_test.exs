@@ -83,7 +83,12 @@ defmodule Skia.CodegenDefrustTest do
 
     assert MapSet.equal?(
              names,
-             MapSet.new([:draw_translate_impl, :draw_scale_impl, :draw_rotate_impl])
+             MapSet.new([
+               :draw_translate_impl,
+               :draw_scale_impl,
+               :draw_rotate_impl,
+               :draw_rotate_at_impl
+             ])
            )
 
     assert_transform_impl(impls, :draw_translate_impl, :TranslateOpts, :translate)
@@ -110,6 +115,34 @@ defmodule Skia.CodegenDefrustTest do
                %AST.Return{}
              ]
            } = Enum.find(impls, &(&1.name == :draw_rotate_impl))
+
+    assert %AST.Function{
+             args: [
+               %AST.FunctionArg{},
+               %AST.FunctionArg{
+                 name: :opts,
+                 type: %AST.TypePath{parts: [:generated_opts, :RotateAtOpts], lifetimes: [:a]}
+               },
+               %AST.FunctionArg{name: :_raw_opts, type: "&[(Atom, Term<'a>)]"}
+             ],
+             body: [
+               %AST.ExprStmt{
+                 expr: %AST.MethodCall{
+                   method: :rotate,
+                   args: [
+                     %AST.Field{field: :degrees},
+                     %AST.Some{
+                       expr: %AST.PathCall{
+                         path: %AST.Path{parts: [:Point, :new]},
+                         args: [%AST.Field{field: :x}, %AST.Field{field: :y}]
+                       }
+                     }
+                   ]
+                 }
+               },
+               %AST.Return{}
+             ]
+           } = Enum.find(impls, &(&1.name == :draw_rotate_at_impl))
   end
 
   defp assert_transform_impl(impls, name, opts_type, method) do

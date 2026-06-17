@@ -729,7 +729,7 @@ defmodule Skia.Codegen do
 
     legacy_items =
       Transforms.commands()
-      |> Keyword.drop([:translate, :scale, :rotate])
+      |> Keyword.drop([:translate, :scale, :rotate, :rotate_at])
       |> generated_body_impls(:transform)
 
     render_items(defrust_items ++ legacy_items, "generated_transforms.rs")
@@ -739,7 +739,7 @@ defmodule Skia.Codegen do
   @spec generated_transform_impl_asts() :: [AST.Function.t()]
   def generated_transform_impl_asts do
     Transforms.commands()
-    |> Keyword.take([:translate, :scale, :rotate])
+    |> Keyword.take([:translate, :scale, :rotate, :rotate_at])
     |> Enum.map(fn {name, spec} -> generated_transform_impl_ast(name, spec) end)
   end
 
@@ -753,7 +753,7 @@ defmodule Skia.Codegen do
       returns: A.nif_result_type(A.unit_type()),
       body: [
         %AST.ExprStmt{expr: transform_call_expr!(spec)},
-        %AST.Return{expr: %AST.Ok{}}
+        %AST.Return{expr: A.ok()}
       ]
     }
   end
@@ -776,24 +776,21 @@ defmodule Skia.Codegen do
   defp transform_call_expr!(spec) do
     case get_in(spec, [:transform, :body]) do
       [{:call, "canvas", method, args}] ->
-        %AST.MethodCall{
-          receiver: %AST.Var{name: :canvas},
-          method: method,
-          args: Enum.map(args, &transform_arg!/1)
-        }
+        A.method(:canvas, method, Enum.map(args, &transform_arg!/1))
 
       other ->
         raise ArgumentError, "unsupported generated transform body: #{inspect(other)}"
     end
   end
 
-  defp transform_arg!({:tuple, fields}),
-    do: %AST.Tuple{values: Enum.map(fields, &transform_arg!/1)}
+  defp transform_arg!({:tuple, fields}), do: A.tuple(Enum.map(fields, &transform_arg!/1))
 
-  defp transform_arg!(:none), do: %AST.None{}
+  defp transform_arg!({:some, "Point::new(opts.x, opts.y)"}),
+    do: A.some(A.path_call([:Point, :new], [A.field(:opts, :x), A.field(:opts, :y)]))
 
-  defp transform_arg!("opts." <> field),
-    do: %AST.Field{receiver: %AST.Var{name: :opts}, field: String.to_atom(field)}
+  defp transform_arg!(:none), do: A.none()
+
+  defp transform_arg!("opts." <> field), do: A.field(:opts, String.to_atom(field))
 
   defp transform_arg!(other),
     do: raise(ArgumentError, "unsupported generated transform argument: #{inspect(other)}")
