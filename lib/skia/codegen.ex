@@ -374,10 +374,14 @@ defmodule Skia.Codegen do
   defp elixir_arg_name(:picture_term), do: :picture
   defp elixir_arg_name(name), do: name
 
+  @doc false
+  @spec native_nif_specs() :: keyword(keyword())
+  def native_nif_specs, do: @native_nifs
+
   @spec generated_native_nifs() :: String.t()
   def generated_native_nifs do
     wrappers =
-      @native_nifs
+      native_nif_specs()
       |> Enum.map(fn {name, spec} -> {name, Keyword.put(spec, :schedule, :dirty_cpu)} end)
       |> RustQ.Rustler.nif_exports()
 
@@ -720,32 +724,29 @@ defmodule Skia.Codegen do
     |> render_items("generated_opts_helpers.rs")
   end
 
+  @doc false
+  @spec resource_specs() :: [{atom(), keyword()}]
+  def resource_specs do
+    [
+      EncodedImage: [fields: [image: "Image"], decoder: :decode_encoded_image_ref],
+      EncodedFont: [fields: [typeface: "skia_safe::Typeface"], decoder: :decode_encoded_font_ref],
+      EncodedPicture: [
+        fields: [bytes: "Vec<u8>", picture: "Picture"],
+        decoder: :decode_encoded_picture_ref
+      ],
+      EncodedTextBlob: [fields: [blob: "TextBlob"], decoder: :decode_encoded_text_blob_ref],
+      EncodedRuntimeEffect: [
+        fields: [source: "String"],
+        decoder: :decode_encoded_runtime_effect_ref
+      ]
+    ]
+  end
+
   @spec generated_resources() :: String.t()
   def generated_resources do
     resources =
-      [
-        RustQ.Rustler.resource_handle(:EncodedImage,
-          fields: [image: "Image"],
-          decoder: :decode_encoded_image_ref
-        ),
-        RustQ.Rustler.resource_handle(:EncodedFont,
-          fields: [typeface: "skia_safe::Typeface"],
-          decoder: :decode_encoded_font_ref
-        ),
-        RustQ.Rustler.resource_handle(:EncodedPicture,
-          fields: [bytes: "Vec<u8>", picture: "Picture"],
-          decoder: :decode_encoded_picture_ref
-        ),
-        RustQ.Rustler.resource_handle(:EncodedTextBlob,
-          fields: [blob: "TextBlob"],
-          decoder: :decode_encoded_text_blob_ref
-        ),
-        RustQ.Rustler.resource_handle(:EncodedRuntimeEffect,
-          fields: [source: "String"],
-          decoder: :decode_encoded_runtime_effect_ref
-        )
-      ]
-      |> List.flatten()
+      resource_specs()
+      |> Enum.flat_map(fn {name, opts} -> RustQ.Rustler.resource_handle(name, opts) end)
 
     "generated_resources.rs"
     |> template_path()
