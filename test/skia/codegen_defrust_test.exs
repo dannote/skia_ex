@@ -78,7 +78,9 @@ defmodule Skia.CodegenDefrustTest do
   end
 
   test "transform impls use explicit generated opts Rust types" do
-    impls = Skia.Codegen.generated_transform_impl_asts()
+    impls = Skia.Codegen.TransformImpls.generated_asts()
+
+    assert impls == Skia.Codegen.generated_transform_impl_asts()
     names = impls |> Enum.map(& &1.name) |> MapSet.new()
 
     assert MapSet.equal?(
@@ -189,7 +191,9 @@ defmodule Skia.CodegenDefrustTest do
                  %AST.Return{}
                ]
              }
-           ] = Skia.Codegen.generated_shape_impl_asts()
+           ] = Skia.Codegen.ShapeImpls.generated_asts()
+
+    assert Skia.Codegen.ShapeImpls.generated_asts() == Skia.Codegen.generated_shape_impl_asts()
   end
 
   defp assert_transform_impl(impls, name, opts_type, method) do

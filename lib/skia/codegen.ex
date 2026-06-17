@@ -5,7 +5,9 @@ defmodule Skia.Codegen do
   alias RustQ.Rust.AST
   alias RustQ.Rust.AST.Builder, as: A
   alias RustQ.Rustler.Decode, as: R
+  alias Skia.Codegen.ShapeImpls
   alias Skia.Codegen.SkiaSafe
+  alias Skia.Codegen.TransformImpls
   alias Skia.CommandSpec.Clips
   alias Skia.CommandSpec.Images
   alias Skia.CommandSpec.Layers
@@ -729,7 +731,7 @@ defmodule Skia.Codegen do
 
     legacy_items =
       Transforms.commands()
-      |> Keyword.drop([:translate, :scale, :rotate, :rotate_at, :concat])
+      |> Keyword.drop(TransformImpls.commands())
       |> generated_body_impls(:transform)
 
     render_items(defrust_items ++ legacy_items, "generated_transforms.rs")
@@ -737,89 +739,7 @@ defmodule Skia.Codegen do
 
   @doc false
   @spec generated_transform_impl_asts() :: [AST.Function.t()]
-  def generated_transform_impl_asts do
-    Transforms.commands()
-    |> Keyword.take([:translate, :scale, :rotate, :rotate_at, :concat])
-    |> Enum.map(fn {name, spec} -> generated_transform_impl_ast(name, spec) end)
-  end
-
-  defp generated_transform_impl_ast(name, spec) do
-    handler = Keyword.fetch!(spec, :handler)
-
-    RustQ.Meta.quoted(String.to_atom("#{handler}_impl"),
-      args: command_impl_args(name),
-      returns: A.nif_result_type(A.unit_type()),
-      do: transform_body_ast!(spec)
-    )
-  end
-
-  defp command_impl_args(name, raw_opts_name \\ :_raw_opts) do
-    [
-      {:canvas, A.ref_type([:skia_safe, :Canvas])},
-      {:opts, generated_opts_type(name)},
-      {raw_opts_name, "&[(Atom, Term<'a>)]"}
-    ]
-  end
-
-  defp generated_opts_type(name) do
-    opts_name =
-      name |> Atom.to_string() |> Macro.camelize() |> Kernel.<>("Opts") |> String.to_atom()
-
-    A.type_path([:generated_opts, opts_name], lifetimes: [:a])
-  end
-
-  defp transform_body_ast!(spec) do
-    setup =
-      spec |> get_in([:transform, :setup]) |> List.wrap() |> Enum.map(&transform_setup_ast!/1)
-
-    body =
-      case get_in(spec, [:transform, :body]) do
-        [{:call, "canvas", method, args}] ->
-          [
-            {{:., [], [Macro.var(:canvas, nil), method]}, [],
-             Enum.map(args, &transform_arg_ast!/1)},
-            :ok
-          ]
-
-        other ->
-          raise ArgumentError, "unsupported generated transform body: #{inspect(other)}"
-      end
-
-    {:__block__, [], setup ++ body}
-  end
-
-  defp transform_setup_ast!({:let, "matrix", "matrix_from_term(opts.matrix)?"}) do
-    {:=, [],
-     [
-       Macro.var(:matrix, nil),
-       {:unwrap!, [], [{:matrix_from_term, [], [opts_field_ast(:matrix)]}]}
-     ]}
-  end
-
-  defp transform_setup_ast!(other),
-    do: raise(ArgumentError, "unsupported generated transform setup: #{inspect(other)}")
-
-  defp transform_arg_ast!({:tuple, fields}),
-    do: {:{}, [], Enum.map(fields, &transform_arg_ast!/1)}
-
-  defp transform_arg_ast!({:some, "Point::new(opts.x, opts.y)"}),
-    do:
-      {:some, [],
-       [
-         {{:., [], [{:__aliases__, [], [:Point]}, :new]}, [],
-          [opts_field_ast(:x), opts_field_ast(:y)]}
-       ]}
-
-  defp transform_arg_ast!(:none), do: {:none, [], []}
-  defp transform_arg_ast!("&matrix"), do: {:ref, [], [Macro.var(:matrix, nil)]}
-
-  defp transform_arg_ast!("opts." <> field), do: opts_field_ast(String.to_atom(field))
-
-  defp transform_arg_ast!(other),
-    do: raise(ArgumentError, "unsupported generated transform argument: #{inspect(other)}")
-
-  defp opts_field_ast(field),
-    do: {{:., [], [Macro.var(:opts, nil), field]}, [no_parens: true], []}
+  def generated_transform_impl_asts, do: TransformImpls.generated_asts()
 
   @spec generated_shapes() :: String.t()
   def generated_shapes do
@@ -827,7 +747,7 @@ defmodule Skia.Codegen do
 
     legacy_items =
       Shapes.commands()
-      |> Keyword.drop([:line])
+      |> Keyword.drop(ShapeImpls.commands())
       |> generated_body_impls(:shape_draw)
 
     render_items(defrust_items ++ legacy_items ++ [rect_shape_helper()], "generated_shapes.rs")
@@ -835,38 +755,7 @@ defmodule Skia.Codegen do
 
   @doc false
   @spec generated_shape_impl_asts() :: [AST.Function.t()]
-  def generated_shape_impl_asts do
-    Shapes.commands()
-    |> Keyword.take([:line])
-    |> Enum.map(fn {name, spec} -> generated_shape_impl_ast(name, spec) end)
-  end
-
-  defp generated_shape_impl_ast(name, spec) do
-    handler = Keyword.fetch!(spec, :handler)
-
-    RustQ.Meta.quoted(String.to_atom("#{handler}_impl"),
-      args: command_impl_args(name, :raw_opts),
-      returns: A.nif_result_type(A.unit_type()),
-      do: line_shape_body_ast!()
-    )
-  end
-
-  defp line_shape_body_ast! do
-    quote do
-      color = unwrap!(decode_color(opts.stroke))
-
-      paint =
-        unwrap!(stroke_paint(color, opts.stroke_width.unwrap_or(1.0), raw_opts))
-
-      canvas.draw_line(
-        unwrap!(point_from_term(opts.from)),
-        unwrap!(point_from_term(opts.to)),
-        ref(paint)
-      )
-
-      :ok
-    end
-  end
+  def generated_shape_impl_asts, do: ShapeImpls.generated_asts()
 
   defp rect_shape_helper do
     Rust.item("""
