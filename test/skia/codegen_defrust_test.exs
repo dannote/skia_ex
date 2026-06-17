@@ -3,6 +3,23 @@ defmodule Skia.CodegenDefrustTest do
 
   alias RustQ.Rust.AST
 
+  test "generated layer impls are real defrust functions" do
+    impls = Skia.Codegen.GeneratedLayers.__rustq_asts__()
+    names = impls |> Enum.map(& &1.name) |> MapSet.new()
+
+    assert MapSet.equal?(names, MapSet.new([:draw_save_impl, :draw_restore_impl]))
+
+    assert %AST.Function{
+             body: [%AST.ExprStmt{expr: %AST.MethodCall{method: :save}}, %AST.Return{}]
+           } =
+             Enum.find(impls, &(&1.name == :draw_save_impl))
+
+    assert %AST.Function{
+             body: [%AST.ExprStmt{expr: %AST.MethodCall{method: :restore}}, %AST.Return{}]
+           } =
+             Enum.find(impls, &(&1.name == :draw_restore_impl))
+  end
+
   test "generated handlers are real defrust functions" do
     handlers = Skia.Codegen.GeneratedHandlers.__rustq_asts__()
     names = handlers |> Enum.map(& &1.name) |> MapSet.new()

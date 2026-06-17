@@ -12,6 +12,15 @@ defmodule Skia.Codegen.Defrust do
     handler_definition(name, opts)
   end
 
+  defmacro defimpl_handler(name, do: body) do
+    quote do
+      @spec unquote(name)(R.ref(Canvas.t())) :: R.nif_result(R.unit())
+      defrust unquote(name)(canvas) do
+        unquote(body)
+      end
+    end
+  end
+
   defmacro defhandlers(opts) when is_list(opts) do
     from_ast = Keyword.fetch!(opts, :from)
     {commands, _binding} = Code.eval_quoted(from_ast, [], __CALLER__)

@@ -697,9 +697,14 @@ defmodule Skia.Codegen do
 
   @spec generated_layers() :: String.t()
   def generated_layers do
-    Layers.commands()
-    |> generated_body_impls(:layer)
-    |> render_items("generated_layers.rs")
+    defrust_items = Skia.Codegen.GeneratedLayers.__rustq_items__()
+
+    legacy_items =
+      Layers.commands()
+      |> Keyword.drop([:save, :restore])
+      |> generated_body_impls(:layer)
+
+    render_items(defrust_items ++ legacy_items, "generated_layers.rs")
   end
 
   @spec generated_transforms() :: String.t()
