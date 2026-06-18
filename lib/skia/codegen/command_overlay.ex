@@ -48,6 +48,8 @@ defmodule Skia.Codegen.CommandOverlay do
 
   command(:clip_rect, native: Canvas.clip_rect())
 
+  command(:clip_circle, expands_to: [Canvas.clip_path()])
+
   command(:clip_path,
     native: Canvas.clip_path(),
     expand: :clip_path,
@@ -64,10 +66,17 @@ defmodule Skia.Codegen.CommandOverlay do
     overlays()
     |> Enum.each(fn {_name, opts} ->
       opts
-      |> Keyword.fetch!(:native)
-      |> Skia.Codegen.NativeSchema.descriptor!()
+      |> Keyword.get(:native)
+      |> validate_ref()
+
+      opts
+      |> Keyword.get(:expands_to, [])
+      |> Enum.each(&validate_ref/1)
     end)
 
     :ok
   end
+
+  defp validate_ref(nil), do: :ok
+  defp validate_ref(%RustQ.NativeRef{} = ref), do: Skia.Codegen.NativeSchema.descriptor!(ref)
 end

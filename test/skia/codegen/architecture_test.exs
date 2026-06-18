@@ -54,6 +54,7 @@ defmodule Skia.Codegen.ArchitectureTest do
     refute source =~ ~s(native: {)
     assert source =~ "native: Canvas.draw_rect"
     assert source =~ "native: Canvas.clip_rect"
+    assert source =~ "expands_to: [Canvas.clip_path"
   end
 
   test "codegen tests live under test/skia/codegen" do

@@ -9,7 +9,7 @@ defmodule Skia.Codegen.CommandOverlay.DSL do
     end
   end
 
-  @allowed_keys [:native, :expand, :defaults]
+  @allowed_keys [:native, :expands_to, :expand, :defaults]
   @forbidden_schema_keys [:args, :opts, :native_refs, :native_shape]
 
   defmacro command(name, opts) do
@@ -33,11 +33,19 @@ defmodule Skia.Codegen.CommandOverlay.DSL do
             "command overlay for #{name} must not duplicate args/opts/native_refs/native_shape schema"
     end
 
-    Keyword.update(opts, :native, nil, &normalize_native_ref!(name, &1))
+    opts
+    |> update_if_present(:native, &normalize_native_ref!(name, &1))
+    |> update_if_present(:expands_to, fn refs ->
+      Enum.map(refs, &normalize_native_ref!(name, &1))
+    end)
   end
 
   defp normalize_overlay!(name, _opts),
     do: raise(ArgumentError, "invalid command overlay #{inspect(name)}")
+
+  defp update_if_present(opts, key, fun) do
+    if Keyword.has_key?(opts, key), do: Keyword.update!(opts, key, fun), else: opts
+  end
 
   defp normalize_native_ref!(_name, {{:., _, [{:__aliases__, _, [target]}, method]}, _, []})
        when is_atom(target) and is_atom(method) do

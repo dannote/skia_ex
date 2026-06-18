@@ -61,12 +61,27 @@ defmodule Skia.Codegen.Commands do
   end
 
   defp attach_overlay(spec, overlay) do
-    native_ref = Keyword.fetch!(overlay, :native)
-    native = Skia.Codegen.NativeSchema.descriptor!(native_ref)
-
     spec
     |> Keyword.put(:overlay, overlay)
-    |> Keyword.put(:native, native)
+    |> attach_native(overlay)
+    |> attach_expands_to(overlay)
+  end
+
+  defp attach_native(spec, overlay) do
+    case Keyword.fetch(overlay, :native) do
+      {:ok, native_ref} ->
+        Keyword.put(spec, :native, Skia.Codegen.NativeSchema.descriptor!(native_ref))
+
+      :error ->
+        spec
+    end
+  end
+
+  defp attach_expands_to(spec, overlay) do
+    refs = Keyword.get(overlay, :expands_to, [])
+    descriptors = Enum.map(refs, &Skia.Codegen.NativeSchema.descriptor!/1)
+
+    if descriptors == [], do: spec, else: Keyword.put(spec, :expands_to, descriptors)
   end
 
   defp native_signature(spec) do

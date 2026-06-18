@@ -23,6 +23,15 @@ defmodule Skia.Codegen.CommandsTest do
              method.args
   end
 
+  test "composite command overlays carry expanded native descriptors without direct native docs" do
+    clip_circle = Skia.Codegen.Commands.fetch!(:clip_circle)
+
+    refute Keyword.has_key?(clip_circle, :native)
+
+    assert [%RustQ.NativeDescriptor{ref: %RustQ.NativeRef{target: "Canvas", member: "clip_path"}}] =
+             Keyword.fetch!(clip_circle, :expands_to)
+  end
+
   test "overlay defaults are merged into command metadata" do
     assert Keyword.fetch!(Skia.Codegen.Commands.fetch!(:rect), :defaults) == [radius: 0]
 
