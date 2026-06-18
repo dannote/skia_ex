@@ -63,6 +63,18 @@ defmodule Skia.Codegen.ArchitectureTest do
     assert source =~ "defmacro handlers"
   end
 
+  test "Rusty command domains use clear from and commands options" do
+    use_sites =
+      "lib/skia/codegen/rusty/*.ex"
+      |> Path.wildcard()
+      |> Enum.reject(&String.ends_with?(&1, "/domain.ex"))
+      |> Enum.map_join("\n", &File.read!/1)
+
+    assert use_sites =~ "use Skia.Codegen.Rusty.Domain"
+    assert use_sites =~ "from:"
+    refute use_sites =~ "only:"
+  end
+
   test "simple layer commands do not generate trivial impl wrappers" do
     source = File.read!("lib/skia/codegen/rusty/layers.ex")
 
