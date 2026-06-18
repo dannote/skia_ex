@@ -1,6 +1,6 @@
-defmodule Skia.Codegen.ApiSchema do
+defmodule Skia.Codegen.CommandSchema do
   @moduledoc """
-  Derives command metadata from Elixir declarations.
+  Derives command metadata from Elixir command typespecs.
 
   This is the replacement direction for `Skia.CommandSpec`: real Elixir
   `@type`/`@spec` declarations are the source of truth, and this module reads

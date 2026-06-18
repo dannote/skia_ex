@@ -1,4 +1,4 @@
-defmodule Skia.Codegen.CommandDeclarations.Paths do
+defmodule Skia.Codegen.Commands.Paths do
   @moduledoc false
 
   @type color :: Skia.Command.color()
