@@ -15,15 +15,6 @@ defmodule Skia.Codegen.CommandSpecs do
 
   @type command :: %{name: atom(), args: keyword(), opts: [keyword()]}
 
-  @enum_specs %{
-    blend_mode: [skia: "SkBlendMode", rust: :BlendMode],
-    stroke_cap: [skia: "SkPaint_Cap", rust: "paint::Cap"],
-    stroke_join: [skia: "SkPaint_Join", rust: "paint::Join"],
-    fill_rule: [skia: "SkPathFillType", rust: :PathFillType],
-    path_op: [skia: "SkPathOp", rust: :PathOp],
-    clip_op: [skia: "SkClipOp", rust: :ClipOp]
-  }
-
   @spec from_file(Path.t()) :: [command()]
   def from_file(path), do: path |> RustQ.Spec.declarations() |> from_declarations()
 
@@ -83,9 +74,9 @@ defmodule Skia.Codegen.CommandSpecs do
   end
 
   defp command_type(%RustQ.Meta.Type{kind: :enum, meta: %{enum: enum}} = type) do
-    spec = Map.fetch!(@enum_specs, enum)
+    spec = Skia.Codegen.Enums.spec!(enum)
     rust_type = Keyword.fetch!(spec, :rust)
-    native_name = Keyword.fetch!(spec, :skia)
+    descriptor = Keyword.fetch!(spec, :descriptor)
 
     %{
       type
@@ -93,8 +84,7 @@ defmodule Skia.Codegen.CommandSpecs do
         rust: rust_type_string(rust_type),
         meta:
           Map.merge(type.meta, %{
-            native_name: native_name,
-            native_enum: Skia.Codegen.SkiaSafe.enum_descriptor!(native_name),
+            native_enum: descriptor,
             rust_type: rust_type
           })
     }

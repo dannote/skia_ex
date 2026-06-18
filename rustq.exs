@@ -1,6 +1,7 @@
 use RustQ.Config
 
 require_file("lib/skia/codegen/skia_safe.ex")
+require_file("lib/skia/codegen/enums.ex")
 require_file("lib/skia/codegen/command_specs.ex")
 require_file("lib/skia/codegen/native_schema.ex")
 require_file("lib/skia/codegen/command_overlay/dsl.ex")
@@ -13,7 +14,6 @@ require_file("lib/skia/codegen/commands/transforms.ex")
 require_file("lib/skia/codegen/commands/paths.ex")
 require_file("lib/skia/codegen/commands/clips.ex")
 require_file("lib/skia/codegen/commands.ex")
-require_file("lib/skia/codegen/enums.ex")
 require_file("lib/skia/codegen/rusty/args.ex")
 require_file("lib/skia/codegen/rusty/domain.ex")
 require_file("lib/skia/codegen/rusty/paint.ex")

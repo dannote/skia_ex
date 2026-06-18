@@ -2,10 +2,15 @@ defmodule Skia.Codegen.Enums do
   @moduledoc false
 
   alias RustQ.Rust
-  alias Skia.Codegen.Commands
   alias Skia.Codegen.SkiaSafe
 
-  @extra_specs %{
+  @specs %{
+    blend_mode: [skia: "SkBlendMode", rust: :BlendMode],
+    stroke_cap: [skia: "SkPaint_Cap", rust: "paint::Cap"],
+    stroke_join: [skia: "SkPaint_Join", rust: "paint::Join"],
+    fill_rule: [skia: "SkPathFillType", rust: :PathFillType],
+    path_op: [skia: "SkPathOp", rust: :PathOp],
+    clip_op: [skia: "SkClipOp", rust: :ClipOp],
     encoded_image_format: [skia: "SkEncodedImageFormat", rust: :EncodedImageFormat],
     blur_style: [skia: "SkBlurStyle", rust: :BlurStyle],
     sampling: [skia: "SkFilterMode", rust: :FilterMode],
@@ -49,22 +54,11 @@ defmodule Skia.Codegen.Enums do
 
   @spec defs() :: %{atom() => keyword()}
   def defs do
-    specs =
-      Commands.all()
-      |> Enum.flat_map(fn {_name, spec} -> Keyword.get(spec, :opts, []) end)
-      |> Enum.flat_map(fn opt -> opt |> Keyword.fetch!(:type) |> enum_type_spec() end)
-      |> Kernel.++(Map.to_list(@extra_specs))
-
-    specs
-    |> Enum.uniq_by(&elem(&1, 0))
-    |> Map.new(fn {name, spec} -> {name, resolve_spec(spec)} end)
+    Map.new(@specs, fn {name, _spec} -> {name, spec!(name)} end)
   end
 
-  defp enum_type_spec(%RustQ.Meta.Type{kind: :enum, meta: %{elixir_name: name} = meta}) do
-    [{name, [descriptor: Map.fetch!(meta, :native_enum), rust: Map.fetch!(meta, :rust_type)]}]
-  end
-
-  defp enum_type_spec(_type), do: []
+  @spec spec!(atom()) :: keyword()
+  def spec!(name), do: @specs |> Map.fetch!(name) |> resolve_spec()
 
   defp resolve_spec(spec) do
     descriptor =
