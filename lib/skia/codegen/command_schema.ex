@@ -105,23 +105,62 @@ defmodule Skia.Codegen.CommandSchema do
   defp command_type({:path_op, _, []}, _types),
     do: {:enum, :path_op, skia: "SkPathOp", rust: :PathOp}
 
+  defp command_type({:clip_op, _, []}, _types),
+    do: {:enum, :clip_op, skia: "SkClipOp", rust: :ClipOp}
+
   defp command_type(ast, types) do
     ast = expand_type(ast, types)
 
     case ast do
-      {{:., _, [{:__aliases__, _, [:Skia, :Path]}, :t]}, _, []} -> :path
-      {{:., _, [{:__aliases__, _, [:Skia, :Paint]}, :t]}, _, []} -> :paint
-      {{:., _, [{:__aliases__, _, [:Skia, :Vertices]}, :t]}, _, []} -> :vertices
-      {{:., _, [{:__aliases__, _, [:Skia, :ImageFilter]}, :t]}, _, []} -> :image_filter
-      {{:., _, [{:__aliases__, _, [:Skia, :PathEffect]}, :t]}, _, []} -> :path_effect
-      {{:., _, [{:__aliases__, _, [:Skia, :ColorFilter]}, :t]}, _, []} -> :color_filter
-      {{:., _, [{:__aliases__, _, [:Skia, :MaskFilter]}, :t]}, _, []} -> :mask_filter
-      {{:., _, [{:__aliases__, _, [:Skia, :Command]}, :color]}, _, []} -> :color
-      {:number, _, []} -> :number
-      {:boolean, _, []} -> :boolean
-      {:atom, _, []} -> :atom
-      {:{}, _, [{:number, _, []}, {:number, _, []}]} -> {:tuple, [:number, :number]}
-      _other -> :term
+      {{:., _, [{:__aliases__, _, [:Skia, :Path]}, :t]}, _, []} ->
+        :path
+
+      {{:., _, [{:__aliases__, _, [:Skia, :Paint]}, :t]}, _, []} ->
+        :paint
+
+      {{:., _, [{:__aliases__, _, [:Skia, :Vertices]}, :t]}, _, []} ->
+        :vertices
+
+      {{:., _, [{:__aliases__, _, [:Skia, :ImageFilter]}, :t]}, _, []} ->
+        :image_filter
+
+      {{:., _, [{:__aliases__, _, [:Skia, :PathEffect]}, :t]}, _, []} ->
+        :path_effect
+
+      {{:., _, [{:__aliases__, _, [:Skia, :ColorFilter]}, :t]}, _, []} ->
+        :color_filter
+
+      {{:., _, [{:__aliases__, _, [:Skia, :MaskFilter]}, :t]}, _, []} ->
+        :mask_filter
+
+      {{:., _, [{:__aliases__, _, [:Skia, :Command]}, :color]}, _, []} ->
+        :color
+
+      {:number, _, []} ->
+        :number
+
+      {:boolean, _, []} ->
+        :boolean
+
+      {:atom, _, []} ->
+        :atom
+
+      {:{}, _, [{:number, _, []}, {:number, _, []}]} ->
+        {:tuple, [:number, :number]}
+
+      {:{}, _,
+       [
+         {:number, _, []},
+         {:number, _, []},
+         {:number, _, []},
+         {:number, _, []},
+         {:number, _, []},
+         {:number, _, []}
+       ]} ->
+        {:tuple, [:number, :number, :number, :number, :number, :number]}
+
+      _other ->
+        :term
     end
   end
 

@@ -12,9 +12,9 @@ defmodule Skia.CommandSpec do
     Skia.CommandSpec.Text,
     Skia.CommandSpec.Images,
     Skia.CommandSpec.Layers,
-    Skia.CommandSpec.Transforms,
+    Skia.Codegen.Commands.Transforms,
     Skia.Codegen.Commands.Paths,
-    Skia.CommandSpec.Clips
+    Skia.Codegen.Commands.Clips
   ]
 
   @spec all() :: keyword()

@@ -4,7 +4,7 @@ defmodule Skia.Codegen.Rusty.Clips do
   """
 
   alias RustQ.Rust.AST
-  alias Skia.CommandSpec.Clips
+  alias Skia.Codegen.Commands.Clips
 
   @commands [:clip_rect, :clip_circle, :clip_path]
 

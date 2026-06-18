@@ -7,7 +7,7 @@ defmodule Skia.Codegen.Rusty.Transforms do
   """
 
   alias RustQ.Rust.AST
-  alias Skia.CommandSpec.Transforms
+  alias Skia.Codegen.Commands.Transforms
 
   @commands [:translate, :scale, :rotate, :rotate_at, :concat]
 
