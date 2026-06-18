@@ -33,7 +33,7 @@ defmodule Skia.Codegen.ShapeImpls do
         args: T.vec(T.term())
       ],
       returns: T.nif_result(T.unit()),
-      do: clear_body_ast!()
+      do: clear_body_quote!()
     )
   end
 
@@ -44,7 +44,7 @@ defmodule Skia.Codegen.ShapeImpls do
       args: ImplHelpers.command_impl_args(:circle, :raw_opts),
       returns: T.nif_result(T.unit()),
       rust_modules: %{[:Atoms] => [:atoms]},
-      do: circle_body_ast!()
+      do: circle_body_quote!()
     )
   end
 
@@ -54,11 +54,11 @@ defmodule Skia.Codegen.ShapeImpls do
     RustQ.Meta.quoted(String.to_atom("#{handler}_impl"),
       args: ImplHelpers.command_impl_args(name, :raw_opts),
       returns: T.nif_result(T.unit()),
-      do: line_body_ast!()
+      do: line_body_quote!()
     )
   end
 
-  defp clear_body_ast! do
+  defp clear_body_quote! do
     quote do
       case args.first().and_then(fn term -> decode_color(deref(term)).ok() end) do
         {:some, color} -> canvas.clear(color)
@@ -69,7 +69,7 @@ defmodule Skia.Codegen.ShapeImpls do
     end
   end
 
-  defp circle_body_ast! do
+  defp circle_body_quote! do
     quote do
       center = Point.new(opts.x, opts.y)
 
@@ -98,7 +98,7 @@ defmodule Skia.Codegen.ShapeImpls do
     end
   end
 
-  defp line_body_ast! do
+  defp line_body_quote! do
     quote do
       color = unwrap!(decode_color(opts.stroke))
 

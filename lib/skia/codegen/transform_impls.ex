@@ -31,18 +31,18 @@ defmodule Skia.Codegen.TransformImpls do
     RustQ.Meta.quoted(String.to_atom("#{handler}_impl"),
       args: ImplHelpers.command_impl_args(name),
       returns: T.nif_result(T.unit()),
-      do: body_ast!(spec)
+      do: body_quote!(spec)
     )
   end
 
-  defp body_ast!(spec) do
-    setup = spec |> get_in([:transform, :setup]) |> List.wrap() |> Enum.map(&setup_ast!/1)
+  defp body_quote!(spec) do
+    setup = spec |> get_in([:transform, :setup]) |> List.wrap() |> Enum.map(&setup_quote!/1)
 
     body =
       case get_in(spec, [:transform, :body]) do
         [{:call, "canvas", method, args}] ->
           [
-            {{:., [], [Macro.var(:canvas, nil), method]}, [], Enum.map(args, &arg_ast!/1)},
+            {{:., [], [Macro.var(:canvas, nil), method]}, [], Enum.map(args, &arg_quote!/1)},
             :ok
           ]
 
@@ -53,7 +53,7 @@ defmodule Skia.Codegen.TransformImpls do
     {:__block__, [], setup ++ body}
   end
 
-  defp setup_ast!({:let, "matrix", "matrix_from_term(opts.matrix)?"}) do
+  defp setup_quote!({:let, "matrix", "matrix_from_term(opts.matrix)?"}) do
     {:=, [],
      [
        Macro.var(:matrix, nil),
@@ -61,12 +61,12 @@ defmodule Skia.Codegen.TransformImpls do
      ]}
   end
 
-  defp setup_ast!(other),
+  defp setup_quote!(other),
     do: raise(ArgumentError, "unsupported generated transform setup: #{inspect(other)}")
 
-  defp arg_ast!({:tuple, fields}), do: {:{}, [], Enum.map(fields, &arg_ast!/1)}
+  defp arg_quote!({:tuple, fields}), do: {:{}, [], Enum.map(fields, &arg_quote!/1)}
 
-  defp arg_ast!({:some, "Point::new(opts.x, opts.y)"}),
+  defp arg_quote!({:some, "Point::new(opts.x, opts.y)"}),
     do:
       {:some, [],
        [
@@ -74,10 +74,10 @@ defmodule Skia.Codegen.TransformImpls do
           [ImplHelpers.opts_field_ast(:x), ImplHelpers.opts_field_ast(:y)]}
        ]}
 
-  defp arg_ast!(:none), do: {:none, [], []}
-  defp arg_ast!("&matrix"), do: {:ref, [], [Macro.var(:matrix, nil)]}
-  defp arg_ast!("opts." <> field), do: ImplHelpers.opts_field_ast(String.to_atom(field))
+  defp arg_quote!(:none), do: {:none, [], []}
+  defp arg_quote!("&matrix"), do: {:ref, [], [Macro.var(:matrix, nil)]}
+  defp arg_quote!("opts." <> field), do: ImplHelpers.opts_field_ast(String.to_atom(field))
 
-  defp arg_ast!(other),
+  defp arg_quote!(other),
     do: raise(ArgumentError, "unsupported generated transform argument: #{inspect(other)}")
 end
