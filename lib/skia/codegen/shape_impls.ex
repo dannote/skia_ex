@@ -12,7 +12,7 @@ defmodule Skia.Codegen.ShapeImpls do
   alias Skia.Codegen.ImplHelpers
   alias Skia.CommandSpec.Shapes
 
-  @commands [:line]
+  @commands [:clear, :line]
 
   @spec commands() :: [atom()]
   def commands, do: @commands
@@ -24,6 +24,19 @@ defmodule Skia.Codegen.ShapeImpls do
     |> Enum.map(fn {name, spec} -> generated_ast(name, spec) end)
   end
 
+  defp generated_ast(:clear, spec) do
+    handler = Keyword.fetch!(spec, :handler)
+
+    RustQ.Meta.quoted(String.to_atom("#{handler}_impl"),
+      args: [
+        canvas: A.ref_type([:skia_safe, :Canvas]),
+        args: %AST.TypeVec{inner: A.term_type()}
+      ],
+      returns: A.nif_result_type(A.unit_type()),
+      do: clear_body_ast!()
+    )
+  end
+
   defp generated_ast(name, spec) do
     handler = Keyword.fetch!(spec, :handler)
 
@@ -32,6 +45,17 @@ defmodule Skia.Codegen.ShapeImpls do
       returns: A.nif_result_type(A.unit_type()),
       do: line_body_ast!()
     )
+  end
+
+  defp clear_body_ast! do
+    quote do
+      case args.first().and_then(fn term -> decode_color(deref(term)).ok() end) do
+        {:some, color} -> canvas.clear(color)
+        :none -> :ok
+      end
+
+      :ok
+    end
   end
 
   defp line_body_ast! do
