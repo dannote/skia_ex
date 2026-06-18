@@ -7,13 +7,6 @@ defmodule Skia.Codegen do
   alias RustQ.Rustler.Decode, as: R
   alias Skia.Codegen.Rusty
   alias Skia.Codegen.SkiaSafe
-  alias Skia.CommandSpec.Clips
-  alias Skia.CommandSpec.Images
-  alias Skia.CommandSpec.Layers
-  alias Skia.CommandSpec.Paths
-  alias Skia.CommandSpec.Shapes
-  alias Skia.CommandSpec.Text
-  alias Skia.CommandSpec.Transforms
 
   @spec generated_targets() :: [{atom(), keyword()}]
   def generated_targets do
@@ -669,9 +662,6 @@ defmodule Skia.Codegen do
     )
   end
 
-  defp append_if(values, false, _value), do: values
-  defp append_if(values, _condition, value), do: values ++ [value]
-
   @spec generated_opts_helpers() :: String.t()
   def generated_opts_helpers do
     RustQ.Rustler.opts_helpers()
@@ -719,24 +709,14 @@ defmodule Skia.Codegen do
         Skia.Codegen.GeneratedLayers.__rustq_items__() ++
         Enum.map(Rusty.Layers.generated_asts(), &render_rustq_item/1)
 
-    legacy_items =
-      Layers.commands()
-      |> Keyword.drop([:save, :restore] ++ Rusty.Layers.commands())
-      |> generated_body_impls(:layer)
-
-    render_items(defrust_items ++ legacy_items, "generated_layers.rs")
+    render_items(defrust_items, "generated_layers.rs")
   end
 
   @spec generated_transforms() :: String.t()
   def generated_transforms do
-    defrust_items = Enum.map(generated_transform_impl_asts(), &render_rustq_item/1)
-
-    legacy_items =
-      Transforms.commands()
-      |> Keyword.drop(Rusty.Transforms.commands())
-      |> generated_body_impls(:transform)
-
-    render_items(defrust_items ++ legacy_items, "generated_transforms.rs")
+    generated_transform_impl_asts()
+    |> Enum.map(&render_rustq_item/1)
+    |> render_items("generated_transforms.rs")
   end
 
   @doc false
@@ -745,14 +725,9 @@ defmodule Skia.Codegen do
 
   @spec generated_shapes() :: String.t()
   def generated_shapes do
-    defrust_items = Enum.map(generated_shape_impl_asts(), &render_rustq_item/1)
-
-    legacy_items =
-      Shapes.commands()
-      |> Keyword.drop(Rusty.Shapes.commands())
-      |> generated_body_impls(:shape_draw)
-
-    render_items(defrust_items ++ legacy_items, "generated_shapes.rs")
+    generated_shape_impl_asts()
+    |> Enum.map(&render_rustq_item/1)
+    |> render_items("generated_shapes.rs")
   end
 
   @doc false
@@ -761,144 +736,23 @@ defmodule Skia.Codegen do
 
   @spec generated_text() :: String.t()
   def generated_text do
-    defrust_items = Enum.map(Rusty.Text.generated_asts(), &render_rustq_item/1)
-
-    legacy_items =
-      Text.commands()
-      |> Keyword.drop(Rusty.Text.commands())
-      |> generated_body_impls(:text_draw)
-
-    items = defrust_items ++ legacy_items ++ text_helper_impls()
+    items = Enum.map(Rusty.Text.generated_asts(), &render_rustq_item/1) ++ text_helper_impls()
     render_items(items, "generated_text.rs")
   end
 
   @spec generated_images() :: String.t()
   def generated_images do
-    defrust_items = Enum.map(Rusty.Images.generated_asts(), &render_rustq_item/1)
-
-    legacy_items =
-      Images.commands()
-      |> Keyword.drop(Rusty.Images.commands())
-      |> generated_body_impls(:image_draw)
-
-    render_items(defrust_items ++ legacy_items, "generated_images.rs")
+    Rusty.Images.generated_asts()
+    |> Enum.map(&render_rustq_item/1)
+    |> render_items("generated_images.rs")
   end
 
   @spec generated_draw_paths() :: String.t()
   def generated_draw_paths do
-    defrust_items = Enum.map(Rusty.Paths.generated_asts(), &render_rustq_item/1)
-
-    legacy_items =
-      Paths.commands()
-      |> Keyword.drop(Rusty.Paths.commands())
-      |> generated_body_impls(:path_draw)
-
-    render_items(defrust_items ++ legacy_items, "generated_draw_paths.rs")
+    Rusty.Paths.generated_asts()
+    |> Enum.map(&render_rustq_item/1)
+    |> render_items("generated_draw_paths.rs")
   end
-
-  defp generated_body_impls(commands, key) do
-    commands
-    |> Enum.filter(fn {_name, spec} -> Keyword.has_key?(spec, key) end)
-    |> Enum.map(fn {name, spec} -> body_impl(name, spec, key) end)
-  end
-
-  defp body_impl(name, spec, key) do
-    handler = Keyword.fetch!(spec, :handler)
-    command_body = Keyword.fetch!(spec, key)
-    setup = command_body |> Keyword.get(:setup, []) |> rust_lines()
-    body = command_body |> command_body_lines() |> rust_lines()
-    setup = if setup == "", do: "", else: setup <> "\n\n    "
-    params = body_impl_params(name, spec, setup <> body)
-    lifetime = if Enum.any?(params, &String.contains?(&1, "'a")), do: "<'a>", else: ""
-    params = Enum.join(params, ",\n    ")
-
-    Rust.item("""
-    fn #{handler}_impl#{lifetime}(
-        #{params},
-    ) -> NifResult<()> {
-        #{setup}#{body}
-        Ok(())
-    }
-    """)
-  end
-
-  defp command_body_lines(command_body) do
-    cond do
-      Keyword.has_key?(command_body, :body) -> Keyword.fetch!(command_body, :body)
-      Keyword.has_key?(command_body, :call) -> [Keyword.fetch!(command_body, :call)]
-    end
-  end
-
-  defp rust_lines(lines), do: Enum.map_join(lines, "\n    ", &rust_line/1)
-  defp rust_line(line), do: line |> rust_fragment() |> Rust.to_fragment()
-
-  defp rust_fragments(lines), do: Enum.map(lines, &rust_fragment/1)
-
-  defp rust_fragment(line) when is_binary(line), do: Rust.raw(line)
-  defp rust_fragment({:stmt, expr}), do: Rust.raw([rust_expr(expr), ";"])
-  defp rust_fragment({:let, pattern, expr}), do: Rust.let_(pattern, rust_expr(expr))
-  defp rust_fragment({:let_mut, pattern, expr}), do: Rust.let_mut(pattern, rust_expr(expr))
-  defp rust_fragment({:assign, target, expr}), do: Rust.assign(target, rust_expr(expr))
-
-  defp rust_fragment({:call, receiver, method, args}),
-    do: Rust.call_stmt(receiver, method, rust_args(args))
-
-  defp rust_fragment({:return_if, condition}), do: Rust.return_if(rust_expr(condition))
-
-  defp rust_fragment({:if, condition, then_lines}),
-    do: Rust.if_(rust_expr(condition), rust_fragments(then_lines))
-
-  defp rust_fragment({:if_else, condition, then_lines, else_lines}) do
-    Rust.if_(rust_expr(condition), rust_fragments(then_lines), else: rust_fragments(else_lines))
-  end
-
-  defp rust_fragment({:if_let, pattern, expr, then_lines}) do
-    Rust.if_let(pattern, rust_expr(expr), rust_fragments(then_lines))
-  end
-
-  defp rust_fragment({:if_let_else, pattern, expr, then_lines, else_lines}) do
-    Rust.if_let(pattern, rust_expr(expr), rust_fragments(then_lines),
-      else: rust_fragments(else_lines)
-    )
-  end
-
-  defp rust_fragment({:match, expr, clauses}) do
-    arms = Enum.map(clauses, fn {pattern, lines} -> {pattern, rust_fragments(lines)} end)
-    Rust.match_(rust_expr(expr), arms)
-  end
-
-  defp rust_args(args), do: Enum.map(args, &rust_expr/1)
-  defp rust_expr(expr) when is_binary(expr), do: expr
-
-  defp rust_expr({:call_expr, receiver, method, args}),
-    do: Rust.call_expr(receiver, method, rust_args(args)) |> Rust.to_fragment()
-
-  defp rust_expr({:some, value}), do: Rust.some(rust_expr(value)) |> Rust.to_fragment()
-  defp rust_expr(:none), do: Rust.none() |> Rust.to_fragment()
-  defp rust_expr({:tuple, values}), do: Rust.tuple(rust_args(values)) |> Rust.to_fragment()
-
-  defp rust_expr({:cast, value, type}),
-    do: Rust.cast(rust_expr(value), type) |> Rust.to_fragment()
-
-  defp rust_expr({:question, value}), do: Rust.question(rust_expr(value)) |> Rust.to_fragment()
-  defp rust_expr({:ref, value}), do: Rust.ref_expr(rust_expr(value)) |> Rust.to_fragment()
-
-  defp rust_expr({:ref_mut, value}),
-    do: Rust.ref_expr(rust_expr(value), mut: true) |> Rust.to_fragment()
-
-  defp body_impl_params(name, spec, source) do
-    opts = Keyword.get(spec, :opts, [])
-
-    ["canvas: &skia_safe::Canvas"]
-    |> append_if(Keyword.get(spec, :args, []) != [], "args: Vec<Term<'a>>")
-    |> append_if(opts != [], "opts: generated_opts::#{opts_type(name)}<'a>")
-    |> append_if(opts != [], "#{raw_opts_name(source)}: &[(Atom, Term<'a>)]")
-  end
-
-  defp opts_type(name), do: name |> Atom.to_string() |> Macro.camelize() |> Kernel.<>("Opts")
-
-  defp raw_opts_name(source),
-    do: if(String.contains?(source, "raw_opts"), do: "raw_opts", else: "_raw_opts")
 
   defp text_helper_impls do
     [
@@ -1005,14 +859,9 @@ defmodule Skia.Codegen do
 
   @spec generated_clips() :: String.t()
   def generated_clips do
-    defrust_items = Enum.map(Rusty.Clips.generated_asts(), &render_rustq_item/1)
-
-    legacy_items =
-      Clips.commands()
-      |> Keyword.drop(Rusty.Clips.commands())
-      |> generated_body_impls(:clip)
-
-    render_items(defrust_items ++ legacy_items, "generated_clips.rs")
+    Rusty.Clips.generated_asts()
+    |> Enum.map(&render_rustq_item/1)
+    |> render_items("generated_clips.rs")
   end
 
   @spec generated_paint() :: String.t()

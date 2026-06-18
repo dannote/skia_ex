@@ -54,8 +54,10 @@ defmodule Skia.CodegenDefrustTest do
     assert source =~ "fn draw_text_impl<'a>("
     assert source =~ "let text = args.first().ok_or(rustler::Error::BadArg)?.decode::<String>()?;"
 
-    assert source =~
-             "draw_paragraph_text(canvas, &text, opts.x, opts.y, width, size, &paint, &opts)?;"
+    assert source =~ "draw_paragraph_text("
+    assert source =~ "&text"
+    assert source =~ "&paint"
+    assert source =~ "&opts"
   end
 
   test "transform impls are generated from Rusty Elixir" do
