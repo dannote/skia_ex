@@ -5,43 +5,15 @@ defmodule Skia.Codegen.Rusty.Layers do
   Save/restore and semantic layer implementations live here.
   """
 
-  alias RustQ.Rust.AST
   alias Skia.Codegen.Commands.Layers
 
-  @commands [:save_layer]
   @simple_commands [:save, :restore]
 
-  @spec commands() :: [atom()]
-  def commands, do: @commands
-
-  @spec generated_asts() :: [AST.Function.t()]
-  def generated_asts do
-    Layers.commands()
-    |> Keyword.take(@commands)
-    |> Enum.flat_map(fn {_name, spec} -> generated_asts(spec) end)
-  end
-
-  defp generated_asts(spec) do
-    handler = Keyword.fetch!(spec, :handler)
-    [rust_ast!(handler), impl_ast!(handler)]
-  end
-
-  @spec generated_command_asts() :: [AST.Function.t()]
+  @spec generated_command_asts() :: [RustQ.Rust.AST.Function.t()]
   def generated_command_asts do
     Layers.commands()
     |> Keyword.take(@simple_commands)
     |> Enum.map(fn {_name, spec} -> spec |> Keyword.fetch!(:handler) |> rust_ast!() end)
-  end
-
-  defp impl_ast!(handler) do
-    handler
-    |> then(&String.to_atom("#{&1}_impl"))
-    |> rust_ast!()
-  end
-
-  defp rust_ast!(name) do
-    Enum.find(__rustq_asts__(), &(&1.name == name)) ||
-      raise "missing Rusty layer impl #{name}"
   end
 
   use RustQ.Meta
@@ -49,7 +21,7 @@ defmodule Skia.Codegen.Rusty.Layers do
 
   alias RustQ.Type, as: R
 
-  defcommand_handlers(Layers, only: [:save_layer])
+  defrust_commands(Layers, [:save_layer])
 
   @spec draw_save(R.ref(SkiaSafe.Canvas.t()), term()) :: R.nif_result(R.unit())
   defrust draw_save(canvas, _command) do

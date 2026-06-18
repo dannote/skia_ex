@@ -6,36 +6,7 @@ defmodule Skia.Codegen.Rusty.Text do
   builder-heavy internals are worth modeling structurally.
   """
 
-  alias RustQ.Rust.AST
   alias Skia.Codegen.Commands.Text
-
-  @commands [:text_blob, :text]
-
-  @spec commands() :: [atom()]
-  def commands, do: @commands
-
-  @spec generated_asts() :: [AST.Function.t()]
-  def generated_asts do
-    Text.commands()
-    |> Keyword.take(@commands)
-    |> Enum.flat_map(fn {_name, spec} -> generated_asts(spec) end)
-  end
-
-  defp generated_asts(spec) do
-    handler = Keyword.fetch!(spec, :handler)
-    [rust_ast!(handler), impl_ast!(handler)]
-  end
-
-  defp impl_ast!(handler) do
-    name = String.to_atom("#{handler}_impl")
-
-    rust_ast!(name)
-  end
-
-  defp rust_ast!(name) do
-    Enum.find(__rustq_asts__(), &(&1.name == name)) ||
-      raise "missing Rusty text impl #{name}"
-  end
 
   use RustQ.Meta
   use Skia.Codegen.Rusty.Command
@@ -43,7 +14,7 @@ defmodule Skia.Codegen.Rusty.Text do
 
   alias RustQ.Type, as: R
 
-  defcommand_handlers(Text)
+  defrust_commands(Text, [:text_blob, :text])
 
   @spec draw_text_blob_impl(
           R.ref(SkiaSafe.Canvas.t()),

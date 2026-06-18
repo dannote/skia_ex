@@ -3,36 +3,7 @@ defmodule Skia.Codegen.Rusty.Paths do
   Rusty Elixir path drawing implementation generation.
   """
 
-  alias RustQ.Rust.AST
   alias Skia.Codegen.Commands.Paths
-
-  @commands [:path, :path_op, :path_outline]
-
-  @spec commands() :: [atom()]
-  def commands, do: @commands
-
-  @spec generated_asts() :: [AST.Function.t()]
-  def generated_asts do
-    Paths.commands()
-    |> Keyword.take(@commands)
-    |> Enum.flat_map(fn {_name, spec} -> generated_asts(spec) end)
-  end
-
-  defp generated_asts(spec) do
-    handler = Keyword.fetch!(spec, :handler)
-    [rust_ast!(handler), impl_ast!(handler)]
-  end
-
-  defp impl_ast!(handler) do
-    name = String.to_atom("#{handler}_impl")
-
-    rust_ast!(name)
-  end
-
-  defp rust_ast!(name) do
-    Enum.find(__rustq_asts__(), &(&1.name == name)) ||
-      raise "missing Rusty path impl #{name}"
-  end
 
   use RustQ.Meta
   use Skia.Codegen.Rusty.Command
@@ -40,7 +11,7 @@ defmodule Skia.Codegen.Rusty.Paths do
 
   alias RustQ.Type, as: R
 
-  defcommand_handlers(Paths)
+  defrust_commands(Paths, [:path, :path_op, :path_outline])
 
   @spec draw_path_impl(
           R.ref(SkiaSafe.Canvas.t()),

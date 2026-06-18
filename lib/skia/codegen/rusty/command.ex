@@ -7,30 +7,75 @@ defmodule Skia.Codegen.Rusty.Command do
     end
   end
 
+  defmacro defrust_commands(commands_module, names, opts \\ []) do
+    commands_module = Macro.expand(commands_module, __CALLER__)
+    names = expand_value!(names, __CALLER__)
+    opts = expand_value!(opts, __CALLER__)
+    helpers = Keyword.get(opts, :helpers, [])
+    handlers = handler_defs(commands_module, only: names)
+
+    quote do
+      @commands unquote(names)
+
+      @spec commands() :: [atom()]
+      def commands, do: @commands
+
+      @spec generated_asts() :: [RustQ.Rust.AST.Function.t()]
+      def generated_asts do
+        command_asts =
+          unquote(commands_module).commands()
+          |> Keyword.take(@commands)
+          |> Enum.flat_map(fn {_name, spec} -> generated_asts(spec) end)
+
+        command_asts ++ Enum.map(unquote(helpers), &rust_ast!/1)
+      end
+
+      defp generated_asts(spec) do
+        handler = Keyword.fetch!(spec, :handler)
+        [rust_ast!(handler), impl_ast!(handler)]
+      end
+
+      defp impl_ast!(handler) do
+        handler
+        |> then(&String.to_atom("#{&1}_impl"))
+        |> rust_ast!()
+      end
+
+      defp rust_ast!(name) do
+        Enum.find(__rustq_asts__(), &(&1.name == name)) ||
+          raise "missing Rusty command AST #{name}"
+      end
+
+      unquote_splicing(handlers)
+    end
+  end
+
   defmacro defcommand_handlers(commands_module, opts \\ []) do
     commands_module = Macro.expand(commands_module, __CALLER__)
     opts = expand_value!(opts, __CALLER__)
-
-    handlers =
-      commands_module.commands()
-      |> select_commands(opts)
-      |> Enum.map(fn {command_name, spec} ->
-        handler = Keyword.fetch!(spec, :handler)
-        args? = Keyword.get(spec, :args, []) != []
-        opts? = Keyword.get(spec, :opts, []) != []
-        impl = String.to_atom("#{handler}_impl")
-        decoder = String.to_atom("decode_#{command_name}_opts")
-
-        quote do
-          @spec unquote(handler)(RustQ.Type.ref(SkiaSafe.Canvas.t()), RustQ.Type.term()) ::
-                  RustQ.Type.nif_result(RustQ.Type.unit())
-          unquote(command_body(handler, impl, decoder, args?, opts?))
-        end
-      end)
+    handlers = handler_defs(commands_module, opts)
 
     quote do
       (unquote_splicing(handlers))
     end
+  end
+
+  defp handler_defs(commands_module, opts) do
+    commands_module.commands()
+    |> select_commands(opts)
+    |> Enum.map(fn {command_name, spec} ->
+      handler = Keyword.fetch!(spec, :handler)
+      args? = Keyword.get(spec, :args, []) != []
+      opts? = Keyword.get(spec, :opts, []) != []
+      impl = String.to_atom("#{handler}_impl")
+      decoder = String.to_atom("decode_#{command_name}_opts")
+
+      quote do
+        @spec unquote(handler)(RustQ.Type.ref(SkiaSafe.Canvas.t()), RustQ.Type.term()) ::
+                RustQ.Type.nif_result(RustQ.Type.unit())
+        unquote(command_body(handler, impl, decoder, args?, opts?))
+      end
+    end)
   end
 
   defp select_commands(commands, opts) do

@@ -6,41 +6,7 @@ defmodule Skia.Codegen.Rusty.Shapes do
   valid Elixir `@spec + defrust` bodies to Rust.
   """
 
-  alias RustQ.Rust.AST
   alias Skia.Codegen.Commands.Shapes
-
-  @commands [:clear, :rect, :circle, :oval, :arc, :vertices, :line]
-
-  @spec commands() :: [atom()]
-  def commands, do: @commands
-
-  @spec generated_asts() :: [AST.Function.t()]
-  def generated_asts do
-    command_asts =
-      Shapes.commands()
-      |> Keyword.take(@commands)
-      |> Enum.flat_map(fn {name, spec} -> generated_asts(name, spec) end)
-
-    command_asts ++ helper_asts()
-  end
-
-  defp generated_asts(_name, spec) do
-    handler = Keyword.fetch!(spec, :handler)
-    [rust_ast!(handler), impl_ast!(handler)]
-  end
-
-  defp impl_ast!(handler) do
-    name = String.to_atom("#{handler}_impl")
-
-    rust_ast!(name)
-  end
-
-  defp helper_asts, do: [rust_ast!(:draw_rect_shape)]
-
-  defp rust_ast!(name) do
-    Enum.find(__rustq_asts__(), &(&1.name == name)) ||
-      raise "missing Rusty shape impl #{name}"
-  end
 
   use RustQ.Meta
   use Skia.Codegen.Rusty.Command
@@ -48,7 +14,9 @@ defmodule Skia.Codegen.Rusty.Shapes do
 
   alias RustQ.Type, as: R
 
-  defcommand_handlers(Shapes)
+  defrust_commands(Shapes, [:clear, :rect, :circle, :oval, :arc, :vertices, :line],
+    helpers: [:draw_rect_shape]
+  )
 
   @spec draw_clear_impl(R.ref(SkiaSafe.Canvas.t()), R.vec(R.term())) :: R.nif_result(R.unit())
   defrust draw_clear_impl(canvas, args) do

@@ -3,39 +3,7 @@ defmodule Skia.Codegen.Rusty.Images do
   Rusty Elixir image and picture drawing implementation generation.
   """
 
-  alias RustQ.Rust.AST
   alias Skia.Codegen.Commands.Images
-
-  @commands [:image, :picture]
-
-  @spec commands() :: [atom()]
-  def commands, do: @commands
-
-  @spec generated_asts() :: [AST.Function.t()]
-  def generated_asts do
-    command_asts =
-      Images.commands()
-      |> Keyword.take(@commands)
-      |> Enum.flat_map(fn {_name, spec} -> generated_asts(spec) end)
-
-    command_asts ++ [rust_ast!(:draw_image_source_or_default)]
-  end
-
-  defp generated_asts(spec) do
-    handler = Keyword.fetch!(spec, :handler)
-    [rust_ast!(handler), impl_ast!(handler)]
-  end
-
-  defp impl_ast!(handler) do
-    name = String.to_atom("#{handler}_impl")
-
-    rust_ast!(name)
-  end
-
-  defp rust_ast!(name) do
-    Enum.find(__rustq_asts__(), &(&1.name == name)) ||
-      raise "missing Rusty image impl #{name}"
-  end
 
   use RustQ.Meta
   use Skia.Codegen.Rusty.Command
@@ -43,7 +11,7 @@ defmodule Skia.Codegen.Rusty.Images do
 
   alias RustQ.Type, as: R
 
-  defcommand_handlers(Images)
+  defrust_commands(Images, [:image, :picture], helpers: [:draw_image_source_or_default])
 
   @spec draw_image_impl(
           R.ref(SkiaSafe.Canvas.t()),

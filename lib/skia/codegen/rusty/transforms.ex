@@ -6,43 +6,14 @@ defmodule Skia.Codegen.Rusty.Transforms do
   valid Elixir `@spec + defrust` bodies to Rust.
   """
 
-  alias RustQ.Rust.AST
   alias Skia.Codegen.Commands.Transforms
-
-  @commands [:translate, :scale, :rotate, :rotate_at, :concat]
-
-  @spec commands() :: [atom()]
-  def commands, do: @commands
-
-  @spec generated_asts() :: [AST.Function.t()]
-  def generated_asts do
-    Transforms.commands()
-    |> Keyword.take(@commands)
-    |> Enum.flat_map(fn {_name, spec} -> generated_asts(spec) end)
-  end
-
-  defp generated_asts(spec) do
-    handler = Keyword.fetch!(spec, :handler)
-    [rust_ast!(handler), impl_ast!(handler)]
-  end
-
-  defp impl_ast!(handler) do
-    name = String.to_atom("#{handler}_impl")
-
-    rust_ast!(name)
-  end
-
-  defp rust_ast!(name) do
-    Enum.find(__rustq_asts__(), &(&1.name == name)) ||
-      raise "missing Rusty transform impl #{name}"
-  end
 
   use RustQ.Meta
   use Skia.Codegen.Rusty.Command
 
   alias RustQ.Type, as: R
 
-  defcommand_handlers(Transforms)
+  defrust_commands(Transforms, [:translate, :scale, :rotate, :rotate_at, :concat])
 
   @spec draw_translate_impl(
           R.ref(SkiaSafe.Canvas.t()),
