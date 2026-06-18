@@ -120,7 +120,7 @@ defmodule Skia.Codegen.CommandSchema do
       {:number, _, []} -> :number
       {:boolean, _, []} -> :boolean
       {:atom, _, []} -> :atom
-      {:{}, _, [:number, :number]} -> {:tuple, [:number, :number]}
+      {:{}, _, [{:number, _, []}, {:number, _, []}]} -> {:tuple, [:number, :number]}
       _other -> :term
     end
   end
