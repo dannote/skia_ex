@@ -712,25 +712,17 @@ defmodule Skia.Codegen do
     end
   end
 
-  defp rust_required_type(type), do: type |> command_type_kind() |> rust_required_type_for_kind()
+  defp rust_required_type(type), do: type |> command_type_kind() |> rust_required_type(type)
 
-  defp rust_required_type_for_kind(:number), do: "f32"
-  defp rust_required_type_for_kind(:boolean), do: "bool"
-  defp rust_required_type_for_kind(:atom), do: "Atom"
-  defp rust_required_type_for_kind(:enum), do: "Atom"
-  defp rust_required_type_for_kind(:integer), do: "i64"
-  defp rust_required_type_for_kind(:string), do: "String"
-  defp rust_required_type_for_kind(:term), do: "Term<'a>"
+  defp rust_required_type(:enum, _type), do: "Atom"
+  defp rust_required_type(:term, _type), do: "Term<'a>"
+  defp rust_required_type(_kind, %RustQ.Meta.Type{} = type), do: rust_type(type)
 
-  defp rust_optional_type(type), do: type |> command_type_kind() |> rust_optional_type_for_kind()
+  defp rust_optional_type(type), do: type |> command_type_kind() |> rust_optional_type(type)
 
-  defp rust_optional_type_for_kind(:number), do: "Option<f32>"
-  defp rust_optional_type_for_kind(:boolean), do: "Option<bool>"
-  defp rust_optional_type_for_kind(:atom), do: "Option<Atom>"
-  defp rust_optional_type_for_kind(:enum), do: "Option<Atom>"
-  defp rust_optional_type_for_kind(:integer), do: "Option<i64>"
-  defp rust_optional_type_for_kind(:string), do: "Option<String>"
-  defp rust_optional_type_for_kind(:term), do: "Option<Term<'a>>"
+  defp rust_optional_type(:enum, _type), do: "Option<Atom>"
+  defp rust_optional_type(:term, _type), do: "Option<Term<'a>>"
+  defp rust_optional_type(_kind, %RustQ.Meta.Type{} = type), do: "Option<#{rust_type(type)}>"
 
   defp option_decoder(opt) do
     name = Keyword.fetch!(opt, :name)
@@ -788,4 +780,10 @@ defmodule Skia.Codegen do
   defp command_type_category(:enum), do: :enum
   defp command_type_category({:tuple, _elements}), do: :term
   defp command_type_category(_category), do: :term
+
+  defp rust_type(%RustQ.Meta.Type{ast: ast}) do
+    ast
+    |> RustQ.Rust.AST.Render.render_type()
+    |> IO.iodata_to_binary()
+  end
 end

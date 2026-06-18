@@ -16,10 +16,10 @@ defmodule Skia.Codegen.Commands.Text do
           optional(:paint) => Skia.Paint.t(),
           optional(:fill) => color(),
           optional(:stroke) => color(),
-          optional(:stroke_width) => number(),
+          optional(:stroke_width) => RustQ.Type.f32(),
           optional(:stroke_cap) => stroke_cap(),
           optional(:stroke_join) => stroke_join(),
-          optional(:stroke_miter) => number(),
+          optional(:stroke_miter) => RustQ.Type.f32(),
           optional(:blend_mode) => blend_mode(),
           optional(:image_filter) => Skia.ImageFilter.t(),
           optional(:path_effect) => Skia.PathEffect.t(),
@@ -28,15 +28,15 @@ defmodule Skia.Codegen.Commands.Text do
         }
 
   @type text_blob_opts :: %{
-          required(:x) => number(),
-          required(:y) => number(),
+          required(:x) => RustQ.Type.f32(),
+          required(:y) => RustQ.Type.f32(),
           optional(:paint) => Skia.Paint.t(),
           optional(:fill) => color(),
           optional(:stroke) => color(),
-          optional(:stroke_width) => number(),
+          optional(:stroke_width) => RustQ.Type.f32(),
           optional(:stroke_cap) => stroke_cap(),
           optional(:stroke_join) => stroke_join(),
-          optional(:stroke_miter) => number(),
+          optional(:stroke_miter) => RustQ.Type.f32(),
           optional(:blend_mode) => blend_mode(),
           optional(:image_filter) => Skia.ImageFilter.t(),
           optional(:path_effect) => Skia.PathEffect.t(),
@@ -45,17 +45,17 @@ defmodule Skia.Codegen.Commands.Text do
         }
 
   @type text_opts :: %{
-          required(:x) => number(),
-          required(:y) => number(),
-          optional(:width) => number(),
-          optional(:size) => number(),
+          required(:x) => RustQ.Type.f32(),
+          required(:y) => RustQ.Type.f32(),
+          optional(:width) => RustQ.Type.f32(),
+          optional(:size) => RustQ.Type.f32(),
           optional(:fill) => color(),
           optional(:font) => font(),
           optional(:weight) => integer(),
           optional(:align) => atom(),
           optional(:direction) => atom(),
           optional(:font_family) => String.t(),
-          optional(:line_height) => number(),
+          optional(:line_height) => RustQ.Type.f32(),
           optional(:spans) => term()
         }
 

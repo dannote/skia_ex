@@ -2,7 +2,7 @@ defmodule Skia.Codegen.Commands.Layers do
   @moduledoc false
 
   @type blend_mode :: atom()
-  @type bounds :: {number(), number(), number(), number()}
+  @type bounds :: {RustQ.Type.f32(), RustQ.Type.f32(), RustQ.Type.f32(), RustQ.Type.f32()}
 
   @metadata %{
     save: [handler: :draw_save],
@@ -14,10 +14,10 @@ defmodule Skia.Codegen.Commands.Layers do
 
   @type empty_opts :: %{}
   @type save_layer_opts :: %{
-          optional(:opacity) => number(),
+          optional(:opacity) => RustQ.Type.f32(),
           optional(:bounds) => bounds(),
           optional(:blend_mode) => blend_mode(),
-          optional(:blur) => number(),
+          optional(:blur) => RustQ.Type.f32(),
           optional(:image_filter) => Skia.ImageFilter.t()
         }
   @type push_style_opts :: %{required(:style) => term()}

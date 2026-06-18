@@ -5,7 +5,7 @@ defmodule Skia.Codegen.Commands.Shapes do
   @type blend_mode :: atom()
   @type stroke_cap :: atom()
   @type stroke_join :: atom()
-  @type point :: {number(), number()}
+  @type point :: {RustQ.Type.f32(), RustQ.Type.f32()}
 
   @defaults %{
     rect: [radius: 0],
@@ -17,10 +17,10 @@ defmodule Skia.Codegen.Commands.Shapes do
           optional(:paint) => Skia.Paint.t(),
           optional(:fill) => color(),
           optional(:stroke) => color(),
-          optional(:stroke_width) => number(),
+          optional(:stroke_width) => RustQ.Type.f32(),
           optional(:stroke_cap) => stroke_cap(),
           optional(:stroke_join) => stroke_join(),
-          optional(:stroke_miter) => number(),
+          optional(:stroke_miter) => RustQ.Type.f32(),
           optional(:blend_mode) => blend_mode(),
           optional(:image_filter) => Skia.ImageFilter.t(),
           optional(:path_effect) => Skia.PathEffect.t(),
@@ -31,18 +31,18 @@ defmodule Skia.Codegen.Commands.Shapes do
   @type clear_opts :: %{}
 
   @type rect_opts :: %{
-          required(:x) => number(),
-          required(:y) => number(),
-          required(:width) => number(),
-          required(:height) => number(),
-          optional(:radius) => number(),
+          required(:x) => RustQ.Type.f32(),
+          required(:y) => RustQ.Type.f32(),
+          required(:width) => RustQ.Type.f32(),
+          required(:height) => RustQ.Type.f32(),
+          optional(:radius) => RustQ.Type.f32(),
           optional(:paint) => Skia.Paint.t(),
           optional(:fill) => color(),
           optional(:stroke) => color(),
-          optional(:stroke_width) => number(),
+          optional(:stroke_width) => RustQ.Type.f32(),
           optional(:stroke_cap) => stroke_cap(),
           optional(:stroke_join) => stroke_join(),
-          optional(:stroke_miter) => number(),
+          optional(:stroke_miter) => RustQ.Type.f32(),
           optional(:blend_mode) => blend_mode(),
           optional(:image_filter) => Skia.ImageFilter.t(),
           optional(:path_effect) => Skia.PathEffect.t(),
@@ -51,17 +51,17 @@ defmodule Skia.Codegen.Commands.Shapes do
         }
 
   @type oval_opts :: %{
-          required(:x) => number(),
-          required(:y) => number(),
-          required(:width) => number(),
-          required(:height) => number(),
+          required(:x) => RustQ.Type.f32(),
+          required(:y) => RustQ.Type.f32(),
+          required(:width) => RustQ.Type.f32(),
+          required(:height) => RustQ.Type.f32(),
           optional(:paint) => Skia.Paint.t(),
           optional(:fill) => color(),
           optional(:stroke) => color(),
-          optional(:stroke_width) => number(),
+          optional(:stroke_width) => RustQ.Type.f32(),
           optional(:stroke_cap) => stroke_cap(),
           optional(:stroke_join) => stroke_join(),
-          optional(:stroke_miter) => number(),
+          optional(:stroke_miter) => RustQ.Type.f32(),
           optional(:blend_mode) => blend_mode(),
           optional(:image_filter) => Skia.ImageFilter.t(),
           optional(:path_effect) => Skia.PathEffect.t(),
@@ -70,20 +70,20 @@ defmodule Skia.Codegen.Commands.Shapes do
         }
 
   @type arc_opts :: %{
-          required(:x) => number(),
-          required(:y) => number(),
-          required(:width) => number(),
-          required(:height) => number(),
-          required(:start_degrees) => number(),
-          required(:sweep_degrees) => number(),
+          required(:x) => RustQ.Type.f32(),
+          required(:y) => RustQ.Type.f32(),
+          required(:width) => RustQ.Type.f32(),
+          required(:height) => RustQ.Type.f32(),
+          required(:start_degrees) => RustQ.Type.f32(),
+          required(:sweep_degrees) => RustQ.Type.f32(),
           optional(:use_center) => boolean(),
           optional(:paint) => Skia.Paint.t(),
           optional(:fill) => color(),
           optional(:stroke) => color(),
-          optional(:stroke_width) => number(),
+          optional(:stroke_width) => RustQ.Type.f32(),
           optional(:stroke_cap) => stroke_cap(),
           optional(:stroke_join) => stroke_join(),
-          optional(:stroke_miter) => number(),
+          optional(:stroke_miter) => RustQ.Type.f32(),
           optional(:blend_mode) => blend_mode(),
           optional(:image_filter) => Skia.ImageFilter.t(),
           optional(:path_effect) => Skia.PathEffect.t(),
@@ -92,16 +92,16 @@ defmodule Skia.Codegen.Commands.Shapes do
         }
 
   @type circle_opts :: %{
-          required(:x) => number(),
-          required(:y) => number(),
-          required(:radius) => number(),
+          required(:x) => RustQ.Type.f32(),
+          required(:y) => RustQ.Type.f32(),
+          required(:radius) => RustQ.Type.f32(),
           optional(:paint) => Skia.Paint.t(),
           optional(:fill) => color(),
           optional(:stroke) => color(),
-          optional(:stroke_width) => number(),
+          optional(:stroke_width) => RustQ.Type.f32(),
           optional(:stroke_cap) => stroke_cap(),
           optional(:stroke_join) => stroke_join(),
-          optional(:stroke_miter) => number(),
+          optional(:stroke_miter) => RustQ.Type.f32(),
           optional(:blend_mode) => blend_mode(),
           optional(:image_filter) => Skia.ImageFilter.t(),
           optional(:path_effect) => Skia.PathEffect.t(),
@@ -115,10 +115,10 @@ defmodule Skia.Codegen.Commands.Shapes do
           required(:from) => point(),
           required(:to) => point(),
           required(:stroke) => color(),
-          optional(:stroke_width) => number(),
+          optional(:stroke_width) => RustQ.Type.f32(),
           optional(:stroke_cap) => stroke_cap(),
           optional(:stroke_join) => stroke_join(),
-          optional(:stroke_miter) => number(),
+          optional(:stroke_miter) => RustQ.Type.f32(),
           optional(:blend_mode) => blend_mode()
         }
 

@@ -2,7 +2,7 @@ defmodule Skia.Codegen.Commands.Images do
   @moduledoc false
 
   @type blend_mode :: atom()
-  @type source_rect :: {number(), number(), number(), number()}
+  @type source_rect :: {RustQ.Type.f32(), RustQ.Type.f32(), RustQ.Type.f32(), RustQ.Type.f32()}
 
   @metadata %{
     image: [handler: :draw_image],
@@ -10,20 +10,20 @@ defmodule Skia.Codegen.Commands.Images do
   }
 
   @type image_opts :: %{
-          required(:x) => number(),
-          required(:y) => number(),
-          optional(:width) => number(),
-          optional(:height) => number(),
+          required(:x) => RustQ.Type.f32(),
+          required(:y) => RustQ.Type.f32(),
+          optional(:width) => RustQ.Type.f32(),
+          optional(:height) => RustQ.Type.f32(),
           optional(:source) => source_rect(),
-          optional(:opacity) => number(),
+          optional(:opacity) => RustQ.Type.f32(),
           optional(:sampling) => Skia.SamplingOptions.t(),
           optional(:blend_mode) => blend_mode()
         }
 
   @type picture_opts :: %{
-          optional(:x) => number(),
-          optional(:y) => number(),
-          optional(:opacity) => number(),
+          optional(:x) => RustQ.Type.f32(),
+          optional(:y) => RustQ.Type.f32(),
+          optional(:opacity) => RustQ.Type.f32(),
           optional(:blend_mode) => blend_mode()
         }
 

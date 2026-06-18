@@ -11,19 +11,19 @@ defmodule Skia.Codegen.Commands.Clips do
   }
 
   @type clip_rect_opts :: %{
-          required(:x) => number(),
-          required(:y) => number(),
-          required(:width) => number(),
-          required(:height) => number(),
-          optional(:radius) => number(),
+          required(:x) => RustQ.Type.f32(),
+          required(:y) => RustQ.Type.f32(),
+          required(:width) => RustQ.Type.f32(),
+          required(:height) => RustQ.Type.f32(),
+          optional(:radius) => RustQ.Type.f32(),
           optional(:antialias) => boolean(),
           optional(:clip_op) => clip_op()
         }
 
   @type clip_circle_opts :: %{
-          required(:x) => number(),
-          required(:y) => number(),
-          required(:radius) => number(),
+          required(:x) => RustQ.Type.f32(),
+          required(:y) => RustQ.Type.f32(),
+          required(:radius) => RustQ.Type.f32(),
           optional(:antialias) => boolean(),
           optional(:clip_op) => clip_op()
         }

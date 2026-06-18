@@ -1,15 +1,17 @@
 defmodule Skia.Codegen.Commands.Transforms do
   @moduledoc false
 
-  @type matrix :: {number(), number(), number(), number(), number(), number()}
+  @type matrix ::
+          {RustQ.Type.f32(), RustQ.Type.f32(), RustQ.Type.f32(), RustQ.Type.f32(),
+           RustQ.Type.f32(), RustQ.Type.f32()}
 
-  @type translate_opts :: %{required(:x) => number(), required(:y) => number()}
-  @type scale_opts :: %{required(:x) => number(), required(:y) => number()}
-  @type rotate_opts :: %{required(:degrees) => number()}
+  @type translate_opts :: %{required(:x) => RustQ.Type.f32(), required(:y) => RustQ.Type.f32()}
+  @type scale_opts :: %{required(:x) => RustQ.Type.f32(), required(:y) => RustQ.Type.f32()}
+  @type rotate_opts :: %{required(:degrees) => RustQ.Type.f32()}
   @type rotate_at_opts :: %{
-          required(:degrees) => number(),
-          required(:x) => number(),
-          required(:y) => number()
+          required(:degrees) => RustQ.Type.f32(),
+          required(:x) => RustQ.Type.f32(),
+          required(:y) => RustQ.Type.f32()
         }
   @type concat_opts :: %{required(:matrix) => matrix()}
 
