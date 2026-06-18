@@ -3,24 +3,29 @@ defmodule Skia.Codegen.SkiaSafe do
 
   @native_manifest "native/skia_native/Cargo.toml"
 
+  @spec enum_descriptor!(String.t()) :: RustQ.NativeEnumDescriptor.t()
+  def enum_descriptor!(enum_name) when is_binary(enum_name) do
+    RustQ.NativeEnumDescriptor.resolve!(bindings_index(), enum_name, package: "skia-bindings")
+  rescue
+    RuntimeError ->
+      raise "cannot find Skia enum #{enum_name} in skia-bindings"
+  end
+
   @spec enum_variants(String.t()) :: [{String.t(), String.t()}]
   def enum_variants(enum_name) when is_binary(enum_name) do
-    bindings_docs!()
-    |> RustQ.Syn.enum_variants!(enum_name)
+    enum_name
+    |> enum_descriptor!()
+    |> then(& &1.enum.variants)
     |> Enum.map(&{Macro.underscore(&1), &1})
-  rescue
-    RustQ.Error ->
-      raise "cannot find Skia enum #{enum_name} in #{bindings_docs_path()}"
   end
 
-  defp bindings_docs! do
-    bindings_docs_path()
-    |> File.read!()
+  defp bindings_index do
+    :persistent_term.get({__MODULE__, :bindings_index}, nil) || build_bindings_index()
   end
 
-  defp bindings_docs_path do
-    "skia-bindings"
-    |> RustQ.Cargo.package_source!(manifest_path: @native_manifest)
-    |> Path.join("bindings_docs.rs")
+  defp build_bindings_index do
+    index = RustQ.Syn.Index.from_package("skia-bindings", manifest_path: @native_manifest)
+    :persistent_term.put({__MODULE__, :bindings_index}, index)
+    index
   end
 end
