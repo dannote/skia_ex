@@ -13,7 +13,17 @@ defmodule Skia.Codegen.Commands do
 
   @spec all() :: keyword()
   def all do
-    Enum.flat_map(@domains, & &1.commands())
+    Skia.Codegen.CommandOverlay.validate_native!()
+    overlays = Map.new(Skia.Codegen.CommandOverlay.overlays())
+
+    @domains
+    |> Enum.flat_map(& &1.commands())
+    |> Enum.map(fn {name, spec} ->
+      case Map.fetch(overlays, name) do
+        {:ok, overlay} -> {name, Keyword.put(spec, :overlay, overlay)}
+        :error -> {name, spec}
+      end
+    end)
   end
 
   @spec names() :: [atom()]

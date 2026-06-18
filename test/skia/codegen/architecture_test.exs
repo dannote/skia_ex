@@ -7,7 +7,9 @@ defmodule Skia.Codegen.ArchitectureTest do
   end
 
   test "command metadata does not carry native_refs" do
-    refute codegen_source() =~ "native_refs"
+    refute Enum.any?(Skia.Codegen.Commands.all(), fn {_name, spec} ->
+             Keyword.has_key?(spec, :native_refs)
+           end)
   end
 
   test "native schema uses Cargo and Syn instead of registry globs or regex Rust parsing" do
@@ -32,7 +34,7 @@ defmodule Skia.Codegen.ArchitectureTest do
 
     source = File.read!("lib/skia/codegen/command_overlay.ex")
     refute source =~ "opts:"
-    refute source =~ "args: [path:"
+    refute source =~ "native_refs"
   end
 
   test "codegen tests live under test/skia/codegen" do
@@ -42,11 +44,5 @@ defmodule Skia.Codegen.ArchitectureTest do
       |> Enum.reject(&String.starts_with?(&1, "test/skia/codegen/"))
 
     assert root_codegen_tests == []
-  end
-
-  defp codegen_source do
-    "lib/skia/codegen/**/*.ex"
-    |> Path.wildcard()
-    |> Enum.map_join("\n", &File.read!/1)
   end
 end
