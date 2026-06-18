@@ -5,6 +5,14 @@ defmodule Skia.Codegen.Enums do
   alias Skia.Codegen.Commands
   alias Skia.Codegen.SkiaSafe
 
+  @extra_specs %{
+    encoded_image_format: [skia: "SkEncodedImageFormat", rust: :EncodedImageFormat],
+    blur_style: [skia: "SkBlurStyle", rust: :BlurStyle],
+    sampling: [skia: "SkFilterMode", rust: :FilterMode],
+    tile_mode: [skia: "SkTileMode", rust: :TileMode],
+    mipmap_mode: [skia: "SkMipmapMode", rust: :MipmapMode]
+  }
+
   @spec generated() :: String.t()
   def generated do
     entries =
@@ -45,7 +53,7 @@ defmodule Skia.Codegen.Enums do
       Commands.all()
       |> Enum.flat_map(fn {_name, spec} -> Keyword.get(spec, :opts, []) end)
       |> Enum.flat_map(fn opt -> opt |> Keyword.fetch!(:type) |> enum_type_spec() end)
-      |> Kernel.++(Map.to_list(Skia.Codegen.EnumSpecs.extra_specs()))
+      |> Kernel.++(Map.to_list(@extra_specs))
 
     specs
     |> Enum.uniq_by(&elem(&1, 0))

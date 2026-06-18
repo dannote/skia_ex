@@ -1,7 +1,6 @@
 use RustQ.Config
 
 require_file("lib/skia/codegen/skia_safe.ex")
-require_file("lib/skia/codegen/enum_specs.ex")
 require_file("lib/skia/codegen/command_specs.ex")
 require_file("lib/skia/codegen/native_schema.ex")
 require_file("lib/skia/codegen/command_overlay/dsl.ex")

@@ -15,6 +15,15 @@ defmodule Skia.Codegen.CommandSpecs do
 
   @type command :: %{name: atom(), args: keyword(), opts: [keyword()]}
 
+  @command_enum_specs %{
+    blend_mode: [skia: "SkBlendMode", rust: :BlendMode],
+    stroke_cap: [skia: "SkPaint_Cap", rust: "paint::Cap"],
+    stroke_join: [skia: "SkPaint_Join", rust: "paint::Join"],
+    fill_rule: [skia: "SkPathFillType", rust: :PathFillType],
+    path_op: [skia: "SkPathOp", rust: :PathOp],
+    clip_op: [skia: "SkClipOp", rust: :ClipOp]
+  }
+
   @spec from_file(Path.t()) :: [command()]
   def from_file(path), do: path |> RustQ.Spec.declarations() |> from_declarations()
 
@@ -67,7 +76,7 @@ defmodule Skia.Codegen.CommandSpecs do
   defp command_type(ast, aliases), do: ast |> spec_type(aliases) |> command_type()
 
   defp command_type(%RustQ.Meta.Type{kind: :alias, meta: %{elixir_name: name, ast: ast}} = type) do
-    case Skia.Codegen.EnumSpecs.command_spec(name) do
+    case command_enum_spec(name) do
       {:ok, spec} -> enum_type(type, name, spec)
       :error -> RustQ.Spec.type(ast, %{})
     end
@@ -93,8 +102,10 @@ defmodule Skia.Codegen.CommandSpecs do
     }
   end
 
+  defp command_enum_spec(name), do: Map.fetch(@command_enum_specs, name)
+
   defp enum_spec(name) do
-    case Skia.Codegen.EnumSpecs.command_spec(name) do
+    case command_enum_spec(name) do
       {:ok, spec} -> spec
       :error -> raise ArgumentError, "missing command enum spec for #{inspect(name)}"
     end
