@@ -15,7 +15,7 @@ defmodule Skia.Codegen.CommandOverlay.DSL do
   defmacro command(name, opts) do
     opts = normalize_overlay!(name, opts)
 
-    quote bind_quoted: [name: name, opts: opts] do
+    quote bind_quoted: [name: name, opts: Macro.escape(opts)] do
       @commands {name, opts}
     end
   end
@@ -41,12 +41,10 @@ defmodule Skia.Codegen.CommandOverlay.DSL do
 
   defp normalize_native_ref!(_name, {{:., _, [{:__aliases__, _, [target]}, method]}, _, []})
        when is_atom(target) and is_atom(method) do
-    {Atom.to_string(target), Atom.to_string(method)}
+    Skia.Codegen.NativeRef.new(Atom.to_string(target), Atom.to_string(method))
   end
 
-  defp normalize_native_ref!(_name, {target, method})
-       when is_binary(target) and is_binary(method),
-       do: {target, method}
+  defp normalize_native_ref!(_name, %Skia.Codegen.NativeRef{} = ref), do: ref
 
   defp normalize_native_ref!(name, ref) do
     raise ArgumentError,

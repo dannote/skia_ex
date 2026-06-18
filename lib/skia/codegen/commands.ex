@@ -13,14 +13,13 @@ defmodule Skia.Codegen.Commands do
 
   @spec all() :: keyword()
   def all do
-    Skia.Codegen.CommandOverlay.validate_native!()
     overlays = Map.new(Skia.Codegen.CommandOverlay.overlays())
 
     @domains
     |> Enum.flat_map(& &1.commands())
     |> Enum.map(fn {name, spec} ->
       case Map.fetch(overlays, name) do
-        {:ok, overlay} -> {name, Keyword.put(spec, :overlay, overlay)}
+        {:ok, overlay} -> {name, attach_overlay(spec, overlay)}
         :error -> {name, spec}
       end
     end)
@@ -51,17 +50,38 @@ defmodule Skia.Codegen.Commands do
 
   @spec doc(atom(), keyword()) :: String.t()
   def doc(name, spec) do
-    ["Adds a `#{name}` command to the document.", native_doc(spec)]
+    ["Adds a `#{name}` command to the document.", native_signature(spec), native_doc(spec)]
     |> Enum.reject(&(&1 in [nil, ""]))
     |> Enum.join("\n\n")
   end
 
+  defp attach_overlay(spec, overlay) do
+    native_ref = Keyword.fetch!(overlay, :native)
+    native = Skia.Codegen.NativeRef.descriptor!(native_ref)
+
+    spec
+    |> Keyword.put(:overlay, overlay)
+    |> Keyword.put(:native, native)
+  end
+
+  defp native_signature(spec) do
+    with %{method: method} = native <- Keyword.get(spec, :native),
+         ref = Skia.Codegen.NativeRef.new(native.target, native.name) do
+      args = Enum.map_join(method.args, ", ", &native_arg/1)
+      returns = method.returns || "()"
+      "Native: `#{Skia.Codegen.NativeRef.format(ref)}(#{args}) -> #{returns}`"
+    else
+      _ -> nil
+    end
+  end
+
+  defp native_arg(%RustQ.Syn.Arg{name: nil, type: type}), do: type
+  defp native_arg(%RustQ.Syn.Arg{name: name, type: type}), do: "#{name}: #{type}"
+
   defp native_doc(spec) do
-    with overlay when is_list(overlay) <- Keyword.get(spec, :overlay),
-         {target, method} <- Keyword.fetch!(overlay, :native),
-         %{method: %{docs: docs}} <- Skia.Codegen.NativeSchema.descriptor!(target, method),
-         [_ | _] <- docs do
-      ["Native `skia_safe::#{target}::#{method}` docs:" | docs]
+    with %{method: %{docs: [_ | _] = docs}} = native <- Keyword.get(spec, :native),
+         ref = Skia.Codegen.NativeRef.new(native.target, native.name) do
+      ["Native `#{Skia.Codegen.NativeRef.format(ref)}` docs:" | docs]
       |> Enum.map(&normalize_native_doc_line/1)
       |> Enum.join("\n")
     else

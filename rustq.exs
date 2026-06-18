@@ -3,6 +3,7 @@ use RustQ.Config
 require_file("lib/skia/codegen/command_schema.ex")
 require_file("lib/skia/codegen/skia_safe.ex")
 require_file("lib/skia/codegen/native_schema.ex")
+require_file("lib/skia/codegen/native_ref.ex")
 require_file("lib/skia/codegen/command_overlay/dsl.ex")
 require_file("lib/skia/codegen/command_overlay.ex")
 require_file("lib/skia/codegen/commands/shapes.ex")

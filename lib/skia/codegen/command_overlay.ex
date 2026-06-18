@@ -62,10 +62,10 @@ defmodule Skia.Codegen.CommandOverlay do
   @spec validate_native!() :: :ok
   def validate_native! do
     overlays()
-    |> Enum.each(fn {name, opts} ->
-      {target, method} = Keyword.fetch!(opts, :native)
-      Skia.Codegen.NativeSchema.descriptor!(target, method)
-      name
+    |> Enum.each(fn {_name, opts} ->
+      opts
+      |> Keyword.fetch!(:native)
+      |> Skia.Codegen.NativeRef.descriptor!()
     end)
 
     :ok

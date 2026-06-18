@@ -7,6 +7,10 @@ defmodule Skia.DocsTest do
     rect_doc = doc_for(docs, :rect)
 
     assert rect_doc =~ "Adds a `rect` command to the document."
+
+    assert rect_doc =~
+             "Native: `skia_safe::Canvas::draw_rect(self: & self, rect: impl AsRef < Rect >, paint: & Paint) -> & Self`"
+
     assert rect_doc =~ "Native `skia_safe::Canvas::draw_rect` docs:"
     assert rect_doc =~ "Draws `Rect` rect using clip, `Matrix`, and `Paint` `paint`."
   end

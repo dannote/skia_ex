@@ -51,6 +51,7 @@ defmodule Skia.Codegen.ArchitectureTest do
     refute source =~ "opts:"
     refute source =~ "native_refs"
     refute source =~ "native_shape"
+    refute source =~ ~s(native: {)
     assert source =~ "native: Canvas.draw_rect"
     assert source =~ "native: Canvas.clip_rect"
   end
