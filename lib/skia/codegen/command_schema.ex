@@ -41,22 +41,26 @@ defmodule Skia.Codegen.CommandSchema do
     do: collect_declarations(body)
 
   defp collect_declarations(body) do
-    body
-    |> block_expressions()
-    |> Enum.reduce({%{}, [], %{}}, fn
-      {:@, _, [{:type, _, [{:"::", _, [{name, _, _ctx}, type_ast]}]}]}, {types, specs, defs} ->
-        {Map.put(types, name, type_ast), specs, defs}
+    {types, specs, defs} =
+      body
+      |> block_expressions()
+      |> Enum.reduce({[], [], %{}}, fn
+        {:@, meta, [{:type, _, [{:"::", _, [_name_ast, _type_ast]} = type_ast]}]},
+        {types, specs, defs} ->
+          {[{:type, type_ast, meta[:line] || 0} | types], specs, defs}
 
-      {:@, _, [{:spec, _, [{:"::", _, [{name, _, arg_types}, _return]}]}]},
-      {types, specs, defs} ->
-        {types, specs ++ [{name, arg_types}], defs}
+        {:@, _, [{:spec, _, [{:"::", _, [{name, _, arg_types}, _return]}]}]},
+        {types, specs, defs} ->
+          {types, specs ++ [{name, arg_types}], defs}
 
-      {:def, _, [{name, _, args}, _body]}, {types, specs, defs} ->
-        {types, specs, Map.put(defs, name, Enum.map(args || [], &arg_name!/1))}
+        {:def, _, [{name, _, args}, _body]}, {types, specs, defs} ->
+          {types, specs, Map.put(defs, name, Enum.map(args || [], &arg_name!/1))}
 
-      _other, acc ->
-        acc
-    end)
+        _other, acc ->
+          acc
+      end)
+
+    {RustQ.Spec.aliases(types), specs, defs}
   end
 
   defp command_from_spec(name, def_args, spec_arg_types, types) do
@@ -67,7 +71,7 @@ defmodule Skia.Codegen.CommandSchema do
     %{
       name: name,
       args: Enum.zip(arg_names, Enum.map(arg_types, &command_type(&1, types))),
-      opts: opts_type |> expand_type(types) |> opts_from_map_type(types)
+      opts: opts_type |> spec_type(types) |> resolve_opts_alias(types) |> opts_from_type!()
     }
   end
 
@@ -76,138 +80,109 @@ defmodule Skia.Codegen.CommandSchema do
   defp arg_name!(other),
     do: raise(ArgumentError, "unsupported command declaration argument #{Macro.to_string(other)}")
 
-  defp opts_from_map_type({:%{}, _, fields}, types) do
-    Enum.map(fields, fn {{required, _, [name]}, type_ast}
-                        when required in [:required, :optional] ->
-      [name: name, type: command_type(type_ast, types), required: required == :required]
+  defp resolve_opts_alias(%RustQ.Meta.Type{kind: :alias, meta: %{ast: ast}}, aliases) do
+    ast |> spec_type(aliases) |> resolve_opts_alias(aliases)
+  end
+
+  defp resolve_opts_alias(type, _aliases), do: type
+
+  defp opts_from_type!(%RustQ.Meta.Type{kind: :struct, meta: %{fields: fields}}) do
+    Enum.map(fields, fn {name, type, presence} ->
+      [name: name, type: command_type(type), required: presence == :required]
     end)
   end
 
-  defp opts_from_map_type(other, _types),
-    do: raise(ArgumentError, "expected map option type, got #{Macro.to_string(other)}")
+  defp opts_from_type!(type), do: raise("expected command opts map type, got #{inspect(type)}")
 
-  defp expand_type({name, _, []} = ast, types) when is_atom(name) do
-    case Map.fetch(types, name) do
-      {:ok, type_ast} -> expand_type(type_ast, types)
-      :error -> ast
+  defp spec_type({name, _, []}, aliases) when is_atom(name) do
+    Map.get(aliases, {name, 0}) || RustQ.Spec.type({name, [], []}, aliases)
+  end
+
+  defp spec_type(ast, aliases), do: RustQ.Spec.type(ast, aliases)
+
+  defp command_type(ast, aliases), do: ast |> spec_type(aliases) |> command_type()
+
+  defp command_type(%RustQ.Meta.Type{kind: :alias, meta: %{elixir_name: name, ast: ast}}) do
+    cond do
+      enum_name?(name) -> {:enum, name, enum_spec(name)}
+      tuple_alias?(ast) -> {:tuple, tuple_alias_elements(ast)}
+      true -> name
     end
   end
 
-  defp expand_type(other, _types), do: other
+  defp command_type(%RustQ.Meta.Type{kind: :enum, meta: %{elixir_name: name}}),
+    do: {:enum, name, enum_spec(name)}
 
-  defp command_type({:blend_mode, _, []}, _types),
-    do: {:enum, :blend_mode, skia: "SkBlendMode", rust: :BlendMode}
+  defp command_type(%RustQ.Meta.Type{kind: :tuple, rust: rust}),
+    do: {:tuple, tuple_elements(rust)}
 
-  defp command_type({:stroke_cap, _, []}, _types),
-    do: {:enum, :stroke_cap, skia: "SkPaint_Cap", rust: "paint::Cap"}
+  defp command_type(%RustQ.Meta.Type{kind: :term}), do: :term
+  defp command_type(%RustQ.Meta.Type{kind: :atom}), do: :atom
+  defp command_type(%RustQ.Meta.Type{kind: :bool}), do: :boolean
+  defp command_type(%RustQ.Meta.Type{kind: kind}) when kind in [:i64, :u8, :u32], do: :integer
+  defp command_type(%RustQ.Meta.Type{kind: kind}) when kind in [:f32, :f64], do: :number
 
-  defp command_type({:stroke_join, _, []}, _types),
-    do: {:enum, :stroke_join, skia: "SkPaint_Join", rust: "paint::Join"}
-
-  defp command_type({:fill_rule, _, []}, _types),
-    do: {:enum, :fill_rule, skia: "SkPathFillType", rust: :PathFillType}
-
-  defp command_type({:path_op, _, []}, _types),
-    do: {:enum, :path_op, skia: "SkPathOp", rust: :PathOp}
-
-  defp command_type({:clip_op, _, []}, _types),
-    do: {:enum, :clip_op, skia: "SkClipOp", rust: :ClipOp}
-
-  defp command_type({:sampling, _, []}, _types),
-    do: {:enum, :sampling, skia: "SkFilterMode", rust: :FilterMode}
-
-  defp command_type({:font, _, []}, _types), do: :font
-  defp command_type({:point, _, []}, _types), do: {:tuple, [:number, :number]}
-  defp command_type({:bounds, _, []}, _types), do: {:tuple, [:number, :number, :number, :number]}
-
-  defp command_type({:source_rect, _, []}, _types),
-    do: {:tuple, [:number, :number, :number, :number]}
-
-  defp command_type({:matrix, _, []}, _types),
-    do: {:tuple, [:number, :number, :number, :number, :number, :number]}
-
-  defp command_type(ast, types) do
-    ast = expand_type(ast, types)
-
-    case ast do
-      {{:., _, [{:__aliases__, _, [:Skia, :Path]}, :t]}, _, []} ->
-        :path
-
-      {{:., _, [{:__aliases__, _, [:Skia, :Paint]}, :t]}, _, []} ->
-        :paint
-
-      {{:., _, [{:__aliases__, _, [:Skia, :Vertices]}, :t]}, _, []} ->
-        :vertices
-
-      {{:., _, [{:__aliases__, _, [:Skia, :Image]}, :t]}, _, []} ->
-        :image
-
-      {{:., _, [{:__aliases__, _, [:Skia, :Picture]}, :t]}, _, []} ->
-        :picture
-
-      {{:., _, [{:__aliases__, _, [:Skia, :TextBlob]}, :t]}, _, []} ->
-        :text_blob
-
-      {{:., _, [{:__aliases__, _, [:Skia, :SamplingOptions]}, :t]}, _, []} ->
-        :sampling_options
-
-      {{:., _, [{:__aliases__, _, [:Skia, :ImageFilter]}, :t]}, _, []} ->
-        :image_filter
-
-      {{:., _, [{:__aliases__, _, [:Skia, :PathEffect]}, :t]}, _, []} ->
-        :path_effect
-
-      {{:., _, [{:__aliases__, _, [:Skia, :ColorFilter]}, :t]}, _, []} ->
-        :color_filter
-
-      {{:., _, [{:__aliases__, _, [:Skia, :MaskFilter]}, :t]}, _, []} ->
-        :mask_filter
-
-      {{:., _, [{:__aliases__, _, [:Skia, :Command]}, :color]}, _, []} ->
-        :color
-
-      {{:., _, [{:__aliases__, _, [:String]}, :t]}, _, []} ->
-        :string
-
-      {:number, _, []} ->
-        :number
-
-      {:boolean, _, []} ->
-        :boolean
-
-      {:integer, _, []} ->
-        :integer
-
-      {:atom, _, []} ->
-        :atom
-
-      {:string, _, []} ->
-        :string
-
-      {:font, _, []} ->
-        :font
-
-      {:{}, _, [{:number, _, []}, {:number, _, []}]} ->
-        {:tuple, [:number, :number]}
-
-      {:{}, _, [{:number, _, []}, {:number, _, []}, {:number, _, []}, {:number, _, []}]} ->
-        {:tuple, [:number, :number, :number, :number]}
-
-      {:{}, _,
-       [
-         {:number, _, []},
-         {:number, _, []},
-         {:number, _, []},
-         {:number, _, []},
-         {:number, _, []},
-         {:number, _, []}
-       ]} ->
-        {:tuple, [:number, :number, :number, :number, :number, :number]}
-
-      _other ->
-        :term
-    end
+  defp command_type(%RustQ.Meta.Type{rust: rust}) do
+    rust
+    |> String.trim_trailing("<'a>")
+    |> String.split("::")
+    |> List.last()
+    |> Macro.underscore()
+    |> String.to_atom()
   end
+
+  defp enum_spec(:blend_mode), do: [skia: "SkBlendMode", rust: :BlendMode]
+  defp enum_spec(:stroke_cap), do: [skia: "SkPaint_Cap", rust: "paint::Cap"]
+  defp enum_spec(:stroke_join), do: [skia: "SkPaint_Join", rust: "paint::Join"]
+  defp enum_spec(:fill_rule), do: [skia: "SkPathFillType", rust: :PathFillType]
+  defp enum_spec(:path_op), do: [skia: "SkPathOp", rust: :PathOp]
+  defp enum_spec(:clip_op), do: [skia: "SkClipOp", rust: :ClipOp]
+  defp enum_spec(:sampling), do: [skia: "SkFilterMode", rust: :FilterMode]
+
+  defp enum_name?(name),
+    do:
+      name in [:blend_mode, :stroke_cap, :stroke_join, :fill_rule, :path_op, :clip_op, :sampling]
+
+  defp tuple_alias?({:{}, _, _}), do: true
+
+  defp tuple_alias?(ast) when is_tuple(ast) and tuple_size(ast) > 0,
+    do: ast |> Tuple.to_list() |> Enum.all?(&tuple_alias_element?/1)
+
+  defp tuple_alias?(_ast), do: false
+
+  defp tuple_alias_elements({:{}, _, elems}), do: Enum.map(elems, &tuple_alias_element/1)
+
+  defp tuple_alias_elements(ast) when is_tuple(ast),
+    do: ast |> Tuple.to_list() |> Enum.map(&tuple_alias_element/1)
+
+  defp tuple_alias_element({:number, _, []}), do: :number
+  defp tuple_alias_element({:boolean, _, []}), do: :boolean
+  defp tuple_alias_element({:integer, _, []}), do: :integer
+  defp tuple_alias_element({:atom, _, []}), do: :atom
+  defp tuple_alias_element({:string, _, []}), do: :string
+  defp tuple_alias_element({:binary, _, []}), do: :string
+
+  defp tuple_alias_element?({name, _, []})
+       when name in [:number, :boolean, :integer, :atom, :string, :binary],
+       do: true
+
+  defp tuple_alias_element?(_ast), do: false
+
+  defp tuple_elements(rust) do
+    rust
+    |> String.trim_leading("(")
+    |> String.trim_trailing(")")
+    |> String.split(",", trim: true)
+    |> Enum.map(&rust_scalar_type(String.trim(&1)))
+  end
+
+  defp rust_scalar_type("f64"), do: :number
+  defp rust_scalar_type("f32"), do: :number
+  defp rust_scalar_type("bool"), do: :boolean
+  defp rust_scalar_type("i64"), do: :integer
+  defp rust_scalar_type("Atom"), do: :atom
+  defp rust_scalar_type("String"), do: :string
+  defp rust_scalar_type(other), do: other |> Macro.underscore() |> String.to_atom()
 
   defp block_expressions({:__block__, _, expressions}), do: expressions
   defp block_expressions(expression), do: [expression]
