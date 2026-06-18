@@ -62,7 +62,7 @@ defmodule Skia.Codegen.Commands do
 
   defp attach_overlay(spec, overlay) do
     native_ref = Keyword.fetch!(overlay, :native)
-    native = Skia.Codegen.NativeRef.descriptor!(native_ref)
+    native = Skia.Codegen.NativeSchema.descriptor!(native_ref.target, native_ref.member)
 
     spec
     |> Keyword.put(:overlay, overlay)
@@ -71,8 +71,8 @@ defmodule Skia.Codegen.Commands do
 
   defp native_signature(spec) do
     with %{method: %{signature_ast: signature}} = native <- Keyword.get(spec, :native),
-         ref = Skia.Codegen.NativeRef.new(native.target, native.name) do
-      "Native: `#{Skia.Codegen.NativeRef.format(ref)}`\n\nNative signature: `#{RustQ.Syn.Signature.render(signature)}`"
+         ref = RustQ.NativeRef.new(native.target, native.name, package: "skia-safe") do
+      "Native: `#{RustQ.NativeRef.format(ref)}`\n\nNative signature: `#{RustQ.Syn.Signature.render(signature)}`"
     else
       _ -> nil
     end
@@ -97,8 +97,8 @@ defmodule Skia.Codegen.Commands do
 
   defp native_doc(spec) do
     with %{method: %{docs: [_ | _] = docs}} = native <- Keyword.get(spec, :native),
-         ref = Skia.Codegen.NativeRef.new(native.target, native.name) do
-      ["Native `#{Skia.Codegen.NativeRef.format(ref)}` docs:" | docs]
+         ref = RustQ.NativeRef.new(native.target, native.name, package: "skia-safe") do
+      ["Native `#{RustQ.NativeRef.format(ref)}` docs:" | docs]
       |> Enum.map(&normalize_native_doc_line/1)
       |> Enum.join("\n")
     else

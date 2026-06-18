@@ -4,7 +4,7 @@ defmodule Skia.Codegen.CommandsTest do
   test "native-backed commands carry native refs and Syn descriptors" do
     rect = Skia.Codegen.Commands.fetch!(:rect)
 
-    assert %Skia.Codegen.NativeRef{target: "Canvas", method: "draw_rect"} =
+    assert %RustQ.NativeRef{package: "skia-safe", target: "Canvas", member: "draw_rect"} =
              get_in(rect, [:overlay, :native])
 
     assert %Skia.Codegen.NativeSchema.Method{target: "Canvas", name: "draw_rect", method: method} =
