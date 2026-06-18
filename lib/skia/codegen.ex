@@ -712,13 +712,13 @@ defmodule Skia.Codegen do
     end
   end
 
-  defp rust_required_type(type), do: type |> command_type_kind() |> rust_required_type(type)
+  defp rust_required_type(type), do: type |> option_type_category() |> rust_required_type(type)
 
   defp rust_required_type(:enum, _type), do: "Atom"
   defp rust_required_type(:term, _type), do: "Term<'a>"
   defp rust_required_type(_kind, %RustQ.Meta.Type{} = type), do: rust_type(type)
 
-  defp rust_optional_type(type), do: type |> command_type_kind() |> rust_optional_type(type)
+  defp rust_optional_type(type), do: type |> option_type_category() |> rust_optional_type(type)
 
   defp rust_optional_type(:enum, _type), do: "Option<Atom>"
   defp rust_optional_type(:term, _type), do: "Option<Term<'a>>"
@@ -736,7 +736,7 @@ defmodule Skia.Codegen do
   end
 
   defp required_decoder(type, name),
-    do: type |> command_type_kind() |> required_decoder_for_kind(name)
+    do: type |> option_type_category() |> required_decoder_for_kind(name)
 
   defp required_decoder_for_kind(:number, name), do: R.opt_decode(:opt_f32, :opts, name)
 
@@ -758,7 +758,7 @@ defmodule Skia.Codegen do
   defp required_decoder_for_kind(:term, name), do: R.required_term(:opts, name)
 
   defp optional_decoder(type, name),
-    do: type |> command_type_kind() |> optional_decoder_for_kind(name)
+    do: type |> option_type_category() |> optional_decoder_for_kind(name)
 
   defp optional_decoder_for_kind(:number, name), do: R.opt_decode(:opt_f32_option, :opts, name)
   defp optional_decoder_for_kind(:boolean, name), do: R.opt_decode(:opt_bool_option, :opts, name)
@@ -768,18 +768,15 @@ defmodule Skia.Codegen do
   defp optional_decoder_for_kind(:string, name), do: R.optional_term_decode(:opts, name, :String)
   defp optional_decoder_for_kind(:term, name), do: A.call(:opt_term, [:opts, A.atom(name)])
 
-  defp command_type_kind(%RustQ.Meta.Type{} = type),
-    do: command_type_category(RustQ.Meta.Type.category(type))
+  defp option_type_category(%RustQ.Meta.Type{} = type) do
+    case RustQ.Meta.Type.category(type) do
+      category when category in [:number, :integer, :boolean, :atom, :string, :term, :enum] ->
+        category
 
-  defp command_type_category(:number), do: :number
-  defp command_type_category(:integer), do: :integer
-  defp command_type_category(:boolean), do: :boolean
-  defp command_type_category(:atom), do: :atom
-  defp command_type_category(:string), do: :string
-  defp command_type_category(:term), do: :term
-  defp command_type_category(:enum), do: :enum
-  defp command_type_category({:tuple, _elements}), do: :term
-  defp command_type_category(_category), do: :term
+      _category ->
+        :term
+    end
+  end
 
   defp rust_type(%RustQ.Meta.Type{ast: ast}) do
     ast
