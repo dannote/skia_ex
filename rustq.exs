@@ -14,8 +14,8 @@ require_file("lib/skia/codegen/commands/paths.ex")
 require_file("lib/skia/codegen/commands/clips.ex")
 require_file("lib/skia/codegen/commands.ex")
 require_file("lib/skia/codegen/enums.ex")
-require_file("lib/skia/codegen/handler_shells.ex")
 require_file("lib/skia/codegen/rusty/args.ex")
+require_file("lib/skia/codegen/rusty/command.ex")
 require_file("lib/skia/codegen/rusty/paint.ex")
 require_file("lib/skia/codegen/rusty/clips.ex")
 require_file("lib/skia/codegen/rusty/images.ex")
@@ -56,10 +56,6 @@ end
 
 generate :generated_dispatch, "native/skia_native/src/generated_dispatch.rs" do
   build(&Skia.Codegen.generated_dispatch/0)
-end
-
-generate :generated_handlers, "native/skia_native/src/generated_handlers.rs" do
-  build(&Skia.Codegen.generated_handlers/0)
 end
 
 generate :generated_style_helpers, "native/skia_native/src/generated_style_helpers.rs" do

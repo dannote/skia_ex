@@ -18,23 +18,31 @@ defmodule Skia.Codegen.Rusty.Transforms do
   def generated_asts do
     Transforms.commands()
     |> Keyword.take(@commands)
-    |> Enum.map(fn {name, spec} -> generated_ast(name, spec) end)
+    |> Enum.flat_map(fn {_name, spec} -> generated_asts(spec) end)
   end
 
-  defp generated_ast(_name, spec) do
-    spec |> Keyword.fetch!(:handler) |> impl_ast!()
+  defp generated_asts(spec) do
+    handler = Keyword.fetch!(spec, :handler)
+    [rust_ast!(handler), impl_ast!(handler)]
   end
 
   defp impl_ast!(handler) do
     name = String.to_atom("#{handler}_impl")
 
+    rust_ast!(name)
+  end
+
+  defp rust_ast!(name) do
     Enum.find(__rustq_asts__(), &(&1.name == name)) ||
       raise "missing Rusty transform impl #{name}"
   end
 
   use RustQ.Meta
+  use Skia.Codegen.Rusty.Command
 
   alias RustQ.Type, as: R
+
+  defcommand_handlers(Transforms)
 
   @spec draw_translate_impl(
           R.ref(SkiaSafe.Canvas.t()),

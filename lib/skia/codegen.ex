@@ -472,29 +472,18 @@ defmodule Skia.Codegen do
     end)
   end
 
-  @spec generated_handlers() :: String.t()
-  def generated_handlers do
-    command_handlers =
-      Rusty.Layers.generated_command_asts()
-      |> Enum.reject(&String.ends_with?(Atom.to_string(&1.name), "_impl"))
-      |> Enum.map(&render_rustq_item/1)
-
-    handlers =
-      Skia.Codegen.HandlerShells.generated_asts(Commands.all(), except: [:save, :restore])
-      |> Enum.map(&render_rustq_item/1)
-
-    "generated_handlers.rs"
-    |> template_path()
-    |> RustQ.render_file!(
-      preamble: generated_rust_preamble() <> "use skia_safe::Canvas;\n\n",
-      splice: [items: command_handlers ++ handlers]
-    )
-  end
-
   @spec generated_opts_helpers() :: String.t()
   def generated_opts_helpers do
-    RustQ.Rustler.opts_helpers()
+    (RustQ.Rustler.opts_helpers() ++ [decode_args_helper()])
     |> render_items("generated_opts_helpers.rs")
+  end
+
+  defp decode_args_helper do
+    Rust.item("""
+    fn decode_args<'a>(term: Term<'a>) -> NifResult<Vec<Term<'a>>> {
+        term.map_get(atoms::args())?.decode::<Vec<Term<'a>>>()
+    }
+    """)
   end
 
   @doc false
@@ -530,7 +519,6 @@ defmodule Skia.Codegen do
   def generated_layers do
     items =
       (Rusty.Layers.generated_command_asts() ++ Rusty.Layers.generated_asts())
-      |> Enum.filter(&String.ends_with?(Atom.to_string(&1.name), "_impl"))
       |> Enum.map(&render_rustq_item/1)
 
     render_items(items, "generated_layers.rs")

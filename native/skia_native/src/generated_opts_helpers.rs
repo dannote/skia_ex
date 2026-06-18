@@ -40,3 +40,6 @@ fn opt_atom_option<'a>(opts: &[(Atom, Term<'a>)], key: Atom) -> NifResult<Option
         None => Ok(None),
     }
 }
+fn decode_args<'a>(term: Term<'a>) -> NifResult<Vec<Term<'a>>> {
+    term.map_get(atoms::args())?.decode::<Vec<Term<'a>>>()
+}

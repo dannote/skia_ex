@@ -16,9 +16,14 @@ defmodule Skia.Codegen.Rusty.Images do
     command_asts =
       Images.commands()
       |> Keyword.take(@commands)
-      |> Enum.map(fn {_name, spec} -> spec |> Keyword.fetch!(:handler) |> impl_ast!() end)
+      |> Enum.flat_map(fn {_name, spec} -> generated_asts(spec) end)
 
     command_asts ++ [rust_ast!(:draw_image_source_or_default)]
+  end
+
+  defp generated_asts(spec) do
+    handler = Keyword.fetch!(spec, :handler)
+    [rust_ast!(handler), impl_ast!(handler)]
   end
 
   defp impl_ast!(handler) do
@@ -33,9 +38,12 @@ defmodule Skia.Codegen.Rusty.Images do
   end
 
   use RustQ.Meta
+  use Skia.Codegen.Rusty.Command
   use Skia.Codegen.Rusty.Args
 
   alias RustQ.Type, as: R
+
+  defcommand_handlers(Images)
 
   @spec draw_image_impl(
           R.ref(SkiaSafe.Canvas.t()),

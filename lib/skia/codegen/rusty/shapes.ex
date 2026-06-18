@@ -19,13 +19,14 @@ defmodule Skia.Codegen.Rusty.Shapes do
     command_asts =
       Shapes.commands()
       |> Keyword.take(@commands)
-      |> Enum.map(fn {name, spec} -> generated_ast(name, spec) end)
+      |> Enum.flat_map(fn {name, spec} -> generated_asts(name, spec) end)
 
     command_asts ++ helper_asts()
   end
 
-  defp generated_ast(_name, spec) do
-    spec |> Keyword.fetch!(:handler) |> impl_ast!()
+  defp generated_asts(_name, spec) do
+    handler = Keyword.fetch!(spec, :handler)
+    [rust_ast!(handler), impl_ast!(handler)]
   end
 
   defp impl_ast!(handler) do
@@ -42,9 +43,12 @@ defmodule Skia.Codegen.Rusty.Shapes do
   end
 
   use RustQ.Meta
+  use Skia.Codegen.Rusty.Command
   use Skia.Codegen.Rusty.Paint
 
   alias RustQ.Type, as: R
+
+  defcommand_handlers(Shapes)
 
   @spec draw_clear_impl(R.ref(SkiaSafe.Canvas.t()), R.vec(R.term())) :: R.nif_result(R.unit())
   defrust draw_clear_impl(canvas, args) do

@@ -2,17 +2,18 @@ defmodule Skia.Codegen.RustyTest do
   use ExUnit.Case, async: true
 
   test "generated save/restore handlers come from direct Rusty layer bodies" do
-    handlers = Skia.Codegen.generated_handlers()
     layers = Skia.Codegen.generated_layers()
 
-    assert handlers =~ "fn draw_save<'a>(canvas: &Canvas, _command: Term<'a>) -> NifResult<()>"
-    assert handlers =~ "canvas.save();"
-    refute handlers =~ "draw_save_impl"
+    assert layers =~
+             "fn draw_save<'a>(canvas: &skia_safe::Canvas, _command: Term<'a>) -> NifResult<()>"
+
+    assert layers =~ "canvas.save();"
     refute layers =~ "draw_save_impl"
 
-    assert handlers =~ "fn draw_restore<'a>(canvas: &Canvas, _command: Term<'a>) -> NifResult<()>"
-    assert handlers =~ "canvas.restore();"
-    refute handlers =~ "draw_restore_impl"
+    assert layers =~
+             "fn draw_restore<'a>(canvas: &skia_safe::Canvas, _command: Term<'a>) -> NifResult<()>"
+
+    assert layers =~ "canvas.restore();"
     refute layers =~ "draw_restore_impl"
   end
 
@@ -27,13 +28,11 @@ defmodule Skia.Codegen.RustyTest do
     assert source =~ "canvas.save_layer(&rec);"
   end
 
-  test "generated handlers decode command plumbing through direct Rust paths" do
-    source = Skia.Codegen.generated_handlers()
+  test "generated Rusty command handlers decode command plumbing in domain modules" do
+    source = Skia.Codegen.generated_draw_paths()
 
-    assert source =~ "fn draw_save<"
-    assert source =~ "fn draw_restore<"
     assert source =~ "fn draw_path<'a>("
-    assert source =~ "command.map_get(atoms::args())?"
+    assert source =~ "let args = decode_args(command)?;"
     assert source =~ "generated_opts::decode_path_opts(&opts)?"
     assert source =~ "draw_path_impl(canvas, args, decoded_opts, &opts)"
   end

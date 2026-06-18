@@ -45,6 +45,24 @@ defmodule Skia.Codegen.ArchitectureTest do
     refute config =~ "generated_docs"
   end
 
+  test "standalone generated handler layer is gone" do
+    refute File.exists?("lib/skia/codegen/handler_shells.ex")
+    refute File.exists?("native/skia_native/src/generated_handlers.rs")
+    refute File.exists?("priv/codegen/templates/generated_handlers.rs")
+    refute File.exists?("priv/codegen/templates/handler_shell.rs")
+
+    refute File.read!("rustq.exs") =~ "generated_handlers"
+    refute File.read!("native/skia_native/src/lib.rs") =~ "generated_handlers.rs"
+
+    source =
+      "lib/skia/codegen/rusty/*.ex"
+      |> Path.wildcard()
+      |> Enum.map_join("\n", &File.read!/1)
+
+    refute source =~ "defcommand_handler("
+    assert source =~ "defcommand_handlers("
+  end
+
   test "simple layer commands do not generate trivial impl wrappers" do
     source = File.read!("lib/skia/codegen/rusty/layers.ex")
 

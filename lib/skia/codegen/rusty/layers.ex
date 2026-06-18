@@ -18,7 +18,12 @@ defmodule Skia.Codegen.Rusty.Layers do
   def generated_asts do
     Layers.commands()
     |> Keyword.take(@commands)
-    |> Enum.map(fn {_name, spec} -> spec |> Keyword.fetch!(:handler) |> impl_ast!() end)
+    |> Enum.flat_map(fn {_name, spec} -> generated_asts(spec) end)
+  end
+
+  defp generated_asts(spec) do
+    handler = Keyword.fetch!(spec, :handler)
+    [rust_ast!(handler), impl_ast!(handler)]
   end
 
   @spec generated_command_asts() :: [AST.Function.t()]
@@ -40,21 +45,19 @@ defmodule Skia.Codegen.Rusty.Layers do
   end
 
   use RustQ.Meta
+  use Skia.Codegen.Rusty.Command
 
   alias RustQ.Type, as: R
 
-  defmodule Canvas do
-    @moduledoc false
-    @type t :: term()
-  end
+  defcommand_handlers(Layers, only: [:save_layer])
 
-  @spec draw_save(R.ref(Canvas.t()), term()) :: R.nif_result(R.unit())
+  @spec draw_save(R.ref(SkiaSafe.Canvas.t()), term()) :: R.nif_result(R.unit())
   defrust draw_save(canvas, _command) do
     canvas.save()
     :ok
   end
 
-  @spec draw_restore(R.ref(Canvas.t()), term()) :: R.nif_result(R.unit())
+  @spec draw_restore(R.ref(SkiaSafe.Canvas.t()), term()) :: R.nif_result(R.unit())
   defrust draw_restore(canvas, _command) do
     canvas.restore()
     :ok

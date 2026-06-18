@@ -604,7 +604,6 @@ fn draw_command_result(canvas: &skia_safe::Canvas, command: Term) -> NifResult<R
     }
 }
 
-include!("generated_handlers.rs");
 include!("generated_style_helpers.rs");
 include!("generated_layers.rs");
 include!("generated_transforms.rs");
