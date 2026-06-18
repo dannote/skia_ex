@@ -28,9 +28,9 @@ defmodule Skia.Codegen.ArchitectureTest do
   end
 
   test "native overlays stay ergonomic and validate native methods" do
-    assert Skia.Codegen.Overlays.validate_native!() == :ok
+    assert Skia.Codegen.CommandOverlay.validate_native!() == :ok
 
-    source = File.read!("lib/skia/codegen/overlays.ex")
+    source = File.read!("lib/skia/codegen/command_overlay.ex")
     refute source =~ "opts:"
     refute source =~ "args: [path:"
   end

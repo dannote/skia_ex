@@ -1,7 +1,7 @@
-defmodule Skia.Codegen.Overlays do
+defmodule Skia.Codegen.CommandOverlay do
   @moduledoc false
 
-  use Skia.Codegen.Overlay
+  use Skia.Codegen.CommandOverlay.DSL
 
   command(:rect,
     native: {"Canvas", "draw_rect"},

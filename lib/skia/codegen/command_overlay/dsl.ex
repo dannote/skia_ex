@@ -1,11 +1,11 @@
-defmodule Skia.Codegen.Overlay do
+defmodule Skia.Codegen.CommandOverlay.DSL do
   @moduledoc false
 
   defmacro __using__(_opts) do
     quote do
-      import Skia.Codegen.Overlay, only: [command: 2]
+      import Skia.Codegen.CommandOverlay.DSL, only: [command: 2]
       Module.register_attribute(__MODULE__, :commands, accumulate: true)
-      @before_compile Skia.Codegen.Overlay
+      @before_compile Skia.Codegen.CommandOverlay.DSL
     end
   end
 
