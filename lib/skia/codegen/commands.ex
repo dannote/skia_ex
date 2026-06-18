@@ -52,6 +52,7 @@ defmodule Skia.Codegen.Commands do
   def doc(name, spec) do
     [
       "Adds a `#{name}` command to the document.",
+      elixir_shape(spec),
       native_signature(spec),
       native_source(spec),
       native_doc(spec)
@@ -59,6 +60,65 @@ defmodule Skia.Codegen.Commands do
     |> Enum.reject(&(&1 in [nil, ""]))
     |> Enum.join("\n\n")
   end
+
+  defp elixir_shape(spec) do
+    [args_doc(spec), opts_doc(spec), defaults_doc(spec)]
+    |> Enum.reject(&(&1 in [nil, ""]))
+    |> case do
+      [] -> nil
+      sections -> Enum.join(sections, "\n\n")
+    end
+  end
+
+  defp args_doc(spec) do
+    case Keyword.get(spec, :args, []) do
+      [] ->
+        nil
+
+      args ->
+        "Elixir arguments:\n" <>
+          Enum.map_join(args, "\n", fn {name, type} -> "  * `#{name}` - #{type_doc(type)}" end)
+    end
+  end
+
+  defp opts_doc(spec) do
+    case Keyword.get(spec, :opts, []) do
+      [] ->
+        nil
+
+      opts ->
+        "Elixir options:\n" <>
+          Enum.map_join(opts, "\n", fn opt ->
+            name = Keyword.fetch!(opt, :name)
+            suffix = if Keyword.get(opt, :required, false), do: " required", else: ""
+            "  * `#{name}` - #{type_doc(Keyword.fetch!(opt, :type))}#{suffix}"
+          end)
+    end
+  end
+
+  defp defaults_doc(spec) do
+    case Keyword.get(spec, :defaults, []) do
+      [] ->
+        nil
+
+      defaults ->
+        "Elixir defaults:\n" <>
+          Enum.map_join(defaults, "\n", fn {name, value} ->
+            "  * `#{name}` - `#{inspect(value)}`"
+          end)
+    end
+  end
+
+  defp type_doc({:enum, name, _opts}), do: "`:#{name}`"
+
+  defp type_doc({:tuple, types}) do
+    "`{#{Enum.map_join(types, ", ", &type_name/1)}}`"
+  end
+
+  defp type_doc(type), do: "`#{type_name(type)}`"
+
+  defp type_name({:enum, name, _opts}), do: name
+  defp type_name(type), do: to_string(type)
 
   defp attach_overlay(spec, overlay) do
     native_ref = Keyword.fetch!(overlay, :native)
