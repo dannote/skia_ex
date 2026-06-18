@@ -10,13 +10,29 @@ defmodule Skia.Codegen.ArchitectureTest do
     refute codegen_source() =~ "native_refs"
   end
 
-  test "native schema uses RustQ.Syn instead of regex Rust parsing" do
+  test "native schema uses Cargo and Syn instead of registry globs or regex Rust parsing" do
     source = File.read!("lib/skia/codegen/native_schema.ex")
 
     assert source =~ "RustQ.Cargo"
     assert source =~ "RustQ.Syn"
     refute source =~ "Regex"
     refute source =~ ".cargo/registry"
+  end
+
+  test "SkiaSafe enum lookup uses Cargo and Syn instead of registry globs" do
+    source = File.read!("lib/skia/codegen/skia_safe.ex")
+
+    assert source =~ "RustQ.Cargo"
+    assert source =~ "RustQ.Syn"
+    refute source =~ ".cargo/registry"
+  end
+
+  test "native overlays stay ergonomic and validate native methods" do
+    assert Skia.Codegen.Overlays.validate_native!() == :ok
+
+    source = File.read!("lib/skia/codegen/overlays.ex")
+    refute source =~ "opts:"
+    refute source =~ "args: [path:"
   end
 
   test "codegen tests live under test/skia/codegen" do

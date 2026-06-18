@@ -14,7 +14,25 @@ defmodule Skia.Codegen.NativeSchema do
 
   @native_manifest "native/skia_native/Cargo.toml"
 
+  defmodule Method do
+    @moduledoc "Native skia-safe method descriptor."
+    defstruct [:target, :name, :method]
+
+    @type t :: %__MODULE__{
+            target: String.t(),
+            name: String.t(),
+            method: RustQ.Syn.Method.t()
+          }
+  end
+
   @type method :: RustQ.Syn.Method.t()
+  @type expected_arg ::
+          :self_ref
+          | {:ref, String.t()}
+          | {:impl_trait, String.t(), [String.t()]}
+          | {:path, String.t()}
+          | :any
+  @type expected_return :: {:ref, String.t()} | {:path, String.t()} | :none | :any
 
   @spec index() :: RustQ.Syn.Index.t()
   def index do
@@ -35,6 +53,36 @@ defmodule Skia.Codegen.NativeSchema do
     RuntimeError -> raise "cannot find skia_safe::#{target}::#{name}"
   end
 
+  @spec descriptor!(String.t(), String.t()) :: Method.t()
+  def descriptor!(target, name) when is_binary(target) and is_binary(name) do
+    %Method{target: target, name: name, method: method!(target, name)}
+  end
+
+  @spec assert_method_shape!(String.t(), String.t(), keyword()) :: Method.t()
+  def assert_method_shape!(target, name, opts) do
+    descriptor = descriptor!(target, name)
+    method = descriptor.method
+
+    expected_args = Keyword.get(opts, :args, :any)
+    expected_returns = Keyword.get(opts, :returns, :any)
+
+    if expected_args != :any do
+      actual = Enum.map(method.args, & &1.type_ast)
+
+      unless length(actual) == length(expected_args) and
+               Enum.zip(actual, expected_args)
+               |> Enum.all?(fn {type, expected} -> type_matches?(type, expected) end) do
+        raise "unexpected native args for #{target}::#{name}: #{inspect(method.args)}"
+      end
+    end
+
+    unless return_matches?(method.returns_ast, expected_returns) do
+      raise "unexpected native return for #{target}::#{name}: #{inspect(method.returns_ast)}"
+    end
+
+    descriptor
+  end
+
   @spec source_root!() :: Path.t()
   def source_root! do
     RustQ.Cargo.package_source!("skia-safe", manifest_path: @native_manifest)
@@ -53,6 +101,23 @@ defmodule Skia.Codegen.NativeSchema do
     :persistent_term.put({__MODULE__, :index}, index)
     index
   end
+
+  defp type_matches?(_type, :any), do: true
+  defp type_matches?(%RustQ.Syn.Type.Ref{inner: %RustQ.Syn.Type.Self{}}, :self_ref), do: true
+  defp type_matches?(%RustQ.Syn.Type.Ref{inner: %RustQ.Syn.Type.Self{}}, {:ref, "Self"}), do: true
+  defp type_matches?(type, {:ref, name}), do: RustQ.Syn.Type.ref_to?(type, name)
+
+  defp type_matches?(type, {:impl_trait, trait, args}),
+    do: RustQ.Syn.Type.impl_trait?(type, trait, args)
+
+  defp type_matches?(type, {:path, name}), do: RustQ.Syn.Type.path?(type, name)
+  defp type_matches?(_type, _expected), do: false
+
+  defp return_matches?(_type, :any), do: true
+  defp return_matches?(nil, :none), do: true
+  defp return_matches?(type, {:ref, name}), do: type_matches?(type, {:ref, name})
+  defp return_matches?(type, {:path, name}), do: type_matches?(type, {:path, name})
+  defp return_matches?(_type, _expected), do: false
 
   defp normalize_target("path_utils"), do: "path_utils"
   defp normalize_target("pathops"), do: "pathops"

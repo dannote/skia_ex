@@ -1,7 +1,7 @@
 defmodule Skia.Codegen.SkiaSafe do
   @moduledoc false
 
-  @bindings_docs "skia-bindings-*/bindings_docs.rs"
+  @native_manifest "native/skia_native/Cargo.toml"
 
   @spec enum_variants(String.t()) :: [{String.t(), String.t()}]
   def enum_variants(enum_name) when is_binary(enum_name) do
@@ -19,14 +19,8 @@ defmodule Skia.Codegen.SkiaSafe do
   end
 
   defp bindings_docs_path do
-    [System.user_home!(), ".cargo/registry/src/*", @bindings_docs]
-    |> Path.join()
-    |> Path.wildcard()
-    |> Enum.sort(:desc)
-    |> List.first()
-    |> case do
-      nil -> raise "cannot find skia-bindings bindings_docs.rs"
-      path -> path
-    end
+    "skia-bindings"
+    |> RustQ.Cargo.package_source!(manifest_path: @native_manifest)
+    |> Path.join("bindings_docs.rs")
   end
 end
