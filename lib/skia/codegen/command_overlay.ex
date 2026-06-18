@@ -65,7 +65,7 @@ defmodule Skia.Codegen.CommandOverlay do
     |> Enum.each(fn {_name, opts} ->
       opts
       |> Keyword.fetch!(:native)
-      |> then(&Skia.Codegen.NativeSchema.descriptor!(&1.target, &1.member))
+      |> Skia.Codegen.NativeSchema.descriptor!()
     end)
 
     :ok

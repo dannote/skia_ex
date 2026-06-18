@@ -14,18 +14,6 @@ defmodule Skia.Codegen.NativeSchema do
 
   @native_manifest "native/skia_native/Cargo.toml"
 
-  defmodule Method do
-    @moduledoc "Native skia-safe method descriptor."
-    defstruct [:target, :name, :method, :source_url]
-
-    @type t :: %__MODULE__{
-            target: String.t(),
-            name: String.t(),
-            method: RustQ.Syn.Method.t(),
-            source_url: String.t() | nil
-          }
-  end
-
   @type method :: RustQ.Syn.Method.t()
   @type expected_arg ::
           :self_ref
@@ -54,19 +42,17 @@ defmodule Skia.Codegen.NativeSchema do
     RuntimeError -> raise "cannot find skia_safe::#{target}::#{name}"
   end
 
-  @spec descriptor!(String.t(), String.t()) :: Method.t()
-  def descriptor!(target, name) when is_binary(target) and is_binary(name) do
-    method = method!(target, name)
-
-    %Method{
-      target: target,
-      name: name,
-      method: method,
-      source_url: method_source_url(method)
-    }
+  @spec descriptor!(RustQ.NativeRef.t()) :: RustQ.NativeDescriptor.t()
+  def descriptor!(%RustQ.NativeRef{} = ref) do
+    RustQ.NativeDescriptor.resolve!(index(), ref)
   end
 
-  @spec assert_method_shape!(String.t(), String.t(), keyword()) :: Method.t()
+  @spec descriptor!(String.t(), String.t()) :: RustQ.NativeDescriptor.t()
+  def descriptor!(target, name) when is_binary(target) and is_binary(name) do
+    descriptor!(RustQ.NativeRef.new(target, name, package: "skia-safe"))
+  end
+
+  @spec assert_method_shape!(String.t(), String.t(), keyword()) :: RustQ.NativeDescriptor.t()
   def assert_method_shape!(target, name, opts) do
     descriptor = descriptor!(target, name)
     method = descriptor.method
@@ -92,20 +78,10 @@ defmodule Skia.Codegen.NativeSchema do
   end
 
   @spec package!() :: RustQ.Cargo.Package.t()
-  def package! do
-    RustQ.Cargo.package!("skia-safe", manifest_path: @native_manifest)
-  end
+  def package!, do: index().package
 
   @spec source_root!() :: Path.t()
-  def source_root! do
-    RustQ.Cargo.package_source!("skia-safe", manifest_path: @native_manifest)
-  end
-
-  @spec source_link(Path.t(), pos_integer()) :: String.t() | nil
-  def source_link(source_path, line) do
-    package!()
-    |> RustQ.Cargo.source_link(source_path, line)
-  end
+  def source_root!, do: package!().manifest_path |> Path.dirname()
 
   @spec source_paths() :: [Path.t()]
   def source_paths do
@@ -115,14 +91,8 @@ defmodule Skia.Codegen.NativeSchema do
     |> Enum.sort()
   end
 
-  defp method_source_url(%RustQ.Syn.Method{source_path: path, source_line: line})
-       when is_binary(path) and is_integer(line),
-       do: source_link(path, line)
-
-  defp method_source_url(_method), do: nil
-
   defp build_index do
-    index = RustQ.Syn.Index.from_paths(source_paths())
+    index = RustQ.Syn.Index.from_package("skia-safe", manifest_path: @native_manifest)
     :persistent_term.put({__MODULE__, :index}, index)
     index
   end
