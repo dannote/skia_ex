@@ -52,14 +52,16 @@ defmodule Skia do
     args = Keyword.get(spec, :args, [])
     arg_vars = Enum.map(args, fn {arg_name, _type} -> Macro.var(arg_name, __MODULE__) end)
 
+    doc = Commands.doc(name, spec)
+
     if args == [] do
-      @doc "Adds a `#{name}` command to the document."
+      @doc doc
       @spec unquote(name)(Document.t(), keyword()) :: Document.t()
       def unquote(name)(%Document{} = document, opts \\ []) do
         append_command(document, unquote(name), [], opts)
       end
     else
-      @doc "Adds a `#{name}` command to the document."
+      @doc doc
       @spec unquote(name)(
               Document.t(),
               unquote_splicing(Enum.map(args, fn _ -> quote(do: term()) end)),

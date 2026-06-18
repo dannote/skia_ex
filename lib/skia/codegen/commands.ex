@@ -48,4 +48,29 @@ defmodule Skia.Codegen.Commands do
 
   @spec fetch!(atom()) :: keyword()
   def fetch!(name), do: Keyword.fetch!(all(), name)
+
+  @spec doc(atom(), keyword()) :: String.t()
+  def doc(name, spec) do
+    ["Adds a `#{name}` command to the document.", native_doc(spec)]
+    |> Enum.reject(&(&1 in [nil, ""]))
+    |> Enum.join("\n\n")
+  end
+
+  defp native_doc(spec) do
+    with overlay when is_list(overlay) <- Keyword.get(spec, :overlay),
+         {target, method} <- Keyword.fetch!(overlay, :native),
+         %{method: %{docs: docs}} <- Skia.Codegen.NativeSchema.descriptor!(target, method),
+         [_ | _] <- docs do
+      ["Native `skia_safe::#{target}::#{method}` docs:" | docs]
+      |> Enum.map(&normalize_native_doc_line/1)
+      |> Enum.join("\n")
+    else
+      _ -> nil
+    end
+  end
+
+  defp normalize_native_doc_line(line) do
+    line
+    |> String.replace(~r/\[`(?:crate::)?([^\]]+)`\]/, "`\\1`")
+  end
 end

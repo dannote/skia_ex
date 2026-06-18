@@ -74,8 +74,17 @@ defmodule Skia.MixProject do
       main: "readme",
       extras: ["README.md"],
       source_ref: "v#{@version}",
-      source_url: @source_url
+      source_url: @source_url,
+      filter_modules: &public_doc_module?/2
     ]
+  end
+
+  defp public_doc_module?(module, _metadata) do
+    module
+    |> inspect()
+    |> then(fn name ->
+      String.starts_with?(name, "Skia") and not String.starts_with?(name, "Skia.Codegen")
+    end)
   end
 
   defp aliases() do
