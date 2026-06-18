@@ -45,6 +45,13 @@ defmodule Skia.Codegen.ArchitectureTest do
     refute config =~ "generated_docs"
   end
 
+  test "simple layer commands do not generate trivial impl wrappers" do
+    source = File.read!("lib/skia/codegen/rusty/layers.ex")
+
+    refute source =~ "draw_save_impl"
+    refute source =~ "draw_restore_impl"
+  end
+
   test "native overlays stay ergonomic and validate native methods" do
     assert Skia.Codegen.CommandOverlay.validate_native!() == :ok
 

@@ -3,10 +3,12 @@
 use skia_safe::Canvas;
 
 fn draw_save<'a>(canvas: &Canvas, _command: Term<'a>) -> NifResult<()> {
-    draw_save_impl(canvas)
+    canvas.save();
+    Ok(())
 }
 fn draw_restore<'a>(canvas: &Canvas, _command: Term<'a>) -> NifResult<()> {
-    draw_restore_impl(canvas)
+    canvas.restore();
+    Ok(())
 }
 fn clip_circle<'a>(canvas: &Canvas, command: Term<'a>) -> NifResult<()> {
     let opts = decode_opts(command)?;

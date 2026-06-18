@@ -1,19 +1,19 @@
 defmodule Skia.Codegen.RustyTest do
   use ExUnit.Case, async: true
 
-  test "generated save/restore handlers and impls come from Rusty layers" do
+  test "generated save/restore handlers come from direct Rusty layer bodies" do
     handlers = Skia.Codegen.generated_handlers()
     layers = Skia.Codegen.generated_layers()
 
     assert handlers =~ "fn draw_save<'a>(canvas: &Canvas, _command: Term<'a>) -> NifResult<()>"
-    assert handlers =~ "draw_save_impl(canvas)"
-    assert layers =~ "fn draw_save_impl(canvas: &Canvas) -> NifResult<()>"
-    assert layers =~ "canvas.save();"
+    assert handlers =~ "canvas.save();"
+    refute handlers =~ "draw_save_impl"
+    refute layers =~ "draw_save_impl"
 
     assert handlers =~ "fn draw_restore<'a>(canvas: &Canvas, _command: Term<'a>) -> NifResult<()>"
-    assert handlers =~ "draw_restore_impl(canvas)"
-    assert layers =~ "fn draw_restore_impl(canvas: &Canvas) -> NifResult<()>"
-    assert layers =~ "canvas.restore();"
+    assert handlers =~ "canvas.restore();"
+    refute handlers =~ "draw_restore_impl"
+    refute layers =~ "draw_restore_impl"
   end
 
   test "layer impls are generated from Rusty Elixir" do

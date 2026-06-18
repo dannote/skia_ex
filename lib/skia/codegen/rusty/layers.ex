@@ -25,10 +25,7 @@ defmodule Skia.Codegen.Rusty.Layers do
   def generated_command_asts do
     Layers.commands()
     |> Keyword.take(@simple_commands)
-    |> Enum.flat_map(fn {_name, spec} ->
-      handler = Keyword.fetch!(spec, :handler)
-      [rust_ast!(handler), rust_ast!(String.to_atom("#{handler}_impl"))]
-    end)
+    |> Enum.map(fn {_name, spec} -> spec |> Keyword.fetch!(:handler) |> rust_ast!() end)
   end
 
   defp impl_ast!(handler) do
@@ -53,22 +50,12 @@ defmodule Skia.Codegen.Rusty.Layers do
 
   @spec draw_save(R.ref(Canvas.t()), term()) :: R.nif_result(R.unit())
   defrust draw_save(canvas, _command) do
-    draw_save_impl(canvas)
-  end
-
-  @spec draw_save_impl(R.ref(Canvas.t())) :: R.nif_result(R.unit())
-  defrust draw_save_impl(canvas) do
     canvas.save()
     :ok
   end
 
   @spec draw_restore(R.ref(Canvas.t()), term()) :: R.nif_result(R.unit())
   defrust draw_restore(canvas, _command) do
-    draw_restore_impl(canvas)
-  end
-
-  @spec draw_restore_impl(R.ref(Canvas.t())) :: R.nif_result(R.unit())
-  defrust draw_restore_impl(canvas) do
     canvas.restore()
     :ok
   end
