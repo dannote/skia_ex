@@ -26,6 +26,7 @@ defmodule Skia.Codegen.Rusty.Clips do
   end
 
   use RustQ.Meta
+  use Skia.Codegen.Rusty.Args
 
   alias RustQ.Type, as: R
 
@@ -71,7 +72,7 @@ defmodule Skia.Codegen.Rusty.Clips do
           R.slice({R.atom(), R.term()})
         ) :: R.nif_result(R.unit())
   defrust clip_path_impl(canvas, args, opts, raw_opts) do
-    path = unwrap!(build_path(deref(unwrap!(args.first().ok_or(badarg())))))
+    path = unwrap!(build_path(first_arg_term!()))
     unwrap!(apply_fill_rule(mut_ref(path), raw_opts))
     clip_op = unwrap!(decode_clip_op(opts.clip_op.unwrap_or(Atoms.intersect())))
     canvas.clip_path(ref(path), clip_op, opts.antialias.unwrap_or(true))

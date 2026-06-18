@@ -26,6 +26,7 @@ defmodule Skia.Codegen.Rusty.Paths do
   end
 
   use RustQ.Meta
+  use Skia.Codegen.Rusty.Args
 
   alias RustQ.Type, as: R
 
@@ -36,7 +37,7 @@ defmodule Skia.Codegen.Rusty.Paths do
           R.slice({R.atom(), R.term()})
         ) :: R.nif_result(R.unit())
   defrust draw_path_impl(canvas, args, opts, raw_opts) do
-    path = unwrap!(build_path(deref(unwrap!(args.first().ok_or(badarg())))))
+    path = unwrap!(build_path(first_arg_term!()))
     unwrap!(apply_fill_rule(mut_ref(path), raw_opts))
 
     case opts.fill do
@@ -76,8 +77,8 @@ defmodule Skia.Codegen.Rusty.Paths do
           R.slice({R.atom(), R.term()})
         ) :: R.nif_result(R.unit())
   defrust draw_path_op_impl(canvas, args, opts, raw_opts) do
-    a = unwrap!(build_path(deref(unwrap!(args.first().ok_or(badarg())))))
-    b = unwrap!(build_path(deref(unwrap!(args.get(1).ok_or(badarg())))))
+    a = unwrap!(build_path(first_arg_term!()))
+    b = unwrap!(build_path(arg_term!(1)))
     op = unwrap!(GeneratedEnums.decode_path_op(opts.path_op))
     path = unwrap!(a.op(ref(b), op).ok_or(badarg()))
     unwrap!(apply_fill_rule(mut_ref(path), raw_opts))
@@ -119,7 +120,7 @@ defmodule Skia.Codegen.Rusty.Paths do
           R.slice({R.atom(), R.term()})
         ) :: R.nif_result(R.unit())
   defrust draw_path_outline_impl(canvas, args, opts, raw_opts) do
-    path = unwrap!(build_path(deref(unwrap!(args.first().ok_or(badarg())))))
+    path = unwrap!(build_path(first_arg_term!()))
     stroke = Paint.default()
     stroke.set_anti_alias(true).set_style(PaintStyle.Stroke).set_stroke_width(opts.outline_width)
     unwrap!(apply_stroke_options(mut_ref(stroke), raw_opts))
