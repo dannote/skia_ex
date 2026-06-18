@@ -3,8 +3,6 @@ defmodule Skia.Codegen do
 
   alias RustQ.Rust
   alias RustQ.Rust.AST
-  alias RustQ.Rust.AST.Builder, as: A
-  alias RustQ.Rustler.Decode, as: R
   alias Skia.Codegen.Commands
   alias Skia.Codegen.Enums
   alias Skia.Codegen.Rusty
@@ -699,88 +697,7 @@ defmodule Skia.Codegen do
   end
 
   defp opts_decoder_field(opt) do
-    {Keyword.fetch!(opt, :name), [type: rust_option_type(opt), decode: option_decoder(opt)]}
-  end
-
-  defp rust_option_type(opt) do
-    type = Keyword.fetch!(opt, :type)
-
-    if Keyword.get(opt, :required, false) do
-      rust_required_type(type)
-    else
-      rust_optional_type(type)
-    end
-  end
-
-  defp rust_required_type(type), do: type |> option_type_category() |> rust_required_type(type)
-
-  defp rust_required_type(:enum, _type), do: "Atom"
-  defp rust_required_type(:term, _type), do: "Term<'a>"
-  defp rust_required_type(_kind, %RustQ.Meta.Type{} = type), do: rust_type(type)
-
-  defp rust_optional_type(type), do: type |> option_type_category() |> rust_optional_type(type)
-
-  defp rust_optional_type(:enum, _type), do: "Option<Atom>"
-  defp rust_optional_type(:term, _type), do: "Option<Term<'a>>"
-  defp rust_optional_type(_kind, %RustQ.Meta.Type{} = type), do: "Option<#{rust_type(type)}>"
-
-  defp option_decoder(opt) do
-    name = Keyword.fetch!(opt, :name)
-    type = Keyword.fetch!(opt, :type)
-
-    if Keyword.get(opt, :required, false) do
-      required_decoder(type, name)
-    else
-      optional_decoder(type, name)
-    end
-  end
-
-  defp required_decoder(type, name),
-    do: type |> option_type_category() |> required_decoder_for_kind(name)
-
-  defp required_decoder_for_kind(:number, name), do: R.opt_decode(:opt_f32, :opts, name)
-
-  defp required_decoder_for_kind(:boolean, name),
-    do: R.required_opt_decode(:opt_bool_option, :opts, name)
-
-  defp required_decoder_for_kind(:atom, name),
-    do: R.required_opt_decode(:opt_atom_option, :opts, name)
-
-  defp required_decoder_for_kind(:enum, name),
-    do: R.required_opt_decode(:opt_atom_option, :opts, name)
-
-  defp required_decoder_for_kind(:integer, name),
-    do: R.required_term_decode(:opts, name, :i64)
-
-  defp required_decoder_for_kind(:string, name),
-    do: R.required_term_decode(:opts, name, :String)
-
-  defp required_decoder_for_kind(:term, name), do: R.required_term(:opts, name)
-
-  defp optional_decoder(type, name),
-    do: type |> option_type_category() |> optional_decoder_for_kind(name)
-
-  defp optional_decoder_for_kind(:number, name), do: R.opt_decode(:opt_f32_option, :opts, name)
-  defp optional_decoder_for_kind(:boolean, name), do: R.opt_decode(:opt_bool_option, :opts, name)
-  defp optional_decoder_for_kind(:atom, name), do: R.opt_decode(:opt_atom_option, :opts, name)
-  defp optional_decoder_for_kind(:enum, name), do: R.opt_decode(:opt_atom_option, :opts, name)
-  defp optional_decoder_for_kind(:integer, name), do: R.optional_term_decode(:opts, name, :i64)
-  defp optional_decoder_for_kind(:string, name), do: R.optional_term_decode(:opts, name, :String)
-  defp optional_decoder_for_kind(:term, name), do: A.call(:opt_term, [:opts, A.atom(name)])
-
-  defp option_type_category(%RustQ.Meta.Type{} = type) do
-    case RustQ.Meta.Type.category(type) do
-      category when category in [:number, :integer, :boolean, :atom, :string, :term, :enum] ->
-        category
-
-      _category ->
-        :term
-    end
-  end
-
-  defp rust_type(%RustQ.Meta.Type{ast: ast}) do
-    ast
-    |> RustQ.Rust.AST.Render.render_type()
-    |> IO.iodata_to_binary()
+    {Keyword.fetch!(opt, :name),
+     [type: Keyword.fetch!(opt, :type), required: Keyword.get(opt, :required, false)]}
   end
 end
