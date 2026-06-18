@@ -12,7 +12,7 @@ defmodule Skia.Codegen.ShapeImpls do
   alias Skia.Codegen.ImplHelpers
   alias Skia.CommandSpec.Shapes
 
-  @commands [:clear, :line]
+  @commands [:clear, :circle, :line]
 
   @spec commands() :: [atom()]
   def commands, do: @commands
@@ -37,6 +37,17 @@ defmodule Skia.Codegen.ShapeImpls do
     )
   end
 
+  defp generated_ast(:circle, spec) do
+    handler = Keyword.fetch!(spec, :handler)
+
+    RustQ.Meta.quoted(String.to_atom("#{handler}_impl"),
+      args: ImplHelpers.command_impl_args(:circle, :raw_opts),
+      returns: A.nif_result_type(A.unit_type()),
+      rust_modules: %{[:Atoms] => [:atoms]},
+      do: circle_body_ast!()
+    )
+  end
+
   defp generated_ast(name, spec) do
     handler = Keyword.fetch!(spec, :handler)
 
@@ -52,6 +63,35 @@ defmodule Skia.Codegen.ShapeImpls do
       case args.first().and_then(fn term -> decode_color(deref(term)).ok() end) do
         {:some, color} -> canvas.clear(color)
         :none -> :ok
+      end
+
+      :ok
+    end
+  end
+
+  defp circle_body_ast! do
+    quote do
+      center = Point.new(opts.x, opts.y)
+
+      case unwrap!(opt_fill_paint(raw_opts, Atoms.fill())) do
+        {:some, paint} ->
+          paint = paint
+          unwrap!(apply_blend_mode(mut_ref(paint), raw_opts))
+          canvas.draw_circle(center, opts.radius, ref(paint))
+
+        :none ->
+          :ok
+      end
+
+      case unwrap!(opt_color(raw_opts, Atoms.stroke())) do
+        {:some, color} ->
+          stroke_paint_value =
+            unwrap!(stroke_paint(color, opts.stroke_width.unwrap_or(1.0), raw_opts))
+
+          canvas.draw_circle(center, opts.radius, ref(stroke_paint_value))
+
+        :none ->
+          :ok
       end
 
       :ok

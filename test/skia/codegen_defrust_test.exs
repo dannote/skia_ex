@@ -198,6 +198,33 @@ defmodule Skia.CodegenDefrustTest do
            } = Enum.find(impls, &(&1.name == :draw_clear_impl))
 
     assert %AST.Function{
+             name: :draw_circle_impl,
+             args: [
+               %AST.FunctionArg{},
+               %AST.FunctionArg{
+                 name: :opts,
+                 type: %AST.TypePath{parts: [:generated_opts, :CircleOpts], lifetimes: [:a]}
+               },
+               %AST.FunctionArg{name: :raw_opts, type: "&[(Atom, Term<'a>)]"}
+             ],
+             body: [
+               %AST.Let{pattern: %AST.PatVar{name: :center}},
+               %AST.ExprStmt{expr: %AST.Match{}},
+               %AST.ExprStmt{expr: %AST.Match{}},
+               %AST.Return{}
+             ]
+           } = Enum.find(impls, &(&1.name == :draw_circle_impl))
+
+    circle_source =
+      impls
+      |> Enum.find(&(&1.name == :draw_circle_impl))
+      |> RustQ.Rust.AST.Render.render_function()
+
+    assert circle_source =~ "atoms::fill()"
+    assert circle_source =~ "atoms::stroke()"
+    assert circle_source =~ "let mut paint = paint;"
+
+    assert %AST.Function{
              name: :draw_line_impl,
              args: [
                %AST.FunctionArg{},
