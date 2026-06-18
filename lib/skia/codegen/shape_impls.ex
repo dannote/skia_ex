@@ -46,37 +46,9 @@ defmodule Skia.Codegen.ShapeImpls do
     @moduledoc false
 
     use RustQ.Meta
+    use Skia.Codegen.RustyPaint
 
     alias RustQ.Type, as: R
-
-    defmacro with_fill_paint(do: body) do
-      quote do
-        case unwrap!(opt_fill_paint(var!(raw_opts), Atoms.fill())) do
-          {:some, var!(paint)} ->
-            var!(paint) = var!(paint)
-            unwrap!(apply_blend_mode(mut_ref(var!(paint)), var!(raw_opts)))
-            unquote(body)
-
-          :none ->
-            :ok
-        end
-      end
-    end
-
-    defmacro with_stroke_paint(width, do: body) do
-      quote do
-        case unwrap!(opt_color(var!(raw_opts), Atoms.stroke())) do
-          {:some, var!(color)} ->
-            var!(stroke_paint_value) =
-              unwrap!(stroke_paint(var!(color), unquote(width), var!(raw_opts)))
-
-            unquote(body)
-
-          :none ->
-            :ok
-        end
-      end
-    end
 
     @spec draw_clear_impl(R.ref(SkiaSafe.Canvas.t()), R.vec(R.term())) :: R.nif_result(R.unit())
     defrust draw_clear_impl(canvas, args) do
