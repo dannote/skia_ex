@@ -103,18 +103,16 @@ defmodule Skia.Codegen.CommandSchema do
   defp command_type(ast, aliases), do: ast |> spec_type(aliases) |> command_type()
 
   defp command_type(%RustQ.Meta.Type{kind: :alias, meta: %{elixir_name: name, ast: ast}}) do
-    cond do
-      enum_name?(name) -> {:enum, name, enum_spec(name)}
-      tuple_alias?(ast) -> {:tuple, tuple_alias_elements(ast)}
-      true -> name
-    end
+    if enum_name?(name),
+      do: {:enum, name, enum_spec(name)},
+      else: ast |> RustQ.Spec.type(%{}) |> command_type()
   end
 
   defp command_type(%RustQ.Meta.Type{kind: :enum, meta: %{elixir_name: name}}),
     do: {:enum, name, enum_spec(name)}
 
-  defp command_type(%RustQ.Meta.Type{kind: :tuple, rust: rust}),
-    do: {:tuple, tuple_elements(rust)}
+  defp command_type(%RustQ.Meta.Type{kind: :tuple, meta: %{elements: elements}}),
+    do: {:tuple, Enum.map(elements, &command_type/1)}
 
   defp command_type(%RustQ.Meta.Type{kind: :term}), do: :term
   defp command_type(%RustQ.Meta.Type{kind: :atom}), do: :atom
@@ -142,47 +140,6 @@ defmodule Skia.Codegen.CommandSchema do
   defp enum_name?(name),
     do:
       name in [:blend_mode, :stroke_cap, :stroke_join, :fill_rule, :path_op, :clip_op, :sampling]
-
-  defp tuple_alias?({:{}, _, _}), do: true
-
-  defp tuple_alias?(ast) when is_tuple(ast) and tuple_size(ast) > 0,
-    do: ast |> Tuple.to_list() |> Enum.all?(&tuple_alias_element?/1)
-
-  defp tuple_alias?(_ast), do: false
-
-  defp tuple_alias_elements({:{}, _, elems}), do: Enum.map(elems, &tuple_alias_element/1)
-
-  defp tuple_alias_elements(ast) when is_tuple(ast),
-    do: ast |> Tuple.to_list() |> Enum.map(&tuple_alias_element/1)
-
-  defp tuple_alias_element({:number, _, []}), do: :number
-  defp tuple_alias_element({:boolean, _, []}), do: :boolean
-  defp tuple_alias_element({:integer, _, []}), do: :integer
-  defp tuple_alias_element({:atom, _, []}), do: :atom
-  defp tuple_alias_element({:string, _, []}), do: :string
-  defp tuple_alias_element({:binary, _, []}), do: :string
-
-  defp tuple_alias_element?({name, _, []})
-       when name in [:number, :boolean, :integer, :atom, :string, :binary],
-       do: true
-
-  defp tuple_alias_element?(_ast), do: false
-
-  defp tuple_elements(rust) do
-    rust
-    |> String.trim_leading("(")
-    |> String.trim_trailing(")")
-    |> String.split(",", trim: true)
-    |> Enum.map(&rust_scalar_type(String.trim(&1)))
-  end
-
-  defp rust_scalar_type("f64"), do: :number
-  defp rust_scalar_type("f32"), do: :number
-  defp rust_scalar_type("bool"), do: :boolean
-  defp rust_scalar_type("i64"), do: :integer
-  defp rust_scalar_type("Atom"), do: :atom
-  defp rust_scalar_type("String"), do: :string
-  defp rust_scalar_type(other), do: other |> Macro.underscore() |> String.to_atom()
 
   defp block_expressions({:__block__, _, expressions}), do: expressions
   defp block_expressions(expression), do: [expression]
