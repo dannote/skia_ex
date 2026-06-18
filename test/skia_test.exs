@@ -436,7 +436,7 @@ defmodule SkiaTest do
       |> Skia.rect(x: 0, y: 0, width: 2, height: 1, fill: :red)
 
     assert {:ok, raw} = Skia.to_raw(document)
-    assert byte_size(raw.data) == 8
+    assert raw.data == <<255, 0, 0, 255, 0, 0, 0, 0>>
   end
 
   test "clips drawing through the native batch boundary" do

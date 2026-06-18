@@ -988,9 +988,14 @@ defmodule Skia.Codegen do
 
   @spec generated_clips() :: String.t()
   def generated_clips do
-    Clips.commands()
-    |> generated_body_impls(:clip)
-    |> render_items("generated_clips.rs")
+    defrust_items = Enum.map(Rusty.Clips.generated_asts(), &render_rustq_item/1)
+
+    legacy_items =
+      Clips.commands()
+      |> Keyword.drop(Rusty.Clips.commands())
+      |> generated_body_impls(:clip)
+
+    render_items(defrust_items ++ legacy_items, "generated_clips.rs")
   end
 
   @spec generated_paint() :: String.t()

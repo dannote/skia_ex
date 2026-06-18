@@ -15,8 +15,19 @@ defmodule Skia.CodegenDefrustTest do
     assert source =~ "canvas.restore();"
   end
 
-  test "generated layer impl module remains empty while legacy layer bodies stay in codegen" do
+  test "generated layer command module stays reserved for simple command macros" do
     assert Skia.Codegen.GeneratedLayers.__rustq_asts__() == []
+  end
+
+  test "layer impls are generated from Rusty Elixir" do
+    source = Skia.Codegen.generated_layers()
+
+    assert source =~ "fn draw_save_layer_impl<'a>("
+
+    assert source =~
+             "let alpha = (opts.opacity.unwrap_or(1.0).clamp(0.0, 1.0) * 255.0).round() as u8;"
+
+    assert source =~ "canvas.save_layer(&rec);"
   end
 
   test "generated handlers decode command plumbing through direct Rust paths" do
@@ -49,6 +60,22 @@ defmodule Skia.CodegenDefrustTest do
     assert source =~ "fn draw_concat_impl<'a>("
     assert source =~ "let matrix = matrix_from_term(opts.matrix)?;"
     assert source =~ "canvas.concat(&matrix);"
+  end
+
+  test "clip impls are generated from Rusty Elixir" do
+    source = Skia.Codegen.generated_clips()
+
+    assert source =~ "fn clip_rect_impl<'a>("
+    assert source =~ "let rect = Rect::from_xywh(opts.x, opts.y, opts.width, opts.height);"
+    assert source =~ "canvas.clip_rect(rect, clip_op, antialias);"
+
+    assert source =~ "fn clip_circle_impl<'a>("
+    assert source =~ "let mut builder = PathBuilder::new();"
+    assert source =~ "builder.add_circle(Point::new(opts.x, opts.y), opts.radius, None);"
+
+    assert source =~ "fn clip_path_impl<'a>("
+    assert source =~ "let mut path = build_path(*args.first().ok_or(rustler::Error::BadArg)?)?;"
+    assert source =~ "apply_fill_rule(&mut path, raw_opts)?;"
   end
 
   test "shape impls are generated from Rusty Elixir" do

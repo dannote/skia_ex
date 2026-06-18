@@ -13,7 +13,7 @@ fn clip_rect_impl<'a>(
         canvas.clip_rrect(RRect::new_rect_xy(rect, radius, radius), clip_op, antialias);
     } else {
         canvas.clip_rect(rect, clip_op, antialias);
-    }
+    };
     Ok(())
 }
 fn clip_circle_impl<'a>(
