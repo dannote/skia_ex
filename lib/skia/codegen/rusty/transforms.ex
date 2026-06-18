@@ -9,8 +9,8 @@ defmodule Skia.Codegen.Rusty.Transforms do
   alias Skia.Codegen.Commands.Transforms
 
   use Skia.Codegen.Rusty.Domain,
-    commands: Transforms,
-    only: [:translate, :scale, :rotate, :rotate_at, :concat]
+    from: Transforms,
+    commands: [:translate, :scale, :rotate, :rotate_at, :concat]
 
   alias RustQ.Type, as: R
 

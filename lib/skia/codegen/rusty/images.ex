@@ -6,8 +6,8 @@ defmodule Skia.Codegen.Rusty.Images do
   alias Skia.Codegen.Commands.Images
 
   use Skia.Codegen.Rusty.Domain,
-    commands: Images,
-    only: [:image, :picture],
+    from: Images,
+    commands: [:image, :picture],
     helpers: [:draw_image_source_or_default]
 
   use Skia.Codegen.Rusty.Args

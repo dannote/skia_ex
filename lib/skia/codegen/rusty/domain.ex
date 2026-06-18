@@ -2,16 +2,16 @@ defmodule Skia.Codegen.Rusty.Domain do
   @moduledoc false
 
   defmacro __using__(opts) do
-    commands_module = opts |> Keyword.fetch!(:commands) |> Macro.expand(__CALLER__)
-    only = opts |> Keyword.fetch!(:only) |> expand_value!(__CALLER__)
+    commands_module = opts |> Keyword.fetch!(:from) |> Macro.expand(__CALLER__)
+    commands = opts |> Keyword.fetch!(:commands) |> expand_value!(__CALLER__)
     helpers = opts |> Keyword.get(:helpers, []) |> expand_value!(__CALLER__)
-    handlers = handler_defs(commands_module, only: only)
+    handlers = handler_defs(commands_module, only: commands)
 
     quote do
       use RustQ.Meta
       import Skia.Codegen.Rusty.Domain
 
-      @commands unquote(only)
+      @commands unquote(commands)
 
       @spec commands() :: [atom()]
       def commands, do: @commands

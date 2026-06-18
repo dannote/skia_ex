@@ -17,8 +17,8 @@ defmodule Skia.Codegen.Rusty.Layers do
   end
 
   use Skia.Codegen.Rusty.Domain,
-    commands: Layers,
-    only: [:save_layer]
+    from: Layers,
+    commands: [:save_layer]
 
   alias RustQ.Type, as: R
 

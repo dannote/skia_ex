@@ -9,8 +9,8 @@ defmodule Skia.Codegen.Rusty.Text do
   alias Skia.Codegen.Commands.Text
 
   use Skia.Codegen.Rusty.Domain,
-    commands: Text,
-    only: [:text_blob, :text]
+    from: Text,
+    commands: [:text_blob, :text]
 
   use Skia.Codegen.Rusty.Args
 

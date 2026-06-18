@@ -6,8 +6,8 @@ defmodule Skia.Codegen.Rusty.Clips do
   alias Skia.Codegen.Commands.Clips
 
   use Skia.Codegen.Rusty.Domain,
-    commands: Clips,
-    only: [:clip_rect, :clip_circle, :clip_path]
+    from: Clips,
+    commands: [:clip_rect, :clip_circle, :clip_path]
 
   use Skia.Codegen.Rusty.Args
 

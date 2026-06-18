@@ -6,8 +6,8 @@ defmodule Skia.Codegen.Rusty.Paths do
   alias Skia.Codegen.Commands.Paths
 
   use Skia.Codegen.Rusty.Domain,
-    commands: Paths,
-    only: [:path, :path_op, :path_outline]
+    from: Paths,
+    commands: [:path, :path_op, :path_outline]
 
   use Skia.Codegen.Rusty.Args
 
