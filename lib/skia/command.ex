@@ -65,6 +65,155 @@ defmodule Skia.Command do
     |> Enum.reject(&is_nil/1)
   end
 
+  defp normalize_meta_value!(_name, _key, %RustQ.Meta.Type{kind: kind}, value)
+       when kind in [:f32, :f64] and (is_integer(value) or is_float(value)),
+       do: value * 1.0
+
+  defp normalize_meta_value!(_name, _key, %RustQ.Meta.Type{kind: kind}, value)
+       when kind in [:i8, :i16, :i32, :i64, :isize, :u8, :u16, :u32, :u64, :usize] and
+              is_integer(value),
+       do: value
+
+  defp normalize_meta_value!(_name, _key, %RustQ.Meta.Type{kind: :bool}, value)
+       when is_boolean(value),
+       do: value
+
+  defp normalize_meta_value!(_name, _key, %RustQ.Meta.Type{kind: :atom}, value)
+       when is_atom(value),
+       do: value
+
+  defp normalize_meta_value!(_name, :spans, %RustQ.Meta.Type{kind: :term}, value),
+    do: normalize_spans!(value)
+
+  defp normalize_meta_value!(_name, _key, %RustQ.Meta.Type{kind: :term}, value), do: value
+
+  defp normalize_meta_value!(
+         _name,
+         _key,
+         %RustQ.Meta.Type{kind: :tuple, meta: %{elements: types}},
+         value
+       )
+       when is_tuple(value),
+       do: normalize_tuple!(types, value)
+
+  defp normalize_meta_value!(
+         _name,
+         _key,
+         %RustQ.Meta.Type{meta: %{elixir_module: String, elixir_type: :t}},
+         value
+       )
+       when is_binary(value),
+       do: value
+
+  defp normalize_meta_value!(
+         _name,
+         _key,
+         %RustQ.Meta.Type{meta: %{elixir_module: Skia.Paint, elixir_type: :t}},
+         %Skia.Paint{} = value
+       ),
+       do: value
+
+  defp normalize_meta_value!(
+         _name,
+         _key,
+         %RustQ.Meta.Type{meta: %{elixir_module: Skia.Command, elixir_type: :color}},
+         value
+       ),
+       do: normalize_color!(value)
+
+  defp normalize_meta_value!(
+         _name,
+         _key,
+         %RustQ.Meta.Type{meta: %{elixir_module: Skia.Path, elixir_type: :t}},
+         %Skia.Path{} = value
+       ),
+       do: value
+
+  defp normalize_meta_value!(
+         _name,
+         _key,
+         %RustQ.Meta.Type{meta: %{elixir_module: Skia.Image, elixir_type: :t}},
+         %Skia.Image{} = value
+       ),
+       do: value
+
+  defp normalize_meta_value!(
+         _name,
+         _key,
+         %RustQ.Meta.Type{meta: %{elixir_module: Skia.Picture, elixir_type: :t}},
+         %Skia.Picture{} = value
+       ),
+       do: value
+
+  defp normalize_meta_value!(
+         _name,
+         _key,
+         %RustQ.Meta.Type{meta: %{elixir_module: Skia.TextBlob, elixir_type: :t}},
+         %Skia.TextBlob{} = value
+       ),
+       do: value
+
+  defp normalize_meta_value!(
+         _name,
+         _key,
+         %RustQ.Meta.Type{meta: %{elixir_module: Skia.Vertices, elixir_type: :t}},
+         %Skia.Vertices{} = value
+       ),
+       do: normalize_vertices!(value)
+
+  defp normalize_meta_value!(
+         _name,
+         _key,
+         %RustQ.Meta.Type{meta: %{elixir_module: Skia.Font, elixir_type: :t}},
+         %Skia.Font{} = value
+       ),
+       do: value
+
+  defp normalize_meta_value!(
+         _name,
+         _key,
+         %RustQ.Meta.Type{meta: %{elixir_module: Skia.ImageFilter, elixir_type: :t}},
+         value
+       ),
+       do: normalize_image_filter!(value)
+
+  defp normalize_meta_value!(
+         _name,
+         _key,
+         %RustQ.Meta.Type{meta: %{elixir_module: Skia.ColorFilter, elixir_type: :t}},
+         value
+       ),
+       do: normalize_color_filter!(value)
+
+  defp normalize_meta_value!(
+         _name,
+         _key,
+         %RustQ.Meta.Type{meta: %{elixir_module: Skia.MaskFilter, elixir_type: :t}},
+         value
+       ),
+       do: normalize_mask_filter!(value)
+
+  defp normalize_meta_value!(
+         _name,
+         _key,
+         %RustQ.Meta.Type{meta: %{elixir_module: Skia.PathEffect, elixir_type: :t}},
+         value
+       ),
+       do: normalize_path_effect!(value)
+
+  defp normalize_meta_value!(
+         _name,
+         _key,
+         %RustQ.Meta.Type{meta: %{elixir_module: Skia.SamplingOptions, elixir_type: :t}},
+         value
+       ),
+       do: normalize_sampling_options!(value)
+
+  defp normalize_meta_value!(name, key, type, value) do
+    raise ArgumentError,
+          "invalid #{inspect(key)} for #{name}: expected #{inspect(type)}, got #{inspect(value)}"
+  end
+
   defp normalize_value!(_name, _key, :number, value) when is_integer(value) or is_float(value),
     do: value * 1.0
 
@@ -99,6 +248,10 @@ defmodule Skia.Command do
 
   defp normalize_value!(_name, _key, {:tuple, types}, value) when is_tuple(value),
     do: normalize_tuple!(types, value)
+
+  defp normalize_value!(name, key, %RustQ.Meta.Type{} = type, value) do
+    normalize_meta_value!(name, key, type, value)
+  end
 
   defp normalize_value!(name, key, type, value) do
     raise ArgumentError,

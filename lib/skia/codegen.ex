@@ -712,59 +712,25 @@ defmodule Skia.Codegen do
     end
   end
 
-  defp rust_required_type(:number), do: "f32"
-  defp rust_required_type(:boolean), do: "bool"
-  defp rust_required_type(:atom), do: "Atom"
-  defp rust_required_type({:enum, _name, _opts}), do: "Atom"
-  defp rust_required_type(:integer), do: "i64"
-  defp rust_required_type(:string), do: "String"
+  defp rust_required_type(type), do: type |> command_type_kind() |> rust_required_type_for_kind()
 
-  defp rust_required_type(type)
-       when type in [
-              :color,
-              :path,
-              :image,
-              :font,
-              :text_blob,
-              :vertices,
-              :image_filter,
-              :color_filter,
-              :mask_filter,
-              :path_effect,
-              :sampling_options,
-              :paint,
-              :term
-            ],
-       do: "Term<'a>"
+  defp rust_required_type_for_kind(:number), do: "f32"
+  defp rust_required_type_for_kind(:boolean), do: "bool"
+  defp rust_required_type_for_kind(:atom), do: "Atom"
+  defp rust_required_type_for_kind(:enum), do: "Atom"
+  defp rust_required_type_for_kind(:integer), do: "i64"
+  defp rust_required_type_for_kind(:string), do: "String"
+  defp rust_required_type_for_kind(:term), do: "Term<'a>"
 
-  defp rust_required_type({:tuple, _types}), do: "Term<'a>"
+  defp rust_optional_type(type), do: type |> command_type_kind() |> rust_optional_type_for_kind()
 
-  defp rust_optional_type(:number), do: "Option<f32>"
-  defp rust_optional_type(:boolean), do: "Option<bool>"
-  defp rust_optional_type(:atom), do: "Option<Atom>"
-  defp rust_optional_type({:enum, _name, _opts}), do: "Option<Atom>"
-  defp rust_optional_type(:integer), do: "Option<i64>"
-  defp rust_optional_type(:string), do: "Option<String>"
-
-  defp rust_optional_type(type)
-       when type in [
-              :color,
-              :path,
-              :image,
-              :font,
-              :text_blob,
-              :vertices,
-              :image_filter,
-              :color_filter,
-              :mask_filter,
-              :path_effect,
-              :sampling_options,
-              :paint,
-              :term
-            ],
-       do: "Option<Term<'a>>"
-
-  defp rust_optional_type({:tuple, _types}), do: "Option<Term<'a>>"
+  defp rust_optional_type_for_kind(:number), do: "Option<f32>"
+  defp rust_optional_type_for_kind(:boolean), do: "Option<bool>"
+  defp rust_optional_type_for_kind(:atom), do: "Option<Atom>"
+  defp rust_optional_type_for_kind(:enum), do: "Option<Atom>"
+  defp rust_optional_type_for_kind(:integer), do: "Option<i64>"
+  defp rust_optional_type_for_kind(:string), do: "Option<String>"
+  defp rust_optional_type_for_kind(:term), do: "Option<Term<'a>>"
 
   defp option_decoder(opt) do
     name = Keyword.fetch!(opt, :name)
@@ -777,70 +743,52 @@ defmodule Skia.Codegen do
     end
   end
 
-  defp required_decoder(:number, name), do: R.opt_decode(:opt_f32, :opts, name)
+  defp required_decoder(type, name),
+    do: type |> command_type_kind() |> required_decoder_for_kind(name)
 
-  defp required_decoder(:boolean, name),
+  defp required_decoder_for_kind(:number, name), do: R.opt_decode(:opt_f32, :opts, name)
+
+  defp required_decoder_for_kind(:boolean, name),
     do: R.required_opt_decode(:opt_bool_option, :opts, name)
 
-  defp required_decoder(:atom, name),
+  defp required_decoder_for_kind(:atom, name),
     do: R.required_opt_decode(:opt_atom_option, :opts, name)
 
-  defp required_decoder({:enum, _name, _opts}, name),
+  defp required_decoder_for_kind(:enum, name),
     do: R.required_opt_decode(:opt_atom_option, :opts, name)
 
-  defp required_decoder(:integer, name),
+  defp required_decoder_for_kind(:integer, name),
     do: R.required_term_decode(:opts, name, :i64)
 
-  defp required_decoder(:string, name),
+  defp required_decoder_for_kind(:string, name),
     do: R.required_term_decode(:opts, name, :String)
 
-  defp required_decoder(type, name)
-       when type in [
-              :color,
-              :path,
-              :image,
-              :font,
-              :text_blob,
-              :vertices,
-              :image_filter,
-              :color_filter,
-              :mask_filter,
-              :path_effect,
-              :sampling_options,
-              :paint,
-              :term
-            ],
-       do: R.required_term(:opts, name)
+  defp required_decoder_for_kind(:term, name), do: R.required_term(:opts, name)
 
-  defp required_decoder({:tuple, _types}, name), do: R.required_term(:opts, name)
+  defp optional_decoder(type, name),
+    do: type |> command_type_kind() |> optional_decoder_for_kind(name)
 
-  defp optional_decoder(:number, name), do: R.opt_decode(:opt_f32_option, :opts, name)
-  defp optional_decoder(:boolean, name), do: R.opt_decode(:opt_bool_option, :opts, name)
-  defp optional_decoder(:atom, name), do: R.opt_decode(:opt_atom_option, :opts, name)
+  defp optional_decoder_for_kind(:number, name), do: R.opt_decode(:opt_f32_option, :opts, name)
+  defp optional_decoder_for_kind(:boolean, name), do: R.opt_decode(:opt_bool_option, :opts, name)
+  defp optional_decoder_for_kind(:atom, name), do: R.opt_decode(:opt_atom_option, :opts, name)
+  defp optional_decoder_for_kind(:enum, name), do: R.opt_decode(:opt_atom_option, :opts, name)
+  defp optional_decoder_for_kind(:integer, name), do: R.optional_term_decode(:opts, name, :i64)
+  defp optional_decoder_for_kind(:string, name), do: R.optional_term_decode(:opts, name, :String)
+  defp optional_decoder_for_kind(:term, name), do: A.call(:opt_term, [:opts, A.atom(name)])
 
-  defp optional_decoder({:enum, _name, _opts}, name),
-    do: R.opt_decode(:opt_atom_option, :opts, name)
+  defp command_type_kind({:enum, _name, _opts}), do: :enum
+  defp command_type_kind(%RustQ.Meta.Type{kind: kind}) when kind in [:f32, :f64], do: :number
 
-  defp optional_decoder(:integer, name), do: R.optional_term_decode(:opts, name, :i64)
-  defp optional_decoder(:string, name), do: R.optional_term_decode(:opts, name, :String)
+  defp command_type_kind(%RustQ.Meta.Type{kind: kind})
+       when kind in [:i8, :i16, :i32, :i64, :isize, :u8, :u16, :u32, :u64, :usize], do: :integer
 
-  defp optional_decoder(type, name)
-       when type in [
-              :color,
-              :path,
-              :image,
-              :font,
-              :text_blob,
-              :vertices,
-              :image_filter,
-              :color_filter,
-              :mask_filter,
-              :path_effect,
-              :sampling_options,
-              :paint,
-              :term
-            ],
-       do: A.call(:opt_term, [:opts, A.atom(name)])
+  defp command_type_kind(%RustQ.Meta.Type{kind: :bool}), do: :boolean
+  defp command_type_kind(%RustQ.Meta.Type{kind: :atom}), do: :atom
+  defp command_type_kind(%RustQ.Meta.Type{kind: :tuple}), do: :term
+  defp command_type_kind(%RustQ.Meta.Type{kind: :term}), do: :term
 
-  defp optional_decoder({:tuple, _types}, name), do: A.call(:opt_term, [:opts, A.atom(name)])
+  defp command_type_kind(%RustQ.Meta.Type{meta: %{elixir_module: String, elixir_type: :t}}),
+    do: :string
+
+  defp command_type_kind(%RustQ.Meta.Type{}), do: :term
 end

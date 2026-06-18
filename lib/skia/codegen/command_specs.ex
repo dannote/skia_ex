@@ -70,29 +70,13 @@ defmodule Skia.Codegen.CommandSpecs do
   defp command_type(%RustQ.Meta.Type{kind: :alias, meta: %{elixir_name: name, ast: ast}}) do
     if enum_name?(name),
       do: {:enum, name, enum_spec(name)},
-      else: ast |> RustQ.Spec.type(%{}) |> command_type()
+      else: RustQ.Spec.type(ast, %{})
   end
 
   defp command_type(%RustQ.Meta.Type{kind: :enum, meta: %{elixir_name: name}}),
     do: {:enum, name, enum_spec(name)}
 
-  defp command_type(%RustQ.Meta.Type{kind: :tuple, meta: %{elements: elements}}),
-    do: {:tuple, Enum.map(elements, &command_type/1)}
-
-  defp command_type(%RustQ.Meta.Type{kind: :term}), do: :term
-  defp command_type(%RustQ.Meta.Type{kind: :atom}), do: :atom
-  defp command_type(%RustQ.Meta.Type{kind: :bool}), do: :boolean
-  defp command_type(%RustQ.Meta.Type{kind: kind}) when kind in [:i64, :u8, :u32], do: :integer
-  defp command_type(%RustQ.Meta.Type{kind: kind}) when kind in [:f32, :f64], do: :number
-
-  defp command_type(%RustQ.Meta.Type{rust: rust}) do
-    rust
-    |> String.trim_trailing("<'a>")
-    |> String.split("::")
-    |> List.last()
-    |> Macro.underscore()
-    |> String.to_atom()
-  end
+  defp command_type(%RustQ.Meta.Type{} = type), do: type
 
   defp enum_spec(name) do
     case Skia.Codegen.EnumSpecs.command_spec(name) do
