@@ -94,6 +94,7 @@ defmodule Skia.MixProject do
         "rustq.gen --check",
         "format --check-formatted",
         "test",
+        "docs --warnings-as-errors",
         "credo --strict",
         "dialyzer",
         "ex_dna --max-clones 0",
