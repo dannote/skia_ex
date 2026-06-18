@@ -13,7 +13,7 @@ defmodule Skia.DocsTest do
     assert rect_doc =~ "Native: `skia_safe::Canvas::draw_rect`"
 
     assert rect_doc =~
-             "Native signature: `fn draw_rect (& self , rect : impl AsRef < Rect > , paint : & Paint) -> & Self`"
+             "Native signature: `fn draw_rect(&self, rect: impl AsRef<Rect>, paint: &Paint) -> &Self`"
 
     assert rect_doc =~ "Native source: [`src/core/canvas.rs:"
     assert rect_doc =~ "https://docs.rs/crate/skia-safe/"

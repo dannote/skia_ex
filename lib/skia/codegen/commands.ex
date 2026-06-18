@@ -70,9 +70,9 @@ defmodule Skia.Codegen.Commands do
   end
 
   defp native_signature(spec) do
-    with %{method: %{signature: signature}} = native <- Keyword.get(spec, :native),
+    with %{method: %{signature_ast: signature}} = native <- Keyword.get(spec, :native),
          ref = Skia.Codegen.NativeRef.new(native.target, native.name) do
-      "Native: `#{Skia.Codegen.NativeRef.format(ref)}`\n\nNative signature: `#{signature}`"
+      "Native: `#{Skia.Codegen.NativeRef.format(ref)}`\n\nNative signature: `#{RustQ.Syn.Signature.render(signature)}`"
     else
       _ -> nil
     end
