@@ -1,22 +1,19 @@
 defmodule Skia.CodegenDefrustTest do
   use ExUnit.Case, async: true
 
-  test "generated save/restore command macros expose handlers and impls" do
-    source = Skia.Codegen.GeneratedCommands.__rustq_source__()
+  test "generated save/restore handlers and impls come from Rusty layers" do
+    handlers = Skia.Codegen.generated_handlers()
+    layers = Skia.Codegen.generated_layers()
 
-    assert source =~ "fn draw_save<'a>(canvas: &Canvas, _command: Term<'a>) -> NifResult<()>"
-    assert source =~ "draw_save_impl(canvas)"
-    assert source =~ "fn draw_save_impl(canvas: &Canvas) -> NifResult<()>"
-    assert source =~ "canvas.save();"
+    assert handlers =~ "fn draw_save<'a>(canvas: &Canvas, _command: Term<'a>) -> NifResult<()>"
+    assert handlers =~ "draw_save_impl(canvas)"
+    assert layers =~ "fn draw_save_impl(canvas: &Canvas) -> NifResult<()>"
+    assert layers =~ "canvas.save();"
 
-    assert source =~ "fn draw_restore<'a>(canvas: &Canvas, _command: Term<'a>) -> NifResult<()>"
-    assert source =~ "draw_restore_impl(canvas)"
-    assert source =~ "fn draw_restore_impl(canvas: &Canvas) -> NifResult<()>"
-    assert source =~ "canvas.restore();"
-  end
-
-  test "generated layer command module stays reserved for simple command macros" do
-    assert Skia.Codegen.GeneratedLayers.__rustq_asts__() == []
+    assert handlers =~ "fn draw_restore<'a>(canvas: &Canvas, _command: Term<'a>) -> NifResult<()>"
+    assert handlers =~ "draw_restore_impl(canvas)"
+    assert layers =~ "fn draw_restore_impl(canvas: &Canvas) -> NifResult<()>"
+    assert layers =~ "canvas.restore();"
   end
 
   test "layer impls are generated from Rusty Elixir" do
@@ -31,10 +28,10 @@ defmodule Skia.CodegenDefrustTest do
   end
 
   test "generated handlers decode command plumbing through direct Rust paths" do
-    source = Skia.Codegen.GeneratedHandlers.__rustq_source__()
+    source = Skia.Codegen.generated_handlers()
 
-    refute source =~ "fn draw_save("
-    refute source =~ "fn draw_restore("
+    assert source =~ "fn draw_save<"
+    assert source =~ "fn draw_restore<"
     assert source =~ "fn draw_path<'a>("
     assert source =~ "command.map_get(atoms::args())?"
     assert source =~ "generated_opts::decode_path_opts(&opts)?"

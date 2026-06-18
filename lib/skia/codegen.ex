@@ -646,19 +646,19 @@ defmodule Skia.Codegen do
   @spec generated_handlers() :: String.t()
   def generated_handlers do
     command_handlers =
-      Skia.Codegen.GeneratedCommands.__rustq_asts__()
+      Rusty.Layers.generated_command_asts()
       |> Enum.reject(&String.ends_with?(Atom.to_string(&1.name), "_impl"))
       |> Enum.map(&render_rustq_item/1)
 
     handlers =
-      command_handlers ++
-        (Skia.Codegen.GeneratedHandlers.__rustq_asts__() |> Enum.map(&render_rustq_item/1))
+      Skia.Codegen.HandlerShells.generated_asts(Skia.CommandSpec.all(), except: [:save, :restore])
+      |> Enum.map(&render_rustq_item/1)
 
     "generated_handlers.rs"
     |> template_path()
     |> RustQ.render_file!(
       preamble: generated_rust_preamble() <> "use skia_safe::Canvas;\n\n",
-      splice: [items: handlers]
+      splice: [items: command_handlers ++ handlers]
     )
   end
 
@@ -699,17 +699,12 @@ defmodule Skia.Codegen do
 
   @spec generated_layers() :: String.t()
   def generated_layers do
-    command_impls =
-      Skia.Codegen.GeneratedCommands.__rustq_asts__()
+    items =
+      (Rusty.Layers.generated_command_asts() ++ Rusty.Layers.generated_asts())
       |> Enum.filter(&String.ends_with?(Atom.to_string(&1.name), "_impl"))
       |> Enum.map(&render_rustq_item/1)
 
-    defrust_items =
-      command_impls ++
-        Skia.Codegen.GeneratedLayers.__rustq_items__() ++
-        Enum.map(Rusty.Layers.generated_asts(), &render_rustq_item/1)
-
-    render_items(defrust_items, "generated_layers.rs")
+    render_items(items, "generated_layers.rs")
   end
 
   @spec generated_transforms() :: String.t()
