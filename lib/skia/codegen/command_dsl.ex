@@ -2,10 +2,9 @@ defmodule Skia.Codegen.CommandDSL do
   @moduledoc """
   Small valid-Elixir command DSL for simple Skia commands.
 
-  This layer expands command declarations such as save/restore into real
-  `@spec` + `defrust` definitions. Use it when the command implementation is
-  naturally expressible as Rusty Elixir; use focused impl modules plus
-  `RustQ.Meta.quoted/2` when Skia must provide generated Rust signature types.
+  This layer expands simple command declarations such as save/restore into real
+  `@spec` + `defrust` definitions. Rich drawing semantics live in focused
+  `Skia.Codegen.Rusty.*` modules.
   """
 
   defmacro __using__(_opts) do
@@ -53,18 +52,17 @@ defmodule Skia.Codegen.CommandDSL do
   defp command_from_spec(name, spec) do
     handler = Keyword.fetch!(spec, :handler)
 
-    [name: name, handler: handler, body: simple_canvas_body!(spec)]
+    [name: name, handler: handler, body: simple_canvas_body!(name)]
   end
 
-  defp simple_canvas_body!(spec) do
-    case get_in(spec, [:layer, :body]) do
-      [{:call, "canvas", method, []}] ->
-        {:__block__, [], [{{:., [], [{:canvas, [], nil}, method]}, [], []}, :ok]}
+  defp simple_canvas_body!(:save),
+    do: {:__block__, [], [{{:., [], [{:canvas, [], nil}, :save]}, [], []}, :ok]}
 
-      other ->
-        raise ArgumentError, "unsupported defcommands body: #{inspect(other)}"
-    end
-  end
+  defp simple_canvas_body!(:restore),
+    do: {:__block__, [], [{{:., [], [{:canvas, [], nil}, :restore]}, [], []}, :ok]}
+
+  defp simple_canvas_body!(name),
+    do: raise(ArgumentError, "unsupported simple command #{inspect(name)}")
 
   defp command_definition(command) do
     handler = Keyword.fetch!(command, :handler)

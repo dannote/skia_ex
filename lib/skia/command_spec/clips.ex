@@ -16,21 +16,6 @@ defmodule Skia.CommandSpec.Clips do
               [name: :antialias, type: :boolean],
               [name: :clip_op, type: T.clip_op()]
             ],
-        clip: [
-          setup: [
-            {:let, "rect", "Rect::from_xywh(opts.x, opts.y, opts.width, opts.height)"},
-            {:let, "radius", "opts.radius.unwrap_or(0.0)"},
-            {:let, "antialias", "opts.antialias.unwrap_or(true)"},
-            {:let, "clip_op", "decode_clip_op(opts.clip_op.unwrap_or(atoms::intersect()))?"}
-          ],
-          body: [
-            {:if_else, "radius > 0.0",
-             [
-               {:call, "canvas", :clip_rrect,
-                ["RRect::new_rect_xy(rect, radius, radius)", "clip_op", "antialias"]}
-             ], [{:call, "canvas", :clip_rect, ["rect", "clip_op", "antialias"]}]}
-          ]
-        ],
         native_refs: ["skia_safe::Canvas::clip_rect", "skia_safe::Canvas::clip_rrect"]
       ],
       clip_circle: [
@@ -44,18 +29,6 @@ defmodule Skia.CommandSpec.Clips do
           [name: :antialias, type: :boolean],
           [name: :clip_op, type: T.clip_op()]
         ],
-        clip: [
-          setup: [
-            {:let_mut, "builder", "PathBuilder::new()"},
-            {:call, "builder", :add_circle, ["Point::new(opts.x, opts.y)", "opts.radius", :none]},
-            {:let, "path", "builder.detach()"},
-            {:let, "clip_op", "decode_clip_op(opts.clip_op.unwrap_or(atoms::intersect()))?"}
-          ],
-          body: [
-            {:call, "canvas", :clip_path,
-             [{:ref, "path"}, "clip_op", "opts.antialias.unwrap_or(true)"]}
-          ]
-        ],
         native_refs: ["skia_safe::Canvas::clip_path"]
       ],
       clip_path: [
@@ -66,17 +39,6 @@ defmodule Skia.CommandSpec.Clips do
           [name: :antialias, type: :boolean],
           [name: :fill_rule, type: T.fill_rule()],
           [name: :clip_op, type: T.clip_op()]
-        ],
-        clip: [
-          setup: [
-            {:let_mut, "path", "build_path(*args.first().ok_or(rustler::Error::BadArg)?)?"},
-            {:stmt, "apply_fill_rule(&mut path, raw_opts)?"},
-            {:let, "clip_op", "decode_clip_op(opts.clip_op.unwrap_or(atoms::intersect()))?"}
-          ],
-          body: [
-            {:call, "canvas", :clip_path,
-             [{:ref, "path"}, "clip_op", "opts.antialias.unwrap_or(true)"]}
-          ]
         ],
         native_refs: ["skia_safe::Canvas::clip_path"]
       ]

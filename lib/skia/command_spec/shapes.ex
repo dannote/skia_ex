@@ -9,12 +9,6 @@ defmodule Skia.CommandSpec.Shapes do
         handler: :draw_clear,
         args: [color: T.color()],
         opts: [],
-        shape_draw: [
-          body: [
-            {:if_let, "Some(color)", "args.first().and_then(|term| decode_color(*term).ok())",
-             [{:call, "canvas", :clear, ["color"]}]}
-          ]
-        ],
         native_refs: ["skia_safe::Canvas::clear"]
       ],
       rect: [
@@ -22,23 +16,12 @@ defmodule Skia.CommandSpec.Shapes do
         args: [],
         defaults: [radius: 0],
         opts: T.rect_opts() ++ [[name: :radius, type: :number]] ++ T.paint_opts(),
-        shape_draw: [
-          setup: [
-            {:let, "rect", "Rect::from_xywh(opts.x, opts.y, opts.width, opts.height)"},
-            {:let, "radius", "opts.radius.unwrap_or(0.0)"}
-          ],
-          body: paint_shape_body({:stmt, "draw_rect_shape(canvas, rect, radius, &paint)"})
-        ],
         native_refs: ["skia_safe::Canvas::draw_rect", "skia_safe::Canvas::draw_rrect"]
       ],
       oval: [
         handler: :draw_oval,
         args: [],
         opts: T.rect_opts() ++ T.paint_opts(),
-        shape_draw: [
-          setup: [{:let, "rect", "Rect::from_xywh(opts.x, opts.y, opts.width, opts.height)"}],
-          body: paint_shape_body({:call, "canvas", :draw_oval, ["rect", "&paint"]})
-        ],
         native_refs: ["skia_safe::Canvas::draw_oval"]
       ],
       arc: [
@@ -52,17 +35,6 @@ defmodule Skia.CommandSpec.Shapes do
               [name: :sweep_degrees, type: :number, required: true],
               [name: :use_center, type: :boolean]
             ] ++ T.paint_opts(),
-        shape_draw: [
-          setup: [
-            {:let, "rect", "Rect::from_xywh(opts.x, opts.y, opts.width, opts.height)"},
-            {:let, "use_center", "opts.use_center.unwrap_or(false)"}
-          ],
-          body:
-            paint_shape_body(
-              {:call, "canvas", :draw_arc,
-               ["rect", "opts.start_degrees", "opts.sweep_degrees", "use_center", "&paint"]}
-            )
-        ],
         native_refs: ["skia_safe::Canvas::draw_arc"]
       ],
       circle: [
@@ -74,11 +46,6 @@ defmodule Skia.CommandSpec.Shapes do
             [name: :y, type: :number, required: true],
             [name: :radius, type: :number, required: true]
           ] ++ T.paint_opts(),
-        shape_draw: [
-          setup: [{:let, "center", "Point::new(opts.x, opts.y)"}],
-          body:
-            paint_shape_body({:call, "canvas", :draw_circle, ["center", "opts.radius", "&paint"]})
-        ],
         native_refs: ["skia_safe::Canvas::draw_circle"]
       ],
       vertices: [
@@ -86,21 +53,6 @@ defmodule Skia.CommandSpec.Shapes do
         args: [vertices: T.vertices()],
         defaults: [blend_mode: :src_over],
         opts: T.paint_opts(),
-        shape_draw: [
-          setup: [
-            {:let, "vertices",
-             "vertices_from_term(*args.first().ok_or(rustler::Error::BadArg)?)?"},
-            {:let, "blend_mode",
-             "generated_enums::decode_blend_mode(opts.blend_mode.unwrap_or(atoms::src_over()))?"},
-            {:let, "paint",
-             "match opts.fill { Some(term) => decode_paint(term)?, None => fill_paint(Color::WHITE) }"},
-            {:let_mut, "paint", "paint"},
-            {:stmt, "apply_paint_effects(&mut paint, raw_opts)?"}
-          ],
-          body: [
-            {:call, "canvas", :draw_vertices, [{:ref, "vertices"}, "blend_mode", {:ref, "paint"}]}
-          ]
-        ],
         native_refs: ["skia_safe::Canvas::draw_vertices"]
       ],
       line: [
@@ -116,28 +68,8 @@ defmodule Skia.CommandSpec.Shapes do
           [name: :stroke_miter, type: :number],
           [name: :blend_mode, type: T.blend_mode()]
         ],
-        shape_draw: [
-          body: [
-            {:let, "color", "decode_color(opts.stroke)?"},
-            {:let, "paint", "stroke_paint(color, opts.stroke_width.unwrap_or(1.0), raw_opts)?"},
-            {:call, "canvas", :draw_line,
-             ["point_from_term(opts.from)?", "point_from_term(opts.to)?", "&paint"]}
-          ]
-        ],
         native_refs: ["skia_safe::Canvas::draw_line"]
       ]
-    ]
-  end
-
-  defp paint_shape_body(draw_call) do
-    [
-      {:if_let, "Some(mut paint)", "opt_fill_paint(raw_opts, atoms::fill())?",
-       [{:stmt, "apply_blend_mode(&mut paint, raw_opts)?"}, draw_call]},
-      {:if_let, "Some(color)", "opt_color(raw_opts, atoms::stroke())?",
-       [
-         {:let, "paint", "stroke_paint(color, opts.stroke_width.unwrap_or(1.0), raw_opts)?"},
-         draw_call
-       ]}
     ]
   end
 end
