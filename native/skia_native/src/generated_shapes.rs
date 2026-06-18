@@ -12,6 +12,33 @@ fn draw_clear_impl<'a>(
     };
     Ok(())
 }
+fn draw_oval_impl<'a>(
+    canvas: &skia_safe::Canvas,
+    opts: generated_opts::OvalOpts<'a>,
+    raw_opts: &[(Atom, Term<'a>)],
+) -> NifResult<()> {
+    let rect = Rect::from_xywh(opts.x, opts.y, opts.width, opts.height);
+    match opt_fill_paint(raw_opts, atoms::fill())? {
+        Some(paint) => {
+            let mut paint = paint;
+            apply_blend_mode(&mut paint, raw_opts)?;
+            canvas.draw_oval(rect, &paint);
+        }
+        None => {}
+    };
+    match opt_color(raw_opts, atoms::stroke())? {
+        Some(color) => {
+            let stroke_paint_value = stroke_paint(
+                color,
+                opts.stroke_width.unwrap_or(1.0),
+                raw_opts,
+            )?;
+            canvas.draw_oval(rect, &stroke_paint_value);
+        }
+        None => {}
+    };
+    Ok(())
+}
 fn draw_circle_impl<'a>(
     canvas: &skia_safe::Canvas,
     opts: generated_opts::CircleOpts<'a>,
@@ -63,22 +90,6 @@ fn draw_rect_impl<'a>(
     if let Some(color) = opt_color(raw_opts, atoms::stroke())? {
         let paint = stroke_paint(color, opts.stroke_width.unwrap_or(1.0), raw_opts)?;
         draw_rect_shape(canvas, rect, radius, &paint);
-    }
-    Ok(())
-}
-fn draw_oval_impl<'a>(
-    canvas: &skia_safe::Canvas,
-    opts: generated_opts::OvalOpts<'a>,
-    raw_opts: &[(Atom, Term<'a>)],
-) -> NifResult<()> {
-    let rect = Rect::from_xywh(opts.x, opts.y, opts.width, opts.height);
-    if let Some(mut paint) = opt_fill_paint(raw_opts, atoms::fill())? {
-        apply_blend_mode(&mut paint, raw_opts)?;
-        canvas.draw_oval(rect, &paint);
-    }
-    if let Some(color) = opt_color(raw_opts, atoms::stroke())? {
-        let paint = stroke_paint(color, opts.stroke_width.unwrap_or(1.0), raw_opts)?;
-        canvas.draw_oval(rect, &paint);
     }
     Ok(())
 }

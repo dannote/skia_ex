@@ -225,6 +225,33 @@ defmodule Skia.CodegenDefrustTest do
     assert circle_source =~ "let mut paint = paint;"
 
     assert %AST.Function{
+             name: :draw_oval_impl,
+             args: [
+               %AST.FunctionArg{},
+               %AST.FunctionArg{
+                 name: :opts,
+                 type: %AST.TypePath{parts: [:generated_opts, :OvalOpts], lifetimes: [:a]}
+               },
+               %AST.FunctionArg{name: :raw_opts, type: "&[(Atom, Term<'a>)]"}
+             ],
+             body: [
+               %AST.Let{pattern: %AST.PatVar{name: :rect}},
+               %AST.ExprStmt{expr: %AST.Match{}},
+               %AST.ExprStmt{expr: %AST.Match{}},
+               %AST.Return{}
+             ]
+           } = Enum.find(impls, &(&1.name == :draw_oval_impl))
+
+    oval_source =
+      impls
+      |> Enum.find(&(&1.name == :draw_oval_impl))
+      |> RustQ.Rust.AST.Render.render_function()
+
+    assert oval_source =~ "atoms::fill()"
+    assert oval_source =~ "atoms::stroke()"
+    assert oval_source =~ "canvas.draw_oval(rect, &paint);"
+
+    assert %AST.Function{
              name: :draw_line_impl,
              args: [
                %AST.FunctionArg{},
