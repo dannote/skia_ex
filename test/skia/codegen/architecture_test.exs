@@ -50,6 +50,9 @@ defmodule Skia.Codegen.ArchitectureTest do
     source = File.read!("lib/skia/codegen/command_overlay.ex")
     refute source =~ "opts:"
     refute source =~ "native_refs"
+    refute source =~ "native_shape"
+    assert source =~ "native: Canvas.draw_rect"
+    assert source =~ "native: Canvas.clip_rect"
   end
 
   test "codegen tests live under test/skia/codegen" do
