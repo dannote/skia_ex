@@ -18,26 +18,32 @@ fn draw_save_layer_impl<'a>(
         None => None,
     };
     let mut paint = Paint::default();
-    paint.set_alpha((opts.opacity.unwrap_or(1.0).clamp(0.0, 1.0) * 255.0).round() as u8);
+    let alpha = (opts.opacity.unwrap_or(1.0).clamp(0.0, 1.0) * 255.0).round() as u8;
+    paint.set_alpha(alpha);
     apply_blend_mode(&mut paint, raw_opts)?;
-    if let Some(sigma) = opts.blur {
-        if let Some(filter) = image_filters::blur(
-            (sigma, sigma),
-            TileMode::Decal,
-            None,
-            None,
-        ) {
+    match opts.blur {
+        Some(sigma) => {
+            match image_filters::blur((sigma, sigma), TileMode::Decal, None, None) {
+                Some(filter) => {
+                    paint.set_image_filter(filter);
+                }
+                None => {}
+            };
+        }
+        None => {}
+    };
+    match opts.image_filter {
+        Some(term) => {
+            let filter = decode_image_filter(term)?;
             paint.set_image_filter(filter);
         }
-    }
-    if let Some(term) = opts.image_filter {
-        let filter = decode_image_filter(term)?;
-        paint.set_image_filter(filter);
-    }
-    let mut rec = SaveLayerRec::default().paint(&paint);
-    if let Some(ref bounds) = bounds {
-        rec = rec.bounds(bounds);
-    }
+        None => {}
+    };
+    let rec = SaveLayerRec::default().paint(&paint);
+    let rec = match bounds.as_ref() {
+        Some(bounds) => rec.bounds(bounds),
+        None => rec,
+    };
     canvas.save_layer(&rec);
     Ok(())
 }

@@ -714,11 +714,14 @@ defmodule Skia.Codegen do
       |> Enum.filter(&String.ends_with?(Atom.to_string(&1.name), "_impl"))
       |> Enum.map(&render_rustq_item/1)
 
-    defrust_items = command_impls ++ Skia.Codegen.GeneratedLayers.__rustq_items__()
+    defrust_items =
+      command_impls ++
+        Skia.Codegen.GeneratedLayers.__rustq_items__() ++
+        Enum.map(Rusty.Layers.generated_asts(), &render_rustq_item/1)
 
     legacy_items =
       Layers.commands()
-      |> Keyword.drop([:save, :restore])
+      |> Keyword.drop([:save, :restore] ++ Rusty.Layers.commands())
       |> generated_body_impls(:layer)
 
     render_items(defrust_items ++ legacy_items, "generated_layers.rs")
