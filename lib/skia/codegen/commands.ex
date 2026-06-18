@@ -97,15 +97,9 @@ defmodule Skia.Codegen.Commands do
   defp native_doc(spec) do
     with %{ref: ref, method: %{docs: [_ | _] = docs}} <- Keyword.get(spec, :native) do
       ["Native `#{RustQ.NativeRef.format(ref)}` docs:" | docs]
-      |> Enum.map(&normalize_native_doc_line/1)
-      |> Enum.join("\n")
+      |> RustQ.Syn.Doc.markdown()
     else
       _ -> nil
     end
-  end
-
-  defp normalize_native_doc_line(line) do
-    line
-    |> String.replace(~r/\[`(?:crate::)?([^\]]+)`\]/, "`\\1`")
   end
 end
