@@ -16,12 +16,13 @@ defmodule Skia.Codegen.NativeSchema do
 
   defmodule Method do
     @moduledoc "Native skia-safe method descriptor."
-    defstruct [:target, :name, :method]
+    defstruct [:target, :name, :method, :source_url]
 
     @type t :: %__MODULE__{
             target: String.t(),
             name: String.t(),
-            method: RustQ.Syn.Method.t()
+            method: RustQ.Syn.Method.t(),
+            source_url: String.t() | nil
           }
   end
 
@@ -55,7 +56,14 @@ defmodule Skia.Codegen.NativeSchema do
 
   @spec descriptor!(String.t(), String.t()) :: Method.t()
   def descriptor!(target, name) when is_binary(target) and is_binary(name) do
-    %Method{target: target, name: name, method: method!(target, name)}
+    method = method!(target, name)
+
+    %Method{
+      target: target,
+      name: name,
+      method: method,
+      source_url: method_source_url(method)
+    }
   end
 
   @spec assert_method_shape!(String.t(), String.t(), keyword()) :: Method.t()
@@ -106,6 +114,12 @@ defmodule Skia.Codegen.NativeSchema do
     |> Path.wildcard()
     |> Enum.sort()
   end
+
+  defp method_source_url(%RustQ.Syn.Method{source_path: path, source_line: line})
+       when is_binary(path) and is_integer(line),
+       do: source_link(path, line)
+
+  defp method_source_url(_method), do: nil
 
   defp build_index do
     index = RustQ.Syn.Index.from_paths(source_paths())

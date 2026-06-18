@@ -7,8 +7,14 @@ defmodule Skia.Codegen.CommandsTest do
     assert %RustQ.NativeRef{package: "skia-safe", target: "Canvas", member: "draw_rect"} =
              get_in(rect, [:overlay, :native])
 
-    assert %Skia.Codegen.NativeSchema.Method{target: "Canvas", name: "draw_rect", method: method} =
-             Keyword.fetch!(rect, :native)
+    assert %Skia.Codegen.NativeSchema.Method{
+             target: "Canvas",
+             name: "draw_rect",
+             method: method,
+             source_url: source_url
+           } = Keyword.fetch!(rect, :native)
+
+    assert source_url =~ "https://docs.rs/crate/skia-safe/"
 
     assert [
              %RustQ.Syn.Arg{name: "self"},

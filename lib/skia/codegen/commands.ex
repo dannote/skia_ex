@@ -79,14 +79,14 @@ defmodule Skia.Codegen.Commands do
   end
 
   defp native_source(spec) do
-    with %{method: %{source_path: path, source_line: line}} <- Keyword.get(spec, :native),
+    with %{method: %{source_path: path, source_line: line}, source_url: source_url} <-
+           Keyword.get(spec, :native),
          true <- is_binary(path),
          true <- is_integer(line) do
       relative = Path.relative_to(path, Skia.Codegen.NativeSchema.source_root!())
-      link = Skia.Codegen.NativeSchema.source_link(path, line)
 
-      if link do
-        "Native source: [`#{relative}:#{line}`](#{link})"
+      if source_url do
+        "Native source: [`#{relative}:#{line}`](#{source_url})"
       else
         "Native source: `#{relative}:#{line}`"
       end
