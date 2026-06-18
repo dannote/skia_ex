@@ -6,19 +6,12 @@ defmodule Skia.Codegen.SkiaSafe do
 
   @spec enum_variants(String.t()) :: [{String.t(), String.t()}]
   def enum_variants(enum_name) when is_binary(enum_name) do
-    docs = bindings_docs!()
-
-    case Regex.run(~r/pub enum #{Regex.escape(enum_name)} \{(?<body>.*?)\n\}/s, docs,
-           capture: ["body"]
-         ) do
-      [body] ->
-        body
-        |> String.split("\n")
-        |> Enum.flat_map(&variant_atom(String.trim(&1)))
-
-      nil ->
-        raise "cannot find Skia enum #{enum_name} in #{bindings_docs_path()}"
-    end
+    bindings_docs!()
+    |> RustQ.Syn.enum_variants!(enum_name)
+    |> Enum.map(&{Macro.underscore(&1), &1})
+  rescue
+    RustQ.Error ->
+      raise "cannot find Skia enum #{enum_name} in #{bindings_docs_path()}"
   end
 
   @spec native_refs(keyword()) :: [String.t()]
@@ -55,13 +48,6 @@ defmodule Skia.Codegen.SkiaSafe do
   end
 
   def native_ref_exists?(_ref), do: true
-
-  defp variant_atom(line) do
-    case Regex.run(~r/^([A-Za-z][A-Za-z0-9_]*)\s*=/, line, capture: :all_but_first) do
-      [name] -> [{Macro.underscore(name), name}]
-      nil -> []
-    end
-  end
 
   defp bindings_docs! do
     bindings_docs_path()
