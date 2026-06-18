@@ -4,7 +4,8 @@ defmodule Skia.Codegen.ShapeImpls do
 
   This module is the shape-family equivalent of `Skia.Codegen.TransformImpls`:
   Skia derives the generated Rust signature types, while RustQ lowers valid
-  Elixir bodies through `RustQ.Meta.quoted/2`.
+  Elixir bodies through `defrust`; Skia derives the generated Rust signature
+  types in `@spec`s while RustQ lowers valid Rusty Elixir bodies.
   """
 
   alias RustQ.Rust.AST
@@ -25,16 +26,7 @@ defmodule Skia.Codegen.ShapeImpls do
   end
 
   defp generated_ast(:clear, spec) do
-    handler = Keyword.fetch!(spec, :handler)
-
-    RustQ.Meta.quoted(String.to_atom("#{handler}_impl"),
-      args: [
-        canvas: T.ref([:skia_safe, :Canvas]),
-        args: T.vec(T.term())
-      ],
-      returns: T.nif_result(T.unit()),
-      do: clear_body_quote!()
-    )
+    spec |> Keyword.fetch!(:handler) |> impl_ast!()
   end
 
   defp generated_ast(:circle, spec) do
@@ -59,25 +51,15 @@ defmodule Skia.Codegen.ShapeImpls do
     )
   end
 
-  defp generated_ast(name, spec) do
-    handler = Keyword.fetch!(spec, :handler)
-
-    RustQ.Meta.quoted(String.to_atom("#{handler}_impl"),
-      args: ImplHelpers.command_impl_args(name, :raw_opts),
-      returns: T.nif_result(T.unit()),
-      do: line_body_quote!()
-    )
+  defp generated_ast(_name, spec) do
+    spec |> Keyword.fetch!(:handler) |> impl_ast!()
   end
 
-  defp clear_body_quote! do
-    quote do
-      case args.first().and_then(fn term -> decode_color(deref(term)).ok() end) do
-        {:some, color} -> canvas.clear(color)
-        :none -> :ok
-      end
+  defp impl_ast!(handler) do
+    name = String.to_atom("#{handler}_impl")
 
-      :ok
-    end
+    Enum.find(__MODULE__.Rusty.__rustq_asts__(), &(&1.name == name)) ||
+      raise "missing Rusty shape impl #{name}"
   end
 
   defp circle_body_quote! do
@@ -138,8 +120,30 @@ defmodule Skia.Codegen.ShapeImpls do
     end
   end
 
-  defp line_body_quote! do
-    quote do
+  defmodule Rusty do
+    @moduledoc false
+
+    use RustQ.Meta
+
+    alias RustQ.Type, as: R
+
+    @spec draw_clear_impl(R.ref(R.path({:skia_safe, :Canvas})), R.vec(R.term())) ::
+            R.nif_result(R.unit())
+    defrust draw_clear_impl(canvas, args) do
+      case args.first().and_then(fn term -> decode_color(deref(term)).ok() end) do
+        {:some, color} -> canvas.clear(color)
+        :none -> :ok
+      end
+
+      :ok
+    end
+
+    @spec draw_line_impl(
+            R.ref(R.path({:skia_safe, :Canvas})),
+            R.path({:generated_opts, :LineOpts}, R.lifetime(:a)),
+            R.slice({R.atom(), R.term()})
+          ) :: R.nif_result(R.unit())
+    defrust draw_line_impl(canvas, opts, raw_opts) do
       color = unwrap!(decode_color(opts.stroke))
 
       paint =

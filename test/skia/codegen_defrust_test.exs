@@ -259,7 +259,7 @@ defmodule Skia.CodegenDefrustTest do
                  name: :opts,
                  type: %AST.TypePath{parts: [:generated_opts, :LineOpts], lifetimes: [:a]}
                },
-               %AST.FunctionArg{name: :raw_opts, type: "&[(Atom, Term<'a>)]"}
+               %AST.FunctionArg{name: :raw_opts, type: {:raw, "&[(Atom, Term<'a>)]"}}
              ],
              body: [
                %AST.Let{pattern: %AST.PatVar{name: :color}},
