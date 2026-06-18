@@ -10,7 +10,7 @@ defmodule Skia.Codegen.ShapeImpls do
   alias RustQ.Rust.AST
   alias Skia.CommandSpec.Shapes
 
-  @commands [:clear, :rect, :circle, :oval, :arc, :line]
+  @commands [:clear, :rect, :circle, :oval, :arc, :vertices, :line]
 
   @spec commands() :: [atom()]
   def commands, do: @commands
@@ -140,6 +140,30 @@ defmodule Skia.Codegen.ShapeImpls do
           ref(stroke_paint_value)
         )
       end
+
+      :ok
+    end
+
+    @spec draw_vertices_impl(
+            R.ref(SkiaSafe.Canvas.t()),
+            R.vec(R.term()),
+            GeneratedOpts.VerticesOpts.t(R.lifetime(:a)),
+            R.slice({R.atom(), R.term()})
+          ) :: R.nif_result(R.unit())
+    defrust draw_vertices_impl(canvas, args, opts, raw_opts) do
+      vertices = unwrap!(vertices_from_term(deref(unwrap!(args.first().ok_or(badarg())))))
+
+      blend_mode =
+        unwrap!(GeneratedEnums.decode_blend_mode(opts.blend_mode.unwrap_or(Atoms.src_over())))
+
+      paint =
+        case opts.fill do
+          {:some, term} -> unwrap!(decode_paint(term))
+          :none -> fill_paint(Color.WHITE)
+        end
+
+      unwrap!(apply_paint_effects(mut_ref(paint), raw_opts))
+      canvas.draw_vertices(ref(vertices), blend_mode, ref(paint))
 
       :ok
     end

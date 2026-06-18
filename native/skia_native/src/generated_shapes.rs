@@ -136,6 +136,24 @@ fn draw_circle_impl<'a>(
     };
     Ok(())
 }
+fn draw_vertices_impl<'a>(
+    canvas: &skia_safe::Canvas,
+    args: Vec<Term<'a>>,
+    opts: generated_opts::VerticesOpts<'a>,
+    raw_opts: &[(Atom, Term<'a>)],
+) -> NifResult<()> {
+    let vertices = vertices_from_term(*args.first().ok_or(rustler::Error::BadArg)?)?;
+    let blend_mode = generated_enums::decode_blend_mode(
+        opts.blend_mode.unwrap_or(atoms::src_over()),
+    )?;
+    let mut paint = match opts.fill {
+        Some(term) => decode_paint(term)?,
+        None => fill_paint(Color::WHITE),
+    };
+    apply_paint_effects(&mut paint, raw_opts)?;
+    canvas.draw_vertices(&vertices, blend_mode, &paint);
+    Ok(())
+}
 fn draw_line_impl<'a>(
     canvas: &skia_safe::Canvas,
     opts: generated_opts::LineOpts<'a>,
@@ -158,23 +176,4 @@ fn draw_rect_shape(
         canvas.draw_rect(rect, paint);
     };
     ()
-}
-fn draw_vertices_impl<'a>(
-    canvas: &skia_safe::Canvas,
-    args: Vec<Term<'a>>,
-    opts: generated_opts::VerticesOpts<'a>,
-    raw_opts: &[(Atom, Term<'a>)],
-) -> NifResult<()> {
-    let vertices = vertices_from_term(*args.first().ok_or(rustler::Error::BadArg)?)?;
-    let blend_mode = generated_enums::decode_blend_mode(
-        opts.blend_mode.unwrap_or(atoms::src_over()),
-    )?;
-    let paint = match opts.fill {
-        Some(term) => decode_paint(term)?,
-        None => fill_paint(Color::WHITE),
-    };
-    let mut paint = paint;
-    apply_paint_effects(&mut paint, raw_opts)?;
-    canvas.draw_vertices(&vertices, blend_mode, &paint);
-    Ok(())
 }
