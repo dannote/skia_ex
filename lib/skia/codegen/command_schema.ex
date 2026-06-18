@@ -23,6 +23,9 @@ defmodule Skia.Codegen.CommandSchema do
     {types, specs, defs} = collect_declarations(quoted)
 
     specs
+    |> Enum.filter(fn {name, spec_arg_types} ->
+      Map.has_key?(defs, name) and is_list(spec_arg_types) and length(spec_arg_types) >= 3
+    end)
     |> Enum.map(fn {name, spec_arg_types} ->
       def_args = Map.fetch!(defs, name)
       command_from_spec(name, def_args, spec_arg_types, types)
@@ -45,7 +48,7 @@ defmodule Skia.Codegen.CommandSchema do
         {types, Map.put(specs, name, arg_types), defs}
 
       {:def, _, [{name, _, args}, _body]}, {types, specs, defs} ->
-        {types, specs, Map.put(defs, name, Enum.map(args, &arg_name!/1))}
+        {types, specs, Map.put(defs, name, Enum.map(args || [], &arg_name!/1))}
 
       _other, acc ->
         acc
@@ -84,6 +87,21 @@ defmodule Skia.Codegen.CommandSchema do
 
   defp expand_type(other, _types), do: other
 
+  defp command_type({:blend_mode, _, []}, _types),
+    do: {:enum, :blend_mode, skia: "SkBlendMode", rust: :BlendMode}
+
+  defp command_type({:stroke_cap, _, []}, _types),
+    do: {:enum, :stroke_cap, skia: "SkPaint_Cap", rust: "paint::Cap"}
+
+  defp command_type({:stroke_join, _, []}, _types),
+    do: {:enum, :stroke_join, skia: "SkPaint_Join", rust: "paint::Join"}
+
+  defp command_type({:fill_rule, _, []}, _types),
+    do: {:enum, :fill_rule, skia: "SkPathFillType", rust: :PathFillType}
+
+  defp command_type({:path_op, _, []}, _types),
+    do: {:enum, :path_op, skia: "SkPathOp", rust: :PathOp}
+
   defp command_type(ast, types) do
     ast = expand_type(ast, types)
 
@@ -97,8 +115,6 @@ defmodule Skia.Codegen.CommandSchema do
       {{:., _, [{:__aliases__, _, [:Skia, :Command]}, :color]}, _, []} -> :color
       {:number, _, []} -> :number
       {:atom, _, []} -> :atom
-      {:fill_rule, _, []} -> {:enum, :fill_rule}
-      {:path_op, _, []} -> {:enum, :path_op}
       _other -> :term
     end
   end

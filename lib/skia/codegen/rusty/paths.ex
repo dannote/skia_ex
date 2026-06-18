@@ -4,7 +4,7 @@ defmodule Skia.Codegen.Rusty.Paths do
   """
 
   alias RustQ.Rust.AST
-  alias Skia.CommandSpec.Paths
+  alias Skia.Codegen.Commands.Paths
 
   @commands [:path, :path_op, :path_outline]
 

@@ -13,7 +13,7 @@ defmodule Skia.CommandSpec do
     Skia.CommandSpec.Images,
     Skia.CommandSpec.Layers,
     Skia.CommandSpec.Transforms,
-    Skia.CommandSpec.Paths,
+    Skia.Codegen.Commands.Paths,
     Skia.CommandSpec.Clips
   ]
 
