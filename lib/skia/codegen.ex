@@ -750,24 +750,12 @@ defmodule Skia.Codegen do
       |> Keyword.drop(ShapeImpls.commands())
       |> generated_body_impls(:shape_draw)
 
-    render_items(defrust_items ++ legacy_items ++ [rect_shape_helper()], "generated_shapes.rs")
+    render_items(defrust_items ++ legacy_items, "generated_shapes.rs")
   end
 
   @doc false
   @spec generated_shape_impl_asts() :: [AST.Function.t()]
   def generated_shape_impl_asts, do: ShapeImpls.generated_asts()
-
-  defp rect_shape_helper do
-    Rust.item("""
-    fn draw_rect_shape(canvas: &skia_safe::Canvas, rect: Rect, radius: f32, paint: &Paint) {
-        if radius > 0.0 {
-            canvas.draw_rrect(RRect::new_rect_xy(rect, radius, radius), paint);
-        } else {
-            canvas.draw_rect(rect, paint);
-        }
-    }
-    """)
-  end
 
   @spec generated_text() :: String.t()
   def generated_text do

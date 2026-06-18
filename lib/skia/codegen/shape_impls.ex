@@ -10,16 +10,19 @@ defmodule Skia.Codegen.ShapeImpls do
   alias RustQ.Rust.AST
   alias Skia.CommandSpec.Shapes
 
-  @commands [:clear, :circle, :oval, :line]
+  @commands [:clear, :rect, :circle, :oval, :arc, :line]
 
   @spec commands() :: [atom()]
   def commands, do: @commands
 
   @spec generated_asts() :: [AST.Function.t()]
   def generated_asts do
-    Shapes.commands()
-    |> Keyword.take(@commands)
-    |> Enum.map(fn {name, spec} -> generated_ast(name, spec) end)
+    command_asts =
+      Shapes.commands()
+      |> Keyword.take(@commands)
+      |> Enum.map(fn {name, spec} -> generated_ast(name, spec) end)
+
+    command_asts ++ helper_asts()
   end
 
   defp generated_ast(_name, spec) do
@@ -29,6 +32,12 @@ defmodule Skia.Codegen.ShapeImpls do
   defp impl_ast!(handler) do
     name = String.to_atom("#{handler}_impl")
 
+    rust_ast!(name)
+  end
+
+  defp helper_asts, do: [rust_ast!(:draw_rect_shape)]
+
+  defp rust_ast!(name) do
     Enum.find(__MODULE__.Rusty.__rustq_asts__(), &(&1.name == name)) ||
       raise "missing Rusty shape impl #{name}"
   end
@@ -79,6 +88,26 @@ defmodule Skia.Codegen.ShapeImpls do
       :ok
     end
 
+    @spec draw_rect_impl(
+            R.ref(SkiaSafe.Canvas.t()),
+            GeneratedOpts.RectOpts.t(R.lifetime(:a)),
+            R.slice({R.atom(), R.term()})
+          ) :: R.nif_result(R.unit())
+    defrust draw_rect_impl(canvas, opts, raw_opts) do
+      rect = Rect.from_xywh(opts.x, opts.y, opts.width, opts.height)
+      radius = opts.radius.unwrap_or(0.0)
+
+      with_fill_paint do
+        draw_rect_shape(canvas, rect, radius, ref(paint))
+      end
+
+      with_stroke_paint opts.stroke_width.unwrap_or(1.0) do
+        draw_rect_shape(canvas, rect, radius, ref(stroke_paint_value))
+      end
+
+      :ok
+    end
+
     @spec draw_circle_impl(
             R.ref(SkiaSafe.Canvas.t()),
             GeneratedOpts.CircleOpts.t(R.lifetime(:a)),
@@ -117,6 +146,32 @@ defmodule Skia.Codegen.ShapeImpls do
       :ok
     end
 
+    @spec draw_arc_impl(
+            R.ref(SkiaSafe.Canvas.t()),
+            GeneratedOpts.ArcOpts.t(R.lifetime(:a)),
+            R.slice({R.atom(), R.term()})
+          ) :: R.nif_result(R.unit())
+    defrust draw_arc_impl(canvas, opts, raw_opts) do
+      rect = Rect.from_xywh(opts.x, opts.y, opts.width, opts.height)
+      use_center = opts.use_center.unwrap_or(false)
+
+      with_fill_paint do
+        canvas.draw_arc(rect, opts.start_degrees, opts.sweep_degrees, use_center, ref(paint))
+      end
+
+      with_stroke_paint opts.stroke_width.unwrap_or(1.0) do
+        canvas.draw_arc(
+          rect,
+          opts.start_degrees,
+          opts.sweep_degrees,
+          use_center,
+          ref(stroke_paint_value)
+        )
+      end
+
+      :ok
+    end
+
     @spec draw_line_impl(
             R.ref(SkiaSafe.Canvas.t()),
             GeneratedOpts.LineOpts.t(R.lifetime(:a)),
@@ -133,6 +188,18 @@ defmodule Skia.Codegen.ShapeImpls do
         unwrap!(point_from_term(opts.to)),
         ref(paint)
       )
+
+      :ok
+    end
+
+    @spec draw_rect_shape(R.ref(SkiaSafe.Canvas.t()), Rect.t(), R.f32(), R.ref(Paint.t())) ::
+            R.unit()
+    defrust draw_rect_shape(canvas, rect, radius, paint) do
+      if radius > 0.0 do
+        canvas.draw_rrect(RRect.new_rect_xy(rect, radius, radius), paint)
+      else
+        canvas.draw_rect(rect, paint)
+      end
 
       :ok
     end

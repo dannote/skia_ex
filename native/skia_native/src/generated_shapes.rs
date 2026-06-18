@@ -12,6 +12,34 @@ fn draw_clear_impl<'a>(
     };
     Ok(())
 }
+fn draw_rect_impl<'a>(
+    canvas: &skia_safe::Canvas,
+    opts: generated_opts::RectOpts<'a>,
+    raw_opts: &[(Atom, Term<'a>)],
+) -> NifResult<()> {
+    let rect = Rect::from_xywh(opts.x, opts.y, opts.width, opts.height);
+    let radius = opts.radius.unwrap_or(0.0);
+    match opt_fill_paint(raw_opts, atoms::fill())? {
+        Some(paint) => {
+            let mut paint = paint;
+            apply_blend_mode(&mut paint, raw_opts)?;
+            draw_rect_shape(canvas, rect, radius, &paint);
+        }
+        None => {}
+    };
+    match opt_color(raw_opts, atoms::stroke())? {
+        Some(color) => {
+            let stroke_paint_value = stroke_paint(
+                color,
+                opts.stroke_width.unwrap_or(1.0),
+                raw_opts,
+            )?;
+            draw_rect_shape(canvas, rect, radius, &stroke_paint_value);
+        }
+        None => {}
+    };
+    Ok(())
+}
 fn draw_oval_impl<'a>(
     canvas: &skia_safe::Canvas,
     opts: generated_opts::OvalOpts<'a>,
@@ -34,6 +62,48 @@ fn draw_oval_impl<'a>(
                 raw_opts,
             )?;
             canvas.draw_oval(rect, &stroke_paint_value);
+        }
+        None => {}
+    };
+    Ok(())
+}
+fn draw_arc_impl<'a>(
+    canvas: &skia_safe::Canvas,
+    opts: generated_opts::ArcOpts<'a>,
+    raw_opts: &[(Atom, Term<'a>)],
+) -> NifResult<()> {
+    let rect = Rect::from_xywh(opts.x, opts.y, opts.width, opts.height);
+    let use_center = opts.use_center.unwrap_or(false);
+    match opt_fill_paint(raw_opts, atoms::fill())? {
+        Some(paint) => {
+            let mut paint = paint;
+            apply_blend_mode(&mut paint, raw_opts)?;
+            canvas
+                .draw_arc(
+                    rect,
+                    opts.start_degrees,
+                    opts.sweep_degrees,
+                    use_center,
+                    &paint,
+                );
+        }
+        None => {}
+    };
+    match opt_color(raw_opts, atoms::stroke())? {
+        Some(color) => {
+            let stroke_paint_value = stroke_paint(
+                color,
+                opts.stroke_width.unwrap_or(1.0),
+                raw_opts,
+            )?;
+            canvas
+                .draw_arc(
+                    rect,
+                    opts.start_degrees,
+                    opts.sweep_degrees,
+                    use_center,
+                    &stroke_paint_value,
+                );
         }
         None => {}
     };
@@ -76,41 +146,18 @@ fn draw_line_impl<'a>(
     canvas.draw_line(point_from_term(opts.from)?, point_from_term(opts.to)?, &paint);
     Ok(())
 }
-fn draw_rect_impl<'a>(
+fn draw_rect_shape(
     canvas: &skia_safe::Canvas,
-    opts: generated_opts::RectOpts<'a>,
-    raw_opts: &[(Atom, Term<'a>)],
-) -> NifResult<()> {
-    let rect = Rect::from_xywh(opts.x, opts.y, opts.width, opts.height);
-    let radius = opts.radius.unwrap_or(0.0);
-    if let Some(mut paint) = opt_fill_paint(raw_opts, atoms::fill())? {
-        apply_blend_mode(&mut paint, raw_opts)?;
-        draw_rect_shape(canvas, rect, radius, &paint);
-    }
-    if let Some(color) = opt_color(raw_opts, atoms::stroke())? {
-        let paint = stroke_paint(color, opts.stroke_width.unwrap_or(1.0), raw_opts)?;
-        draw_rect_shape(canvas, rect, radius, &paint);
-    }
-    Ok(())
-}
-fn draw_arc_impl<'a>(
-    canvas: &skia_safe::Canvas,
-    opts: generated_opts::ArcOpts<'a>,
-    raw_opts: &[(Atom, Term<'a>)],
-) -> NifResult<()> {
-    let rect = Rect::from_xywh(opts.x, opts.y, opts.width, opts.height);
-    let use_center = opts.use_center.unwrap_or(false);
-    if let Some(mut paint) = opt_fill_paint(raw_opts, atoms::fill())? {
-        apply_blend_mode(&mut paint, raw_opts)?;
-        canvas
-            .draw_arc(rect, opts.start_degrees, opts.sweep_degrees, use_center, &paint);
-    }
-    if let Some(color) = opt_color(raw_opts, atoms::stroke())? {
-        let paint = stroke_paint(color, opts.stroke_width.unwrap_or(1.0), raw_opts)?;
-        canvas
-            .draw_arc(rect, opts.start_degrees, opts.sweep_degrees, use_center, &paint);
-    }
-    Ok(())
+    rect: Rect,
+    radius: f32,
+    paint: &Paint,
+) -> () {
+    if radius > 0.0 {
+        canvas.draw_rrect(RRect::new_rect_xy(rect, radius, radius), paint);
+    } else {
+        canvas.draw_rect(rect, paint);
+    };
+    ()
 }
 fn draw_vertices_impl<'a>(
     canvas: &skia_safe::Canvas,
@@ -130,11 +177,4 @@ fn draw_vertices_impl<'a>(
     apply_paint_effects(&mut paint, raw_opts)?;
     canvas.draw_vertices(&vertices, blend_mode, &paint);
     Ok(())
-}
-fn draw_rect_shape(canvas: &skia_safe::Canvas, rect: Rect, radius: f32, paint: &Paint) {
-    if radius > 0.0 {
-        canvas.draw_rrect(RRect::new_rect_xy(rect, radius, radius), paint);
-    } else {
-        canvas.draw_rect(rect, paint);
-    }
 }
