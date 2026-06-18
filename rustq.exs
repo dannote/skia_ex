@@ -101,7 +101,3 @@ end
 generate :generated_path, "native/skia_native/src/generated_path.rs" do
   build(&Skia.Codegen.generated_path/0)
 end
-
-generate :command_docs, "docs/commands.md" do
-  build(&Skia.Codegen.generated_docs/0)
-end

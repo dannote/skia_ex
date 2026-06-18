@@ -29,6 +29,21 @@ defmodule Skia.Codegen.ArchitectureTest do
     refute source =~ ".cargo/registry"
   end
 
+  test "atom generation is derived from code and Syn instead of a manual atom list" do
+    source = File.read!("lib/skia/codegen.ex")
+
+    refute source =~ "@native_atoms"
+    assert source =~ "RustQ.Syn.atom_references!"
+  end
+
+  test "legacy generated command markdown is gone" do
+    refute File.exists?("docs/commands.md")
+
+    config = File.read!("rustq.exs")
+    refute config =~ "command_docs"
+    refute config =~ "generated_docs"
+  end
+
   test "native overlays stay ergonomic and validate native methods" do
     assert Skia.Codegen.CommandOverlay.validate_native!() == :ok
 
