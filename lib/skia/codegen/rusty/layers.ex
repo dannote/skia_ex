@@ -6,7 +6,7 @@ defmodule Skia.Codegen.Rusty.Layers do
   """
 
   alias RustQ.Rust.AST
-  alias Skia.CommandSpec.Layers
+  alias Skia.Codegen.Commands.Layers
 
   @commands [:save_layer]
   @simple_commands [:save, :restore]

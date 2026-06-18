@@ -4,7 +4,7 @@ defmodule Skia.Codegen.Rusty.Images do
   """
 
   alias RustQ.Rust.AST
-  alias Skia.CommandSpec.Images
+  alias Skia.Codegen.Commands.Images
 
   @commands [:image, :picture]
 

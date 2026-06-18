@@ -7,7 +7,7 @@ defmodule Skia.Codegen.Rusty.Text do
   """
 
   alias RustQ.Rust.AST
-  alias Skia.CommandSpec.Text
+  alias Skia.Codegen.Commands.Text
 
   @commands [:text_blob, :text]
 

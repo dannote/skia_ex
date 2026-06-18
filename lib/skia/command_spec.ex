@@ -9,9 +9,9 @@ defmodule Skia.CommandSpec do
 
   @domains [
     Skia.Codegen.Commands.Shapes,
-    Skia.CommandSpec.Text,
-    Skia.CommandSpec.Images,
-    Skia.CommandSpec.Layers,
+    Skia.Codegen.Commands.Text,
+    Skia.Codegen.Commands.Images,
+    Skia.Codegen.Commands.Layers,
     Skia.Codegen.Commands.Transforms,
     Skia.Codegen.Commands.Paths,
     Skia.Codegen.Commands.Clips

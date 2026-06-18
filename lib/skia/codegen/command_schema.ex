@@ -108,6 +108,19 @@ defmodule Skia.Codegen.CommandSchema do
   defp command_type({:clip_op, _, []}, _types),
     do: {:enum, :clip_op, skia: "SkClipOp", rust: :ClipOp}
 
+  defp command_type({:sampling, _, []}, _types),
+    do: {:enum, :sampling, skia: "SkFilterMode", rust: :FilterMode}
+
+  defp command_type({:font, _, []}, _types), do: :font
+  defp command_type({:point, _, []}, _types), do: {:tuple, [:number, :number]}
+  defp command_type({:bounds, _, []}, _types), do: {:tuple, [:number, :number, :number, :number]}
+
+  defp command_type({:source_rect, _, []}, _types),
+    do: {:tuple, [:number, :number, :number, :number]}
+
+  defp command_type({:matrix, _, []}, _types),
+    do: {:tuple, [:number, :number, :number, :number, :number, :number]}
+
   defp command_type(ast, types) do
     ast = expand_type(ast, types)
 
@@ -120,6 +133,18 @@ defmodule Skia.Codegen.CommandSchema do
 
       {{:., _, [{:__aliases__, _, [:Skia, :Vertices]}, :t]}, _, []} ->
         :vertices
+
+      {{:., _, [{:__aliases__, _, [:Skia, :Image]}, :t]}, _, []} ->
+        :image
+
+      {{:., _, [{:__aliases__, _, [:Skia, :Picture]}, :t]}, _, []} ->
+        :picture
+
+      {{:., _, [{:__aliases__, _, [:Skia, :TextBlob]}, :t]}, _, []} ->
+        :text_blob
+
+      {{:., _, [{:__aliases__, _, [:Skia, :SamplingOptions]}, :t]}, _, []} ->
+        :sampling_options
 
       {{:., _, [{:__aliases__, _, [:Skia, :ImageFilter]}, :t]}, _, []} ->
         :image_filter
@@ -136,17 +161,32 @@ defmodule Skia.Codegen.CommandSchema do
       {{:., _, [{:__aliases__, _, [:Skia, :Command]}, :color]}, _, []} ->
         :color
 
+      {{:., _, [{:__aliases__, _, [:String]}, :t]}, _, []} ->
+        :string
+
       {:number, _, []} ->
         :number
 
       {:boolean, _, []} ->
         :boolean
 
+      {:integer, _, []} ->
+        :integer
+
       {:atom, _, []} ->
         :atom
 
+      {:string, _, []} ->
+        :string
+
+      {:font, _, []} ->
+        :font
+
       {:{}, _, [{:number, _, []}, {:number, _, []}]} ->
         {:tuple, [:number, :number]}
+
+      {:{}, _, [{:number, _, []}, {:number, _, []}, {:number, _, []}, {:number, _, []}]} ->
+        {:tuple, [:number, :number, :number, :number]}
 
       {:{}, _,
        [
