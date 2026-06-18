@@ -78,6 +78,20 @@ defmodule Skia.CodegenDefrustTest do
     assert source =~ "apply_fill_rule(&mut path, raw_opts)?;"
   end
 
+  test "image impls are generated from Rusty Elixir" do
+    source = Skia.Codegen.generated_images()
+
+    assert source =~ "fn draw_image_impl<'a>("
+    assert source =~ "let image = image_from_term(*args.first().ok_or(rustler::Error::BadArg)?)?;"
+    assert source =~ "let alpha = (opacity.clamp(0.0, 1.0) * 255.0).round() as u8;"
+
+    assert source =~
+             "draw_image_source_or_default(canvas, image, source, opts, sampling, &paint);"
+
+    assert source =~ "fn draw_picture_impl<'a>("
+    assert source =~ "canvas.draw_picture(&picture, None, Some(&paint));"
+  end
+
   test "path impls are generated from Rusty Elixir" do
     source = Skia.Codegen.generated_draw_paths()
 

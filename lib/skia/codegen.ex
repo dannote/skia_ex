@@ -767,9 +767,14 @@ defmodule Skia.Codegen do
 
   @spec generated_images() :: String.t()
   def generated_images do
-    Images.commands()
-    |> generated_body_impls(:image_draw)
-    |> render_items("generated_images.rs")
+    defrust_items = Enum.map(Rusty.Images.generated_asts(), &render_rustq_item/1)
+
+    legacy_items =
+      Images.commands()
+      |> Keyword.drop(Rusty.Images.commands())
+      |> generated_body_impls(:image_draw)
+
+    render_items(defrust_items ++ legacy_items, "generated_images.rs")
   end
 
   @spec generated_draw_paths() :: String.t()

@@ -3,7 +3,7 @@
 use rustler::{Atom, Binary, Encoder, Env, NifResult, OwnedBinary, ResourceArc, Term};
 use rustler::types::map::map_new;
 use skia_safe::{
-    canvas::SaveLayerRec,
+    canvas::{SaveLayerRec, SrcRectConstraint},
     font_style::{Slant, Weight, Width},
     vertices::VertexMode,
     image_filters, path_utils, surfaces,

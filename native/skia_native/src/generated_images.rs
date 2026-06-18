@@ -9,49 +9,51 @@ fn draw_image_impl<'a>(
     let image = image_from_term(*args.first().ok_or(rustler::Error::BadArg)?)?;
     let mut paint = Paint::default();
     paint.set_anti_alias(true);
-    if let Some(opacity) = opts.opacity {
-        paint.set_alpha((opacity.clamp(0.0, 1.0) * 255.0).round() as u8);
-    }
+    match opts.opacity {
+        Some(opacity) => {
+            let alpha = (opacity.clamp(0.0, 1.0) * 255.0).round() as u8;
+            paint.set_alpha(alpha);
+        }
+        None => {}
+    };
     apply_blend_mode(&mut paint, raw_opts)?;
     let sampling = opt_sampling(raw_opts, atoms::sampling())?;
     let source = match opts.source {
         Some(term) => Some(rect_from_term(term)?),
         None => None,
     };
-    match (opts.width, opts.height, source) {
-        (Some(width), Some(height), source) => {
-            let src = source
-                .as_ref()
-                .map(|rect| (rect, skia_safe::canvas::SrcRectConstraint::Strict));
-            canvas
-                .draw_image_rect_with_sampling_options(
-                    image,
-                    src,
-                    Rect::from_xywh(opts.x, opts.y, width, height),
-                    sampling,
-                    &paint,
-                );
+    match opts.width {
+        Some(width) => {
+            match opts.height {
+                Some(height) => {
+                    let src = source
+                        .as_ref()
+                        .map(|rect| (rect, SrcRectConstraint::Strict));
+                    canvas
+                        .draw_image_rect_with_sampling_options(
+                            image,
+                            src,
+                            Rect::from_xywh(opts.x, opts.y, width, height),
+                            sampling,
+                            &paint,
+                        );
+                }
+                None => {
+                    draw_image_source_or_default(
+                        canvas,
+                        image,
+                        source,
+                        opts,
+                        sampling,
+                        &paint,
+                    );
+                }
+            };
         }
-        (_, _, Some(source)) => {
-            canvas
-                .draw_image_rect_with_sampling_options(
-                    image,
-                    Some((&source, skia_safe::canvas::SrcRectConstraint::Strict)),
-                    Rect::from_xywh(opts.x, opts.y, source.width(), source.height()),
-                    sampling,
-                    &paint,
-                );
+        None => {
+            draw_image_source_or_default(canvas, image, source, opts, sampling, &paint);
         }
-        _ => {
-            canvas
-                .draw_image_with_sampling_options(
-                    image,
-                    (opts.x, opts.y),
-                    sampling,
-                    Some(&paint),
-                );
-        }
-    }
+    };
     Ok(())
 }
 fn draw_picture_impl<'a>(
@@ -63,13 +65,48 @@ fn draw_picture_impl<'a>(
     let picture = picture_from_term(*args.first().ok_or(rustler::Error::BadArg)?)?;
     let mut paint = Paint::default();
     paint.set_anti_alias(true);
-    if let Some(opacity) = opts.opacity {
-        paint.set_alpha((opacity.clamp(0.0, 1.0) * 255.0).round() as u8);
-    }
+    match opts.opacity {
+        Some(opacity) => {
+            let alpha = (opacity.clamp(0.0, 1.0) * 255.0).round() as u8;
+            paint.set_alpha(alpha);
+        }
+        None => {}
+    };
     apply_blend_mode(&mut paint, raw_opts)?;
     canvas.save();
     canvas.translate((opts.x.unwrap_or(0.0), opts.y.unwrap_or(0.0)));
     canvas.draw_picture(&picture, None, Some(&paint));
     canvas.restore();
     Ok(())
+}
+fn draw_image_source_or_default<'a>(
+    canvas: &skia_safe::Canvas,
+    image: Image,
+    source: Option<Rect>,
+    opts: generated_opts::ImageOpts<'a>,
+    sampling: SamplingOptions,
+    paint: &Paint,
+) -> () {
+    match source {
+        Some(source) => {
+            canvas
+                .draw_image_rect_with_sampling_options(
+                    image,
+                    Some((&source, SrcRectConstraint::Strict)),
+                    Rect::from_xywh(opts.x, opts.y, source.width(), source.height()),
+                    sampling,
+                    paint,
+                );
+        }
+        None => {
+            canvas
+                .draw_image_with_sampling_options(
+                    image,
+                    (opts.x, opts.y),
+                    sampling,
+                    Some(paint),
+                );
+        }
+    };
+    ()
 }
