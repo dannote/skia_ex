@@ -1,11 +1,16 @@
 defmodule Skia.Codegen.CommandSchema do
   @moduledoc """
-  Derives command metadata from Elixir command typespecs.
+  Transitional command metadata extraction from Elixir declaration modules.
 
-  Real Elixir
-  `@type`/`@spec` declarations are the source of truth, and this module reads
-  their quoted Elixir AST. It intentionally does not parse rendered Rust source
-  and does not use Rust module resolver tables.
+  This module reads quoted Elixir `@type`/`@spec` declarations for the current
+  command overlay modules. It exists to keep the generator small while Skia
+  migrates toward native-backed schemas from `Skia.Codegen.NativeSchema` and
+  `RustQ.Syn`.
+
+  Do not treat these Elixir typespec declarations as the long-term source of
+  truth for native Skia signatures. Original `skia-safe` Rust source should win.
+  This module intentionally does not parse rendered Rust source and does not use
+  Rust module resolver tables.
   """
 
   @type command :: %{name: atom(), args: keyword(), opts: [keyword()]}

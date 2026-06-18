@@ -1,4 +1,4 @@
-defmodule Skia.CodegenNativeSchemaTest do
+defmodule Skia.Codegen.NativeSchemaTest do
   use ExUnit.Case, async: true
 
   test "reads skia-safe Canvas methods structurally from Rust source" do

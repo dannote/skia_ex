@@ -1,4 +1,4 @@
-defmodule Skia.CodegenCommandSchemaTest do
+defmodule Skia.Codegen.CommandSchemaTest do
   use ExUnit.Case, async: true
 
   test "derives path command args and opts from declaration typespecs" do

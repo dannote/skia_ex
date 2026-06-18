@@ -4,7 +4,11 @@ defmodule Skia.Codegen.NativeSchema do
 
   This module is the intended replacement direction for command declarations:
   read native Rust items through `RustQ.Syn`, then let Skia add a small ergonomic
-  overlay for Elixir naming/defaults. It does not parse Rust source with regex.
+  overlay for Elixir naming/defaults.
+
+  The current source-file map is a deliberately small spike. It should grow into
+  crate/source discovery rather than a large resolver table. This module does
+  not parse Rust source with regex.
   """
 
   @safe_src "skia-safe-*/src"

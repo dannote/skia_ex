@@ -1,4 +1,4 @@
-defmodule Skia.CodegenDefrustTest do
+defmodule Skia.Codegen.RustyTest do
   use ExUnit.Case, async: true
 
   test "generated save/restore handlers and impls come from Rusty layers" do
