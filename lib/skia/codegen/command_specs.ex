@@ -16,13 +16,12 @@ defmodule Skia.Codegen.CommandSpecs do
   @type command :: %{name: atom(), args: keyword(), opts: [keyword()]}
 
   @spec from_file(Path.t()) :: [command()]
-  def from_file(path), do: path |> RustQ.Spec.Declarations.from_file() |> from_declarations()
+  def from_file(path), do: path |> RustQ.Spec.declarations() |> from_declarations()
 
   @spec from_quoted(Macro.t()) :: [command()]
-  def from_quoted(quoted),
-    do: quoted |> RustQ.Spec.Declarations.from_quoted() |> from_declarations()
+  def from_quoted(quoted), do: quoted |> RustQ.Spec.declarations() |> from_declarations()
 
-  defp from_declarations(%RustQ.Spec.Declarations{aliases: types, specs: specs, defs: defs}) do
+  defp from_declarations(%{aliases: types, specs: specs, defs: defs}) do
     specs
     |> Enum.filter(fn {name, spec_arg_types} ->
       Map.has_key?(defs, name) and is_list(spec_arg_types) and length(spec_arg_types) >= 2
