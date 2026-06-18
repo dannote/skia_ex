@@ -129,17 +129,14 @@ defmodule Skia.Codegen.CommandSchema do
     |> String.to_atom()
   end
 
-  defp enum_spec(:blend_mode), do: [skia: "SkBlendMode", rust: :BlendMode]
-  defp enum_spec(:stroke_cap), do: [skia: "SkPaint_Cap", rust: "paint::Cap"]
-  defp enum_spec(:stroke_join), do: [skia: "SkPaint_Join", rust: "paint::Join"]
-  defp enum_spec(:fill_rule), do: [skia: "SkPathFillType", rust: :PathFillType]
-  defp enum_spec(:path_op), do: [skia: "SkPathOp", rust: :PathOp]
-  defp enum_spec(:clip_op), do: [skia: "SkClipOp", rust: :ClipOp]
-  defp enum_spec(:sampling), do: [skia: "SkFilterMode", rust: :FilterMode]
+  defp enum_spec(name) do
+    case Skia.Codegen.EnumSpecs.command_spec(name) do
+      {:ok, spec} -> spec
+      :error -> raise ArgumentError, "missing command enum spec for #{inspect(name)}"
+    end
+  end
 
-  defp enum_name?(name),
-    do:
-      name in [:blend_mode, :stroke_cap, :stroke_join, :fill_rule, :path_op, :clip_op, :sampling]
+  defp enum_name?(name), do: match?({:ok, _spec}, Skia.Codegen.EnumSpecs.command_spec(name))
 
   defp block_expressions({:__block__, _, expressions}), do: expressions
   defp block_expressions(expression), do: [expression]
