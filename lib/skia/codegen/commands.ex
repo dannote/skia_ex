@@ -70,25 +70,26 @@ defmodule Skia.Codegen.Commands do
   end
 
   defp native_signature(spec) do
-    with %{method: method} = native <- Keyword.get(spec, :native),
+    with %{method: %{signature: signature}} = native <- Keyword.get(spec, :native),
          ref = Skia.Codegen.NativeRef.new(native.target, native.name) do
-      args = Enum.map_join(method.args, ", ", &native_arg/1)
-      returns = method.returns || "()"
-      "Native: `#{Skia.Codegen.NativeRef.format(ref)}(#{args}) -> #{returns}`"
+      "Native: `#{Skia.Codegen.NativeRef.format(ref)}`\n\nNative signature: `#{signature}`"
     else
       _ -> nil
     end
   end
-
-  defp native_arg(%RustQ.Syn.Arg{name: nil, type: type}), do: type
-  defp native_arg(%RustQ.Syn.Arg{name: name, type: type}), do: "#{name}: #{type}"
 
   defp native_source(spec) do
     with %{method: %{source_path: path, source_line: line}} <- Keyword.get(spec, :native),
          true <- is_binary(path),
          true <- is_integer(line) do
       relative = Path.relative_to(path, Skia.Codegen.NativeSchema.source_root!())
-      "Native source: `#{relative}:#{line}`"
+      link = Skia.Codegen.NativeSchema.source_link(path, line)
+
+      if link do
+        "Native source: [`#{relative}:#{line}`](#{link})"
+      else
+        "Native source: `#{relative}:#{line}`"
+      end
     else
       _ -> nil
     end

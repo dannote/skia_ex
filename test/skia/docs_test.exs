@@ -10,10 +10,13 @@ defmodule Skia.DocsTest do
     refute rect_doc =~ "Elixir options:"
     refute rect_doc =~ "Elixir defaults:"
 
-    assert rect_doc =~
-             "Native: `skia_safe::Canvas::draw_rect(self: & self, rect: impl AsRef < Rect >, paint: & Paint) -> & Self`"
+    assert rect_doc =~ "Native: `skia_safe::Canvas::draw_rect`"
 
-    assert rect_doc =~ "Native source: `src/core/canvas.rs:"
+    assert rect_doc =~
+             "Native signature: `fn draw_rect (& self , rect : impl AsRef < Rect > , paint : & Paint) -> & Self`"
+
+    assert rect_doc =~ "Native source: [`src/core/canvas.rs:"
+    assert rect_doc =~ "https://docs.rs/crate/skia-safe/"
     assert rect_doc =~ "Native `skia_safe::Canvas::draw_rect` docs:"
     assert rect_doc =~ "Draws `Rect` rect using clip, `Matrix`, and `Paint` `paint`."
   end

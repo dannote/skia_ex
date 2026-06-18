@@ -83,9 +83,20 @@ defmodule Skia.Codegen.NativeSchema do
     descriptor
   end
 
+  @spec package!() :: RustQ.Cargo.Package.t()
+  def package! do
+    RustQ.Cargo.package!("skia-safe", manifest_path: @native_manifest)
+  end
+
   @spec source_root!() :: Path.t()
   def source_root! do
     RustQ.Cargo.package_source!("skia-safe", manifest_path: @native_manifest)
+  end
+
+  @spec source_link(Path.t(), pos_integer()) :: String.t() | nil
+  def source_link(source_path, line) do
+    package!()
+    |> RustQ.Cargo.source_link(source_path, line)
   end
 
   @spec source_paths() :: [Path.t()]
