@@ -6,7 +6,7 @@ Skia uses RustQ as a Rusty Elixir lowering engine: Skia describes drawing semant
 
 Skia owns:
 
-- command specs and generated option structs (`GeneratedOpts.*`)
+- public Elixir command APIs, command argument/option typespecs, and generated option structs (`GeneratedOpts.*`)
 - drawing semantics for shapes, transforms, clips, layers, paths, images, and text
 - Rustler handler shells that decode command batches and dispatch to semantic impls
 - Skia-specific helper macros such as paint/geometry/argument helpers
@@ -17,6 +17,7 @@ RustQ owns:
 - Rust AST types and renderers
 - Rustler AST decoding/rendering primitives
 - generic Rust syntax support such as refs, matches, options, tuples, calls, assignments, and helper builders
+- structural Rust parsing/introspection through syn-backed helpers; never parse Rust source with regex
 
 Do not create fake RustQ module declarations for Skia-owned Rust modules such as `atoms`, `generated_opts`, or `skia_safe`. Use ordinary remote types and calls instead:
 
@@ -39,7 +40,6 @@ The codegen root is orchestration only:
 
 ```text
 lib/skia/codegen.ex
-lib/skia/codegen/command_dsl.ex
 lib/skia/codegen/handler_shells.ex
 ```
 
@@ -59,6 +59,21 @@ lib/skia/codegen/rusty/text.ex
 ```
 
 Family modules are plural (`Shapes`, `Transforms`, `Clips`). Helper macro modules are singular concepts (`Paint`, `Args`, `Geometry`).
+
+## Command metadata direction
+
+`Skia.CommandSpec` is transitional scaffolding. It must shrink and disappear; do not add new parallel command metadata there. Command args/options should be declared as real Elixir `@type`/`@spec` declarations and reflected structurally from quoted Elixir AST. For example, option requirements belong in map types such as:
+
+```elixir
+@type path_op_opts :: %{
+        required(:path_op) => path_op(),
+        optional(:fill_rule) => fill_rule()
+      }
+
+@spec path_op(Skia.Document.t(), Skia.Path.t(), Skia.Path.t(), path_op_opts()) :: Skia.Document.t()
+```
+
+Native Rust binding introspection, when needed, must go through RustQ syn parser helpers or another structural Rust API. Do not infer semantics from rendered Rust strings, do not use regex to parse Rust, and do not introduce Skia-side Rust module resolver tables.
 
 ## Naming conventions
 
