@@ -474,16 +474,8 @@ defmodule Skia.Codegen do
 
   @spec generated_opts_helpers() :: String.t()
   def generated_opts_helpers do
-    (RustQ.Rustler.opts_helpers() ++ [decode_args_helper()])
+    RustQ.Rustler.opts_helpers()
     |> render_items("generated_opts_helpers.rs")
-  end
-
-  defp decode_args_helper do
-    Rust.item("""
-    fn decode_args<'a>(term: Term<'a>) -> NifResult<Vec<Term<'a>>> {
-        term.map_get(atoms::args())?.decode::<Vec<Term<'a>>>()
-    }
-    """)
   end
 
   @doc false

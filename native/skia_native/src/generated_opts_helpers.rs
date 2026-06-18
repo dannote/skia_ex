@@ -3,6 +3,9 @@
 fn decode_opts<'a>(term: Term<'a>) -> NifResult<Vec<(Atom, Term<'a>)>> {
     term.map_get(atoms::opts())?.decode::<Vec<(Atom, Term<'a>)>>()
 }
+fn decode_args<'a>(term: Term<'a>) -> NifResult<Vec<Term<'a>>> {
+    term.map_get(atoms::args())?.decode::<Vec<Term<'a>>>()
+}
 fn opt_term<'a>(opts: &[(Atom, Term<'a>)], key: Atom) -> Option<Term<'a>> {
     opts.iter().find_map(|(atom, term)| if *atom == key { Some(*term) } else { None })
 }
@@ -39,7 +42,4 @@ fn opt_atom_option<'a>(opts: &[(Atom, Term<'a>)], key: Atom) -> NifResult<Option
         Some(term) => Ok(Some(term.decode::<Atom>()?)),
         None => Ok(None),
     }
-}
-fn decode_args<'a>(term: Term<'a>) -> NifResult<Vec<Term<'a>>> {
-    term.map_get(atoms::args())?.decode::<Vec<Term<'a>>>()
 }
