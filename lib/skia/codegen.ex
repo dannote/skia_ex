@@ -777,18 +777,17 @@ defmodule Skia.Codegen do
   defp optional_decoder_for_kind(:term, name), do: A.call(:opt_term, [:opts, A.atom(name)])
 
   defp command_type_kind({:enum, _name, _opts}), do: :enum
-  defp command_type_kind(%RustQ.Meta.Type{kind: kind}) when kind in [:f32, :f64], do: :number
 
-  defp command_type_kind(%RustQ.Meta.Type{kind: kind})
-       when kind in [:i8, :i16, :i32, :i64, :isize, :u8, :u16, :u32, :u64, :usize], do: :integer
+  defp command_type_kind(%RustQ.Meta.Type{} = type),
+    do: command_type_category(RustQ.Meta.Type.category(type))
 
-  defp command_type_kind(%RustQ.Meta.Type{kind: :bool}), do: :boolean
-  defp command_type_kind(%RustQ.Meta.Type{kind: :atom}), do: :atom
-  defp command_type_kind(%RustQ.Meta.Type{kind: :tuple}), do: :term
-  defp command_type_kind(%RustQ.Meta.Type{kind: :term}), do: :term
-
-  defp command_type_kind(%RustQ.Meta.Type{meta: %{elixir_module: String, elixir_type: :t}}),
-    do: :string
-
-  defp command_type_kind(%RustQ.Meta.Type{}), do: :term
+  defp command_type_category(:number), do: :number
+  defp command_type_category(:integer), do: :integer
+  defp command_type_category(:boolean), do: :boolean
+  defp command_type_category(:atom), do: :atom
+  defp command_type_category(:string), do: :string
+  defp command_type_category(:term), do: :term
+  defp command_type_category(:enum), do: :enum
+  defp command_type_category({:tuple, _elements}), do: :term
+  defp command_type_category(_category), do: :term
 end
