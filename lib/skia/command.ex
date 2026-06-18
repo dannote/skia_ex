@@ -214,40 +214,8 @@ defmodule Skia.Command do
           "invalid #{inspect(key)} for #{name}: expected #{inspect(type)}, got #{inspect(value)}"
   end
 
-  defp normalize_value!(_name, _key, :number, value) when is_integer(value) or is_float(value),
-    do: value * 1.0
-
-  defp normalize_value!(_name, _key, :integer, value) when is_integer(value), do: value
-  defp normalize_value!(_name, _key, :string, value) when is_binary(value), do: value
-  defp normalize_value!(_name, _key, :atom, value) when is_atom(value), do: value
-
   defp normalize_value!(_command, _key, {:enum, _enum_name, _opts}, value) when is_atom(value),
     do: value
-
-  defp normalize_value!(_name, _key, :boolean, value) when is_boolean(value), do: value
-  defp normalize_value!(_name, :spans, :term, value), do: normalize_spans!(value)
-  defp normalize_value!(_name, _key, :term, value), do: value
-  defp normalize_value!(_name, _key, :paint, %Skia.Paint{} = value), do: value
-  defp normalize_value!(_name, _key, :color, value), do: normalize_color!(value)
-  defp normalize_value!(_name, _key, :path, %Skia.Path{} = value), do: value
-  defp normalize_value!(_name, _key, :image, %Skia.Image{} = value), do: value
-  defp normalize_value!(_name, _key, :picture, %Skia.Picture{} = value), do: value
-  defp normalize_value!(_name, _key, :text_blob, %Skia.TextBlob{} = value), do: value
-
-  defp normalize_value!(_name, _key, :vertices, %Skia.Vertices{} = value),
-    do: normalize_vertices!(value)
-
-  defp normalize_value!(_name, _key, :font, %Skia.Font{} = value), do: value
-  defp normalize_value!(_name, _key, :image_filter, value), do: normalize_image_filter!(value)
-  defp normalize_value!(_name, _key, :color_filter, value), do: normalize_color_filter!(value)
-  defp normalize_value!(_name, _key, :mask_filter, value), do: normalize_mask_filter!(value)
-  defp normalize_value!(_name, _key, :path_effect, value), do: normalize_path_effect!(value)
-
-  defp normalize_value!(_name, _key, :sampling_options, value),
-    do: normalize_sampling_options!(value)
-
-  defp normalize_value!(_name, _key, {:tuple, types}, value) when is_tuple(value),
-    do: normalize_tuple!(types, value)
 
   defp normalize_value!(name, key, %RustQ.Meta.Type{} = type, value) do
     normalize_meta_value!(name, key, type, value)
