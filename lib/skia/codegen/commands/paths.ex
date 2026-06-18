@@ -2,11 +2,11 @@ defmodule Skia.Codegen.Commands.Paths do
   @moduledoc false
 
   @type color :: Skia.Command.color()
-  @type blend_mode :: atom()
-  @type stroke_cap :: atom()
-  @type stroke_join :: atom()
-  @type fill_rule :: :winding | :even_odd | :inverse_winding | :inverse_even_odd
-  @type path_op :: :difference | :intersect | :union | :xor | :reverse_difference
+  @type blend_mode :: RustQ.Type.enum(:blend_mode)
+  @type stroke_cap :: RustQ.Type.enum(:stroke_cap)
+  @type stroke_join :: RustQ.Type.enum(:stroke_join)
+  @type fill_rule :: RustQ.Type.enum(:fill_rule)
+  @type path_op :: RustQ.Type.enum(:path_op)
 
   @type paint_opts :: %{
           optional(:paint) => Skia.Paint.t(),

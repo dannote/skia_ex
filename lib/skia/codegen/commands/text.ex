@@ -2,9 +2,9 @@ defmodule Skia.Codegen.Commands.Text do
   @moduledoc false
 
   @type color :: Skia.Command.color()
-  @type blend_mode :: atom()
-  @type stroke_cap :: atom()
-  @type stroke_join :: atom()
+  @type blend_mode :: RustQ.Type.enum(:blend_mode)
+  @type stroke_cap :: RustQ.Type.enum(:stroke_cap)
+  @type stroke_join :: RustQ.Type.enum(:stroke_join)
   @type font :: term()
 
   @metadata %{

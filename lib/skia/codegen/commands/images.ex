@@ -1,7 +1,7 @@
 defmodule Skia.Codegen.Commands.Images do
   @moduledoc false
 
-  @type blend_mode :: atom()
+  @type blend_mode :: RustQ.Type.enum(:blend_mode)
   @type source_rect :: {RustQ.Type.f32(), RustQ.Type.f32(), RustQ.Type.f32(), RustQ.Type.f32()}
 
   @metadata %{

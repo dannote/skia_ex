@@ -1,8 +1,8 @@
 defmodule Skia.Codegen.Commands.Clips do
   @moduledoc false
 
-  @type clip_op :: :difference | :intersect
-  @type fill_rule :: :winding | :even_odd | :inverse_winding | :inverse_even_odd
+  @type clip_op :: RustQ.Type.enum(:clip_op)
+  @type fill_rule :: RustQ.Type.enum(:fill_rule)
 
   @defaults %{
     clip_rect: [radius: 0, antialias: true, clip_op: :intersect],

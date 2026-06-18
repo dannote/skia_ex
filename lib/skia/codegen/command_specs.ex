@@ -15,7 +15,7 @@ defmodule Skia.Codegen.CommandSpecs do
 
   @type command :: %{name: atom(), args: keyword(), opts: [keyword()]}
 
-  @command_enum_specs %{
+  @enum_specs %{
     blend_mode: [skia: "SkBlendMode", rust: :BlendMode],
     stroke_cap: [skia: "SkPaint_Cap", rust: "paint::Cap"],
     stroke_join: [skia: "SkPaint_Join", rust: "paint::Join"],
@@ -75,39 +75,36 @@ defmodule Skia.Codegen.CommandSpecs do
 
   defp command_type(ast, aliases), do: ast |> spec_type(aliases) |> command_type()
 
-  defp command_type(%RustQ.Meta.Type{kind: :alias, meta: %{elixir_name: name, ast: ast}} = type) do
-    case command_enum_spec(name) do
-      {:ok, spec} -> enum_type(type, name, spec)
-      :error -> RustQ.Spec.type(ast, %{})
-    end
+  defp command_type(%RustQ.Meta.Type{kind: :alias, meta: %{elixir_name: name, ast: ast}}) do
+    ast
+    |> RustQ.Spec.type(%{})
+    |> put_elixir_name(name)
+    |> command_type()
   end
 
-  defp command_type(%RustQ.Meta.Type{kind: :enum, meta: %{elixir_name: name}} = type),
-    do: enum_type(type, name, enum_spec(name))
-
-  defp command_type(%RustQ.Meta.Type{} = type), do: type
-
-  defp enum_type(%RustQ.Meta.Type{} = type, name, spec) do
+  defp command_type(%RustQ.Meta.Type{kind: :enum, meta: %{enum: enum}} = type) do
+    spec = Map.fetch!(@enum_specs, enum)
+    rust_type = Keyword.fetch!(spec, :rust)
     native_name = Keyword.fetch!(spec, :skia)
 
     %{
       type
-      | kind: :enum,
+      | ast: rust_type_ast(rust_type),
+        rust: rust_type_string(rust_type),
         meta:
           Map.merge(type.meta, %{
-            elixir_name: name,
+            native_name: native_name,
             native_enum: Skia.Codegen.SkiaSafe.enum_descriptor!(native_name),
-            rust_type: Keyword.fetch!(spec, :rust)
+            rust_type: rust_type
           })
     }
   end
 
-  defp command_enum_spec(name), do: Map.fetch(@command_enum_specs, name)
+  defp command_type(%RustQ.Meta.Type{} = type), do: type
 
-  defp enum_spec(name) do
-    case command_enum_spec(name) do
-      {:ok, spec} -> spec
-      :error -> raise ArgumentError, "missing command enum spec for #{inspect(name)}"
-    end
-  end
+  defp put_elixir_name(%RustQ.Meta.Type{} = type, name),
+    do: put_in(type.meta[:elixir_name], name)
+
+  defp rust_type_ast(rust_type), do: {:raw, rust_type_string(rust_type)}
+  defp rust_type_string(rust_type), do: RustQ.Rust.type(rust_type)
 end
