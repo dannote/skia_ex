@@ -21,6 +21,17 @@ defmodule Skia.DocsTest do
     assert rect_doc =~ "Draws `Rect` rect using clip, `Matrix`, and `Paint` `paint`."
   end
 
+  test "composite command docs describe native expansion without direct native docs" do
+    docs = skia_docs()
+    clip_circle_doc = doc_for(docs, :clip_circle)
+
+    assert clip_circle_doc =~ "Adds a `clip_circle` command to the document."
+    assert clip_circle_doc =~ "Implemented via native calls: `skia_safe::Canvas::clip_path`"
+    refute clip_circle_doc =~ "Native signature:"
+    refute clip_circle_doc =~ "Native source:"
+    refute clip_circle_doc =~ "Native `skia_safe::Canvas::clip_path` docs:"
+  end
+
   test "native overlays add docs to more public commands" do
     docs = skia_docs()
 

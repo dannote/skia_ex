@@ -53,6 +53,7 @@ defmodule Skia.Codegen.Commands do
     [
       "Adds a `#{name}` command to the document.",
       native_signature(spec),
+      composite_native_refs(spec),
       native_source(spec),
       native_doc(spec)
     ]
@@ -89,6 +90,21 @@ defmodule Skia.Codegen.Commands do
       "Native: `#{RustQ.NativeRef.format(ref)}`\n\nNative signature: `#{RustQ.Syn.Signature.render(signature)}`"
     else
       _ -> nil
+    end
+  end
+
+  defp composite_native_refs(spec) do
+    case Keyword.get(spec, :expands_to, []) do
+      [] ->
+        nil
+
+      descriptors ->
+        refs =
+          descriptors
+          |> Enum.map(fn %{ref: ref} -> "`#{RustQ.NativeRef.format(ref)}`" end)
+          |> Enum.join(", ")
+
+        "Implemented via native calls: #{refs}"
     end
   end
 
