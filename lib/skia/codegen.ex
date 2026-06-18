@@ -341,25 +341,20 @@ defmodule Skia.Codegen do
       |> Enum.uniq()
       |> Enum.sort()
 
-    case_lines =
-      Enum.map_join(cases, "\n", fn {atom, call} ->
-        "        value if value == atoms::#{atom}() => #{call},"
-      end)
+    dispatch =
+      RustQ.Rustler.atom_dispatch(:draw_command,
+        args: [canvas: "&skia_safe::Canvas", command: :Term],
+        on: "command.map_get(atoms::op())?.decode::<Atom>()?",
+        cases: cases,
+        unknown: "Err(rustler::Error::BadArg)"
+      )
 
     compact_cases =
       compact_ops()
       |> Enum.map_join("\n", fn {atom, id} -> "        #{id} => Ok(atoms::#{atom}())," end)
 
     items = [
-      Rust.item("""
-      fn draw_command(canvas: &skia_safe::Canvas, command: Term) -> NifResult<()> {
-          let value = command.map_get(atoms::op())?.decode::<Atom>()?;
-          match value {
-      #{case_lines}
-              _ => Err(rustler::Error::BadArg),
-          }
-      }
-      """),
+      dispatch,
       Rust.item("""
       fn compact_op_atom(id: i64) -> NifResult<Atom> {
           match id {
