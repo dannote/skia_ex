@@ -172,7 +172,7 @@ defmodule Skia.CodegenDefrustTest do
            } = Enum.find(impls, &(&1.name == :draw_concat_impl))
   end
 
-  test "shape impls are lowered through quoted Rusty Elixir" do
+  test "shape impls are lowered through defrust" do
     impls = Skia.Codegen.ShapeImpls.generated_asts()
 
     assert %AST.Function{
@@ -205,7 +205,7 @@ defmodule Skia.CodegenDefrustTest do
                  name: :opts,
                  type: %AST.TypePath{parts: [:generated_opts, :CircleOpts], lifetimes: [:a]}
                },
-               %AST.FunctionArg{name: :raw_opts, type: "&[(Atom, Term<'a>)]"}
+               %AST.FunctionArg{name: :raw_opts, type: {:raw, "&[(Atom, Term<'a>)]"}}
              ],
              body: [
                %AST.Let{pattern: %AST.PatVar{name: :center}},
@@ -232,7 +232,7 @@ defmodule Skia.CodegenDefrustTest do
                  name: :opts,
                  type: %AST.TypePath{parts: [:generated_opts, :OvalOpts], lifetimes: [:a]}
                },
-               %AST.FunctionArg{name: :raw_opts, type: "&[(Atom, Term<'a>)]"}
+               %AST.FunctionArg{name: :raw_opts, type: {:raw, "&[(Atom, Term<'a>)]"}}
              ],
              body: [
                %AST.Let{pattern: %AST.PatVar{name: :rect}},
