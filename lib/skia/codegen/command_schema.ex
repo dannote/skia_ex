@@ -24,13 +24,12 @@ defmodule Skia.Codegen.CommandSchema do
 
     specs
     |> Enum.filter(fn {name, spec_arg_types} ->
-      Map.has_key?(defs, name) and is_list(spec_arg_types) and length(spec_arg_types) >= 3
+      Map.has_key?(defs, name) and is_list(spec_arg_types) and length(spec_arg_types) >= 2
     end)
     |> Enum.map(fn {name, spec_arg_types} ->
       def_args = Map.fetch!(defs, name)
       command_from_spec(name, def_args, spec_arg_types, types)
     end)
-    |> Enum.sort_by(& &1.name)
   end
 
   defp collect_declarations({:defmodule, _meta, [_module, [do: body]]}),
@@ -39,13 +38,13 @@ defmodule Skia.Codegen.CommandSchema do
   defp collect_declarations(body) do
     body
     |> block_expressions()
-    |> Enum.reduce({%{}, %{}, %{}}, fn
+    |> Enum.reduce({%{}, [], %{}}, fn
       {:@, _, [{:type, _, [{:"::", _, [{name, _, _ctx}, type_ast]}]}]}, {types, specs, defs} ->
         {Map.put(types, name, type_ast), specs, defs}
 
       {:@, _, [{:spec, _, [{:"::", _, [{name, _, arg_types}, _return]}]}]},
       {types, specs, defs} ->
-        {types, Map.put(specs, name, arg_types), defs}
+        {types, specs ++ [{name, arg_types}], defs}
 
       {:def, _, [{name, _, args}, _body]}, {types, specs, defs} ->
         {types, specs, Map.put(defs, name, Enum.map(args || [], &arg_name!/1))}
@@ -82,8 +81,12 @@ defmodule Skia.Codegen.CommandSchema do
   defp opts_from_map_type(other, _types),
     do: raise(ArgumentError, "expected map option type, got #{Macro.to_string(other)}")
 
-  defp expand_type({name, _, []}, types) when is_atom(name),
-    do: Map.get(types, name, {name, [], []})
+  defp expand_type({name, _, []} = ast, types) when is_atom(name) do
+    case Map.fetch(types, name) do
+      {:ok, type_ast} -> expand_type(type_ast, types)
+      :error -> ast
+    end
+  end
 
   defp expand_type(other, _types), do: other
 
@@ -108,13 +111,16 @@ defmodule Skia.Codegen.CommandSchema do
     case ast do
       {{:., _, [{:__aliases__, _, [:Skia, :Path]}, :t]}, _, []} -> :path
       {{:., _, [{:__aliases__, _, [:Skia, :Paint]}, :t]}, _, []} -> :paint
+      {{:., _, [{:__aliases__, _, [:Skia, :Vertices]}, :t]}, _, []} -> :vertices
       {{:., _, [{:__aliases__, _, [:Skia, :ImageFilter]}, :t]}, _, []} -> :image_filter
       {{:., _, [{:__aliases__, _, [:Skia, :PathEffect]}, :t]}, _, []} -> :path_effect
       {{:., _, [{:__aliases__, _, [:Skia, :ColorFilter]}, :t]}, _, []} -> :color_filter
       {{:., _, [{:__aliases__, _, [:Skia, :MaskFilter]}, :t]}, _, []} -> :mask_filter
       {{:., _, [{:__aliases__, _, [:Skia, :Command]}, :color]}, _, []} -> :color
       {:number, _, []} -> :number
+      {:boolean, _, []} -> :boolean
       {:atom, _, []} -> :atom
+      {:{}, _, [:number, :number]} -> {:tuple, [:number, :number]}
       _other -> :term
     end
   end

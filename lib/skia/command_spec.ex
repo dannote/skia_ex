@@ -8,7 +8,7 @@ defmodule Skia.CommandSpec do
   """
 
   @domains [
-    Skia.CommandSpec.Shapes,
+    Skia.Codegen.Commands.Shapes,
     Skia.CommandSpec.Text,
     Skia.CommandSpec.Images,
     Skia.CommandSpec.Layers,

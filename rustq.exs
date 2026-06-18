@@ -1,12 +1,12 @@
 use RustQ.Config
 
 require_file("lib/skia/command_spec/types.ex")
-require_file("lib/skia/command_spec/shapes.ex")
+require_file("lib/skia/codegen/command_schema.ex")
+require_file("lib/skia/codegen/commands/shapes.ex")
 require_file("lib/skia/command_spec/text.ex")
 require_file("lib/skia/command_spec/images.ex")
 require_file("lib/skia/command_spec/layers.ex")
 require_file("lib/skia/command_spec/transforms.ex")
-require_file("lib/skia/codegen/command_schema.ex")
 require_file("lib/skia/codegen/commands/paths.ex")
 require_file("lib/skia/command_spec/clips.ex")
 require_file("lib/skia/command_spec.ex")

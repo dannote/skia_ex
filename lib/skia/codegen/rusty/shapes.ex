@@ -7,7 +7,7 @@ defmodule Skia.Codegen.Rusty.Shapes do
   """
 
   alias RustQ.Rust.AST
-  alias Skia.CommandSpec.Shapes
+  alias Skia.Codegen.Commands.Shapes
 
   @commands [:clear, :rect, :circle, :oval, :arc, :vertices, :line]
 
