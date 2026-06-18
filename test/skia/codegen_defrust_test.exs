@@ -78,6 +78,22 @@ defmodule Skia.CodegenDefrustTest do
     assert source =~ "apply_fill_rule(&mut path, raw_opts)?;"
   end
 
+  test "path impls are generated from Rusty Elixir" do
+    source = Skia.Codegen.generated_draw_paths()
+
+    assert source =~ "fn draw_path_impl<'a>("
+    assert source =~ "let mut path = build_path(*args.first().ok_or(rustler::Error::BadArg)?)?;"
+    assert source =~ "apply_fill_rule(&mut path, raw_opts)?;"
+
+    assert source =~ "fn draw_path_op_impl<'a>("
+    assert source =~ "let op = generated_enums::decode_path_op(opts.path_op)?;"
+    assert source =~ "let mut path = a.op(&b, op).ok_or(rustler::Error::BadArg)?;"
+
+    assert source =~ "fn draw_path_outline_impl<'a>("
+    assert source =~ "path_utils::fill_path_with_paint(&path, &stroke, &mut builder, None, None)"
+    assert source =~ "canvas.draw_path(&outline, &paint);"
+  end
+
   test "shape impls are generated from Rusty Elixir" do
     source = Skia.Codegen.generated_shapes()
 

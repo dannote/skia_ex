@@ -774,9 +774,14 @@ defmodule Skia.Codegen do
 
   @spec generated_draw_paths() :: String.t()
   def generated_draw_paths do
-    Paths.commands()
-    |> generated_body_impls(:path_draw)
-    |> render_items("generated_draw_paths.rs")
+    defrust_items = Enum.map(Rusty.Paths.generated_asts(), &render_rustq_item/1)
+
+    legacy_items =
+      Paths.commands()
+      |> Keyword.drop(Rusty.Paths.commands())
+      |> generated_body_impls(:path_draw)
+
+    render_items(defrust_items ++ legacy_items, "generated_draw_paths.rs")
   end
 
   defp generated_body_impls(commands, key) do
