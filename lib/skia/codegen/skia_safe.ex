@@ -20,12 +20,6 @@ defmodule Skia.Codegen.SkiaSafe do
   end
 
   defp bindings_index do
-    :persistent_term.get({__MODULE__, :bindings_index}, nil) || build_bindings_index()
-  end
-
-  defp build_bindings_index do
-    index = RustQ.Syn.Index.from_package("skia-bindings", manifest_path: @native_manifest)
-    :persistent_term.put({__MODULE__, :bindings_index}, index)
-    index
+    RustQ.Syn.Index.cached_package("skia-bindings", manifest_path: @native_manifest)
   end
 end

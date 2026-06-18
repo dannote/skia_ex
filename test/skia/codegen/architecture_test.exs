@@ -25,7 +25,7 @@ defmodule Skia.Codegen.ArchitectureTest do
     source = File.read!("lib/skia/codegen/skia_safe.ex")
 
     assert source =~ "RustQ.NativeEnumDescriptor"
-    assert source =~ "RustQ.Syn.Index.from_package"
+    assert source =~ "RustQ.Syn.Index.cached_package"
     refute source =~ "RustQ.Cargo"
     refute source =~ ".cargo/registry"
   end

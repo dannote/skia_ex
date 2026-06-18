@@ -17,7 +17,7 @@ defmodule Skia.Codegen.NativeSchema do
   @type method :: RustQ.Syn.Method.t()
   @spec index() :: RustQ.Syn.Index.t()
   def index do
-    :persistent_term.get({__MODULE__, :index}, nil) || build_index()
+    RustQ.Syn.Index.cached_package("skia-safe", manifest_path: @native_manifest)
   end
 
   @spec methods(String.t()) :: [method()]
@@ -63,12 +63,6 @@ defmodule Skia.Codegen.NativeSchema do
     |> Path.join("**/*.rs")
     |> Path.wildcard()
     |> Enum.sort()
-  end
-
-  defp build_index do
-    index = RustQ.Syn.Index.from_package("skia-safe", manifest_path: @native_manifest)
-    :persistent_term.put({__MODULE__, :index}, index)
-    index
   end
 
   defp normalize_target("path_utils"), do: "path_utils"
