@@ -72,11 +72,9 @@ defmodule Skia.Codegen.Enums do
         spec |> Keyword.fetch!(:skia) |> SkiaSafe.enum_descriptor!()
       end)
 
-    variants = Enum.map(descriptor.enum.variants, &{Macro.underscore(&1), &1})
-
     spec
     |> Keyword.put(:descriptor, descriptor)
-    |> Keyword.put(:variants, variants)
+    |> Keyword.put(:variants, RustQ.NativeEnumDescriptor.variants(descriptor))
   end
 
   defp enum_const_name(name) do
@@ -90,14 +88,10 @@ defmodule Skia.Codegen.Enums do
   end
 
   defp enum_decoder(name, spec) do
-    type = Keyword.fetch!(spec, :rust)
-
-    cases =
-      spec
-      |> Keyword.fetch!(:variants)
-      |> Enum.map(fn {atom, variant} -> {atom, "#{Rust.type(type)}::#{variant}"} end)
-
-    RustQ.Rustler.atom_decoder("decode_#{name}", returns: type, cases: cases)
+    RustQ.Rustler.atom_decoder("decode_#{name}",
+      returns: Keyword.fetch!(spec, :rust),
+      descriptor: Keyword.fetch!(spec, :descriptor)
+    )
   end
 
   defp template_path(name) do
