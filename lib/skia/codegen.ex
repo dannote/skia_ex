@@ -776,8 +776,6 @@ defmodule Skia.Codegen do
   defp optional_decoder_for_kind(:string, name), do: R.optional_term_decode(:opts, name, :String)
   defp optional_decoder_for_kind(:term, name), do: A.call(:opt_term, [:opts, A.atom(name)])
 
-  defp command_type_kind({:enum, _name, _opts}), do: :enum
-
   defp command_type_kind(%RustQ.Meta.Type{} = type),
     do: command_type_category(RustQ.Meta.Type.category(type))
 

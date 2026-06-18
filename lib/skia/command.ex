@@ -71,6 +71,7 @@ defmodule Skia.Command do
       :integer when is_integer(value) -> value
       :boolean when is_boolean(value) -> value
       :atom when is_atom(value) -> value
+      :enum when is_atom(value) -> value
       :string when is_binary(value) -> value
       :term when key == :spans -> normalize_spans!(value)
       :term -> value
@@ -125,9 +126,6 @@ defmodule Skia.Command do
               "invalid #{inspect(key)} for #{name}: expected #{inspect(type)}, got #{inspect(value)}"
     end
   end
-
-  defp normalize_value!(_command, _key, {:enum, _enum_name, _opts}, value) when is_atom(value),
-    do: value
 
   defp normalize_value!(name, key, %RustQ.Meta.Type{} = type, value) do
     normalize_meta_value!(name, key, type, value)

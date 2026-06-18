@@ -49,18 +49,27 @@ defmodule Skia.Codegen.Enums do
 
     specs
     |> Enum.uniq_by(&elem(&1, 0))
-    |> Map.new(fn {name, spec} ->
-      variants =
-        spec
-        |> Keyword.fetch!(:skia)
-        |> SkiaSafe.enum_variants()
-
-      {name, Keyword.put(spec, :variants, variants)}
-    end)
+    |> Map.new(fn {name, spec} -> {name, resolve_spec(spec)} end)
   end
 
-  defp enum_type_spec({:enum, name, opts}), do: [{name, opts}]
+  defp enum_type_spec(%RustQ.Meta.Type{kind: :enum, meta: %{elixir_name: name} = meta}) do
+    [{name, [descriptor: Map.fetch!(meta, :native_enum), rust: Map.fetch!(meta, :rust_type)]}]
+  end
+
   defp enum_type_spec(_type), do: []
+
+  defp resolve_spec(spec) do
+    descriptor =
+      Keyword.get_lazy(spec, :descriptor, fn ->
+        spec |> Keyword.fetch!(:skia) |> SkiaSafe.enum_descriptor!()
+      end)
+
+    variants = Enum.map(descriptor.enum.variants, &{Macro.underscore(&1), &1})
+
+    spec
+    |> Keyword.put(:descriptor, descriptor)
+    |> Keyword.put(:variants, variants)
+  end
 
   defp enum_const_name(name) do
     rust_name = name |> Atom.to_string() |> Macro.camelize()

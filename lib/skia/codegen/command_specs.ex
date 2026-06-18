@@ -66,16 +66,32 @@ defmodule Skia.Codegen.CommandSpecs do
 
   defp command_type(ast, aliases), do: ast |> spec_type(aliases) |> command_type()
 
-  defp command_type(%RustQ.Meta.Type{kind: :alias, meta: %{elixir_name: name, ast: ast}}) do
-    if enum_name?(name),
-      do: {:enum, name, enum_spec(name)},
-      else: RustQ.Spec.type(ast, %{})
+  defp command_type(%RustQ.Meta.Type{kind: :alias, meta: %{elixir_name: name, ast: ast}} = type) do
+    case Skia.Codegen.EnumSpecs.command_spec(name) do
+      {:ok, spec} -> enum_type(type, name, spec)
+      :error -> RustQ.Spec.type(ast, %{})
+    end
   end
 
-  defp command_type(%RustQ.Meta.Type{kind: :enum, meta: %{elixir_name: name}}),
-    do: {:enum, name, enum_spec(name)}
+  defp command_type(%RustQ.Meta.Type{kind: :enum, meta: %{elixir_name: name}} = type),
+    do: enum_type(type, name, enum_spec(name))
 
   defp command_type(%RustQ.Meta.Type{} = type), do: type
+
+  defp enum_type(%RustQ.Meta.Type{} = type, name, spec) do
+    native_name = Keyword.fetch!(spec, :skia)
+
+    %{
+      type
+      | kind: :enum,
+        meta:
+          Map.merge(type.meta, %{
+            elixir_name: name,
+            native_enum: Skia.Codegen.SkiaSafe.enum_descriptor!(native_name),
+            rust_type: Keyword.fetch!(spec, :rust)
+          })
+    }
+  end
 
   defp enum_spec(name) do
     case Skia.Codegen.EnumSpecs.command_spec(name) do
@@ -83,6 +99,4 @@ defmodule Skia.Codegen.CommandSpecs do
       :error -> raise ArgumentError, "missing command enum spec for #{inspect(name)}"
     end
   end
-
-  defp enum_name?(name), do: match?({:ok, _spec}, Skia.Codegen.EnumSpecs.command_spec(name))
 end

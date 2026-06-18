@@ -29,6 +29,7 @@ defmodule Skia.Codegen.CommandSpecsTest do
     assert external_type?(b_type, Skia.Path, :t)
     assert required_opts(path_op_opts) == [:path_op]
     assert :fill_rule in opt_names(path_op_opts)
+    assert enum_type?(opt_type(path_op_opts, :path_op), :path_op, "SkPathOp")
 
     assert %{args: [path: outline_path_type], opts: outline_opts} =
              command!(schema, :path_outline)
@@ -41,6 +42,21 @@ defmodule Skia.Codegen.CommandSpecsTest do
     do: Enum.find(schema, &(&1.name == name)) || flunk("missing #{name}")
 
   defp opt_names(opts), do: Enum.map(opts, &Keyword.fetch!(&1, :name))
+
+  defp opt_type(opts, name),
+    do: opts |> Enum.find(&(Keyword.fetch!(&1, :name) == name)) |> Keyword.fetch!(:type)
+
+  defp enum_type?(
+         %RustQ.Meta.Type{
+           kind: :enum,
+           meta: %{elixir_name: name, native_enum: %RustQ.NativeEnumDescriptor{name: native_name}}
+         },
+         name,
+         native_name
+       ),
+       do: true
+
+  defp enum_type?(_other, _name, _native_name), do: false
 
   defp external_type?(
          %RustQ.Meta.Type{meta: %{elixir_module: module, elixir_type: type}},
