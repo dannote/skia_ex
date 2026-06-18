@@ -50,7 +50,12 @@ defmodule Skia.Codegen.Commands do
 
   @spec doc(atom(), keyword()) :: String.t()
   def doc(name, spec) do
-    ["Adds a `#{name}` command to the document.", native_signature(spec), native_doc(spec)]
+    [
+      "Adds a `#{name}` command to the document.",
+      native_signature(spec),
+      native_source(spec),
+      native_doc(spec)
+    ]
     |> Enum.reject(&(&1 in [nil, ""]))
     |> Enum.join("\n\n")
   end
@@ -77,6 +82,17 @@ defmodule Skia.Codegen.Commands do
 
   defp native_arg(%RustQ.Syn.Arg{name: nil, type: type}), do: type
   defp native_arg(%RustQ.Syn.Arg{name: name, type: type}), do: "#{name}: #{type}"
+
+  defp native_source(spec) do
+    with %{method: %{source_path: path, source_line: line}} <- Keyword.get(spec, :native),
+         true <- is_binary(path),
+         true <- is_integer(line) do
+      relative = Path.relative_to(path, Skia.Codegen.NativeSchema.source_root!())
+      "Native source: `#{relative}:#{line}`"
+    else
+      _ -> nil
+    end
+  end
 
   defp native_doc(spec) do
     with %{method: %{docs: [_ | _] = docs}} = native <- Keyword.get(spec, :native),
