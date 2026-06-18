@@ -8,7 +8,7 @@ defmodule Skia.Codegen.ShapeImpls do
   """
 
   alias RustQ.Rust.AST
-  alias RustQ.Rust.AST.Builder, as: A
+  alias RustQ.Rust.AST.TypeBuilder, as: T
   alias Skia.Codegen.ImplHelpers
   alias Skia.CommandSpec.Shapes
 
@@ -29,10 +29,10 @@ defmodule Skia.Codegen.ShapeImpls do
 
     RustQ.Meta.quoted(String.to_atom("#{handler}_impl"),
       args: [
-        canvas: A.ref_type([:skia_safe, :Canvas]),
-        args: %AST.TypeVec{inner: A.term_type()}
+        canvas: T.ref([:skia_safe, :Canvas]),
+        args: T.vec(T.term())
       ],
-      returns: A.nif_result_type(A.unit_type()),
+      returns: T.nif_result(T.unit()),
       do: clear_body_ast!()
     )
   end
@@ -42,7 +42,7 @@ defmodule Skia.Codegen.ShapeImpls do
 
     RustQ.Meta.quoted(String.to_atom("#{handler}_impl"),
       args: ImplHelpers.command_impl_args(:circle, :raw_opts),
-      returns: A.nif_result_type(A.unit_type()),
+      returns: T.nif_result(T.unit()),
       rust_modules: %{[:Atoms] => [:atoms]},
       do: circle_body_ast!()
     )
@@ -53,7 +53,7 @@ defmodule Skia.Codegen.ShapeImpls do
 
     RustQ.Meta.quoted(String.to_atom("#{handler}_impl"),
       args: ImplHelpers.command_impl_args(name, :raw_opts),
-      returns: A.nif_result_type(A.unit_type()),
+      returns: T.nif_result(T.unit()),
       do: line_body_ast!()
     )
   end

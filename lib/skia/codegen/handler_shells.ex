@@ -10,6 +10,7 @@ defmodule Skia.Codegen.HandlerShells do
 
   alias RustQ.Rust.AST
   alias RustQ.Rust.AST.Builder, as: A
+  alias RustQ.Rust.AST.TypeBuilder, as: T
 
   @spec generated_asts(keyword(), keyword()) :: [AST.Function.t()]
   def generated_asts(commands, opts \\ []) do
@@ -58,10 +59,10 @@ defmodule Skia.Codegen.HandlerShells do
     %AST.Function{
       name: name,
       args: [
-        A.arg(:canvas, A.ref_type(:Canvas)),
-        A.arg(command_arg, A.term_type())
+        A.arg(:canvas, T.ref(:Canvas)),
+        A.arg(command_arg, T.term())
       ],
-      returns: A.nif_result_type(A.unit_type()),
+      returns: T.nif_result(T.unit()),
       body: handler_ast_body(impl, args?, opts_name),
       lifetime: :a
     }
@@ -88,7 +89,7 @@ defmodule Skia.Codegen.HandlerShells do
             }
           },
           method: :decode,
-          generics: [%AST.TypeVec{inner: A.term_type()}]
+          generics: [T.vec(T.term())]
         }
       }
     }

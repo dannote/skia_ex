@@ -9,7 +9,7 @@ defmodule Skia.Codegen.TransformImpls do
   """
 
   alias RustQ.Rust.AST
-  alias RustQ.Rust.AST.Builder, as: A
+  alias RustQ.Rust.AST.TypeBuilder, as: T
   alias Skia.Codegen.ImplHelpers
   alias Skia.CommandSpec.Transforms
 
@@ -30,7 +30,7 @@ defmodule Skia.Codegen.TransformImpls do
 
     RustQ.Meta.quoted(String.to_atom("#{handler}_impl"),
       args: ImplHelpers.command_impl_args(name),
-      returns: A.nif_result_type(A.unit_type()),
+      returns: T.nif_result(T.unit()),
       do: body_ast!(spec)
     )
   end
