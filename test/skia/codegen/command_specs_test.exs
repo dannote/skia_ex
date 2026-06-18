@@ -1,9 +1,9 @@
-defmodule Skia.Codegen.CommandSchemaTest do
+defmodule Skia.Codegen.CommandSpecsTest do
   use ExUnit.Case, async: true
 
   test "derives path command args and opts from declaration typespecs" do
     schema =
-      Skia.Codegen.CommandSchema.from_file("lib/skia/codegen/commands/paths.ex")
+      Skia.Codegen.CommandSpecs.from_file("lib/skia/codegen/commands/paths.ex")
 
     assert %{args: [path: :path], opts: path_opts} = command!(schema, :path)
 

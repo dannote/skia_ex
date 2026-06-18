@@ -25,7 +25,7 @@ defmodule Skia.Codegen.Commands.Layers do
   @spec commands() :: keyword()
   def commands do
     __ENV__.file
-    |> Skia.Codegen.CommandSchema.from_file()
+    |> Skia.Codegen.CommandSpecs.from_file()
     |> Enum.map(fn command ->
       {command.name,
        @metadata

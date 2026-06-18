@@ -1,10 +1,10 @@
-defmodule Skia.Codegen.CommandSchema do
+defmodule Skia.Codegen.CommandSpecs do
   @moduledoc """
   Transitional command metadata extraction from Elixir declaration modules.
 
   This module reads quoted Elixir `@type`/`@spec` declarations for the current
   command overlay modules. It exists to keep the generator small while Skia
-  migrates toward native-backed schemas from `Skia.Codegen.NativeSchema` and
+  migrates toward native-backed command metadata from `Skia.Codegen.NativeSchema` and
   `RustQ.Syn`.
 
   Do not treat these Elixir typespec declarations as the long-term source of
