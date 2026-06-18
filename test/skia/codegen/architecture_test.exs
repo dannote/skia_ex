@@ -59,8 +59,8 @@ defmodule Skia.Codegen.ArchitectureTest do
       |> Path.wildcard()
       |> Enum.map_join("\n", &File.read!/1)
 
-    refute source =~ "defcommand_handler("
-    assert source =~ "defcommand_handlers("
+    refute source =~ "defcommand_handler"
+    assert source =~ "defmacro handlers"
   end
 
   test "simple layer commands do not generate trivial impl wrappers" do

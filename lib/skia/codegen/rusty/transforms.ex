@@ -8,12 +8,11 @@ defmodule Skia.Codegen.Rusty.Transforms do
 
   alias Skia.Codegen.Commands.Transforms
 
-  use RustQ.Meta
-  use Skia.Codegen.Rusty.Command
+  use Skia.Codegen.Rusty.Domain,
+    commands: Transforms,
+    only: [:translate, :scale, :rotate, :rotate_at, :concat]
 
   alias RustQ.Type, as: R
-
-  defrust_commands(Transforms, [:translate, :scale, :rotate, :rotate_at, :concat])
 
   @spec draw_translate_impl(
           R.ref(SkiaSafe.Canvas.t()),

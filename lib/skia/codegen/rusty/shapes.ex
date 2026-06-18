@@ -8,15 +8,14 @@ defmodule Skia.Codegen.Rusty.Shapes do
 
   alias Skia.Codegen.Commands.Shapes
 
-  use RustQ.Meta
-  use Skia.Codegen.Rusty.Command
+  use Skia.Codegen.Rusty.Domain,
+    commands: Shapes,
+    only: [:clear, :rect, :circle, :oval, :arc, :vertices, :line],
+    helpers: [:draw_rect_shape]
+
   use Skia.Codegen.Rusty.Paint
 
   alias RustQ.Type, as: R
-
-  defrust_commands(Shapes, [:clear, :rect, :circle, :oval, :arc, :vertices, :line],
-    helpers: [:draw_rect_shape]
-  )
 
   @spec draw_clear_impl(R.ref(SkiaSafe.Canvas.t()), R.vec(R.term())) :: R.nif_result(R.unit())
   defrust draw_clear_impl(canvas, args) do

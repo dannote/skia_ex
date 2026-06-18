@@ -8,13 +8,13 @@ defmodule Skia.Codegen.Rusty.Text do
 
   alias Skia.Codegen.Commands.Text
 
-  use RustQ.Meta
-  use Skia.Codegen.Rusty.Command
+  use Skia.Codegen.Rusty.Domain,
+    commands: Text,
+    only: [:text_blob, :text]
+
   use Skia.Codegen.Rusty.Args
 
   alias RustQ.Type, as: R
-
-  defrust_commands(Text, [:text_blob, :text])
 
   @spec draw_text_blob_impl(
           R.ref(SkiaSafe.Canvas.t()),

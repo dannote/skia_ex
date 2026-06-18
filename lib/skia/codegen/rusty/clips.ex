@@ -5,13 +5,13 @@ defmodule Skia.Codegen.Rusty.Clips do
 
   alias Skia.Codegen.Commands.Clips
 
-  use RustQ.Meta
-  use Skia.Codegen.Rusty.Command
+  use Skia.Codegen.Rusty.Domain,
+    commands: Clips,
+    only: [:clip_rect, :clip_circle, :clip_path]
+
   use Skia.Codegen.Rusty.Args
 
   alias RustQ.Type, as: R
-
-  defrust_commands(Clips, [:clip_rect, :clip_circle, :clip_path])
 
   @spec clip_rect_impl(
           R.ref(SkiaSafe.Canvas.t()),

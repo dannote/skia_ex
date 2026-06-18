@@ -5,13 +5,13 @@ defmodule Skia.Codegen.Rusty.Paths do
 
   alias Skia.Codegen.Commands.Paths
 
-  use RustQ.Meta
-  use Skia.Codegen.Rusty.Command
+  use Skia.Codegen.Rusty.Domain,
+    commands: Paths,
+    only: [:path, :path_op, :path_outline]
+
   use Skia.Codegen.Rusty.Args
 
   alias RustQ.Type, as: R
-
-  defrust_commands(Paths, [:path, :path_op, :path_outline])
 
   @spec draw_path_impl(
           R.ref(SkiaSafe.Canvas.t()),

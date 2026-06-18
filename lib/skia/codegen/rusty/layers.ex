@@ -16,12 +16,11 @@ defmodule Skia.Codegen.Rusty.Layers do
     |> Enum.map(fn {_name, spec} -> spec |> Keyword.fetch!(:handler) |> rust_ast!() end)
   end
 
-  use RustQ.Meta
-  use Skia.Codegen.Rusty.Command
+  use Skia.Codegen.Rusty.Domain,
+    commands: Layers,
+    only: [:save_layer]
 
   alias RustQ.Type, as: R
-
-  defrust_commands(Layers, [:save_layer])
 
   @spec draw_save(R.ref(SkiaSafe.Canvas.t()), term()) :: R.nif_result(R.unit())
   defrust draw_save(canvas, _command) do

@@ -1,21 +1,17 @@
-defmodule Skia.Codegen.Rusty.Command do
+defmodule Skia.Codegen.Rusty.Domain do
   @moduledoc false
 
-  defmacro __using__(_opts) do
-    quote do
-      import Skia.Codegen.Rusty.Command
-    end
-  end
-
-  defmacro defrust_commands(commands_module, names, opts \\ []) do
-    commands_module = Macro.expand(commands_module, __CALLER__)
-    names = expand_value!(names, __CALLER__)
-    opts = expand_value!(opts, __CALLER__)
-    helpers = Keyword.get(opts, :helpers, [])
-    handlers = handler_defs(commands_module, only: names)
+  defmacro __using__(opts) do
+    commands_module = opts |> Keyword.fetch!(:commands) |> Macro.expand(__CALLER__)
+    only = opts |> Keyword.fetch!(:only) |> expand_value!(__CALLER__)
+    helpers = opts |> Keyword.get(:helpers, []) |> expand_value!(__CALLER__)
+    handlers = handler_defs(commands_module, only: only)
 
     quote do
-      @commands unquote(names)
+      use RustQ.Meta
+      import Skia.Codegen.Rusty.Domain
+
+      @commands unquote(only)
 
       @spec commands() :: [atom()]
       def commands, do: @commands
@@ -50,7 +46,7 @@ defmodule Skia.Codegen.Rusty.Command do
     end
   end
 
-  defmacro defcommand_handlers(commands_module, opts \\ []) do
+  defmacro handlers(commands_module, opts \\ []) do
     commands_module = Macro.expand(commands_module, __CALLER__)
     opts = expand_value!(opts, __CALLER__)
     handlers = handler_defs(commands_module, opts)
@@ -92,7 +88,7 @@ defmodule Skia.Codegen.Rusty.Command do
 
   defp expand_value!({:@, _, [{name, _, _}]}, env) when is_atom(name) do
     Module.get_attribute(env.module, name) ||
-      raise ArgumentError, "expected @#{name} to be set before defcommand_handlers/2"
+      raise ArgumentError, "expected @#{name} to be set before handlers/2"
   end
 
   defp expand_value!(quoted, env) do

@@ -5,13 +5,14 @@ defmodule Skia.Codegen.Rusty.Images do
 
   alias Skia.Codegen.Commands.Images
 
-  use RustQ.Meta
-  use Skia.Codegen.Rusty.Command
+  use Skia.Codegen.Rusty.Domain,
+    commands: Images,
+    only: [:image, :picture],
+    helpers: [:draw_image_source_or_default]
+
   use Skia.Codegen.Rusty.Args
 
   alias RustQ.Type, as: R
-
-  defrust_commands(Images, [:image, :picture], helpers: [:draw_image_source_or_default])
 
   @spec draw_image_impl(
           R.ref(SkiaSafe.Canvas.t()),
