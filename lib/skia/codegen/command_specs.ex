@@ -16,17 +16,13 @@ defmodule Skia.Codegen.CommandSpecs do
   @type command :: %{name: atom(), args: keyword(), opts: [keyword()]}
 
   @spec from_file(Path.t()) :: [command()]
-  def from_file(path) do
-    path
-    |> File.read!()
-    |> Code.string_to_quoted!(file: path)
-    |> from_quoted()
-  end
+  def from_file(path), do: path |> RustQ.Spec.Declarations.from_file() |> from_declarations()
 
   @spec from_quoted(Macro.t()) :: [command()]
-  def from_quoted(quoted) do
-    {types, specs, defs} = collect_declarations(quoted)
+  def from_quoted(quoted),
+    do: quoted |> RustQ.Spec.Declarations.from_quoted() |> from_declarations()
 
+  defp from_declarations(%RustQ.Spec.Declarations{aliases: types, specs: specs, defs: defs}) do
     specs
     |> Enum.filter(fn {name, spec_arg_types} ->
       Map.has_key?(defs, name) and is_list(spec_arg_types) and length(spec_arg_types) >= 2
@@ -35,32 +31,6 @@ defmodule Skia.Codegen.CommandSpecs do
       def_args = Map.fetch!(defs, name)
       command_from_spec(name, def_args, spec_arg_types, types)
     end)
-  end
-
-  defp collect_declarations({:defmodule, _meta, [_module, [do: body]]}),
-    do: collect_declarations(body)
-
-  defp collect_declarations(body) do
-    {types, specs, defs} =
-      body
-      |> block_expressions()
-      |> Enum.reduce({[], [], %{}}, fn
-        {:@, meta, [{:type, _, [{:"::", _, [_name_ast, _type_ast]} = type_ast]}]},
-        {types, specs, defs} ->
-          {[{:type, type_ast, meta[:line] || 0} | types], specs, defs}
-
-        {:@, _, [{:spec, _, [{:"::", _, [{name, _, arg_types}, _return]}]}]},
-        {types, specs, defs} ->
-          {types, specs ++ [{name, arg_types}], defs}
-
-        {:def, _, [{name, _, args}, _body]}, {types, specs, defs} ->
-          {types, specs, Map.put(defs, name, Enum.map(args || [], &arg_name!/1))}
-
-        _other, acc ->
-          acc
-      end)
-
-    {RustQ.Spec.aliases(types), specs, defs}
   end
 
   defp command_from_spec(name, def_args, spec_arg_types, types) do
@@ -74,11 +44,6 @@ defmodule Skia.Codegen.CommandSpecs do
       opts: opts_type |> spec_type(types) |> resolve_opts_alias(types) |> opts_from_type!()
     }
   end
-
-  defp arg_name!({name, _, context}) when is_atom(name) and is_atom(context), do: name
-
-  defp arg_name!(other),
-    do: raise(ArgumentError, "unsupported command declaration argument #{Macro.to_string(other)}")
 
   defp resolve_opts_alias(%RustQ.Meta.Type{kind: :alias, meta: %{ast: ast}}, aliases) do
     ast |> spec_type(aliases) |> resolve_opts_alias(aliases)
@@ -137,7 +102,4 @@ defmodule Skia.Codegen.CommandSpecs do
   end
 
   defp enum_name?(name), do: match?({:ok, _spec}, Skia.Codegen.EnumSpecs.command_spec(name))
-
-  defp block_expressions({:__block__, _, expressions}), do: expressions
-  defp block_expressions(expression), do: [expression]
 end
