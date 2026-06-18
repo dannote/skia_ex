@@ -7,11 +7,10 @@ fn draw_text_blob_impl<'a>(
     raw_opts: &[(Atom, Term<'a>)],
 ) -> NifResult<()> {
     let blob = text_blob_from_term(*args.first().ok_or(rustler::Error::BadArg)?)?;
-    let paint = match opts.fill {
+    let mut paint = match opts.fill {
         Some(term) => decode_paint(term)?,
         None => fill_paint(Color::BLACK),
     };
-    let mut paint = paint;
     apply_paint_effects(&mut paint, raw_opts)?;
     canvas.draw_text_blob(&blob, (opts.x, opts.y), &paint);
     Ok(())
@@ -33,11 +32,23 @@ fn draw_text_impl<'a>(
         Some(term) => fill_paint(decode_color(term)?),
         None => fill_paint(Color::BLACK),
     };
-    if let Some(width) = opts.width {
-        draw_paragraph_text(canvas, &text, opts.x, opts.y, width, size, &paint, &opts)?;
-    } else {
-        canvas.draw_str(text, (opts.x, opts.y), &font, &paint);
-    }
+    match opts.width {
+        Some(width) => {
+            draw_paragraph_text(
+                canvas,
+                &text,
+                opts.x,
+                opts.y,
+                width,
+                size,
+                &paint,
+                &opts,
+            )?;
+        }
+        None => {
+            canvas.draw_str(text, (opts.x, opts.y), &font, &paint);
+        }
+    };
     Ok(())
 }
 fn draw_paragraph_text<'a>(

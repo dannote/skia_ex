@@ -41,6 +41,23 @@ defmodule Skia.CodegenDefrustTest do
     assert source =~ "draw_path_impl(canvas, args, decoded_opts, &opts)"
   end
 
+  test "text impls are generated from Rusty Elixir" do
+    source = Skia.Codegen.generated_text()
+
+    assert source =~ "fn draw_text_blob_impl<'a>("
+
+    assert source =~
+             "let blob = text_blob_from_term(*args.first().ok_or(rustler::Error::BadArg)?)?;"
+
+    assert source =~ "apply_paint_effects(&mut paint, raw_opts)?;"
+
+    assert source =~ "fn draw_text_impl<'a>("
+    assert source =~ "let text = args.first().ok_or(rustler::Error::BadArg)?.decode::<String>()?;"
+
+    assert source =~
+             "draw_paragraph_text(canvas, &text, opts.x, opts.y, width, size, &paint, &opts)?;"
+  end
+
   test "transform impls are generated from Rusty Elixir" do
     source = Skia.Codegen.generated_transforms()
 

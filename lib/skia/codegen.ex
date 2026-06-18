@@ -761,7 +761,14 @@ defmodule Skia.Codegen do
 
   @spec generated_text() :: String.t()
   def generated_text do
-    items = generated_body_impls(Text.commands(), :text_draw) ++ text_helper_impls()
+    defrust_items = Enum.map(Rusty.Text.generated_asts(), &render_rustq_item/1)
+
+    legacy_items =
+      Text.commands()
+      |> Keyword.drop(Rusty.Text.commands())
+      |> generated_body_impls(:text_draw)
+
+    items = defrust_items ++ legacy_items ++ text_helper_impls()
     render_items(items, "generated_text.rs")
   end
 
