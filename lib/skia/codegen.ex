@@ -5,9 +5,8 @@ defmodule Skia.Codegen do
   alias RustQ.Rust.AST
   alias RustQ.Rust.AST.Builder, as: A
   alias RustQ.Rustler.Decode, as: R
-  alias Skia.Codegen.ShapeImpls
+  alias Skia.Codegen.Rusty
   alias Skia.Codegen.SkiaSafe
-  alias Skia.Codegen.TransformImpls
   alias Skia.CommandSpec.Clips
   alias Skia.CommandSpec.Images
   alias Skia.CommandSpec.Layers
@@ -731,7 +730,7 @@ defmodule Skia.Codegen do
 
     legacy_items =
       Transforms.commands()
-      |> Keyword.drop(TransformImpls.commands())
+      |> Keyword.drop(Rusty.Transforms.commands())
       |> generated_body_impls(:transform)
 
     render_items(defrust_items ++ legacy_items, "generated_transforms.rs")
@@ -739,7 +738,7 @@ defmodule Skia.Codegen do
 
   @doc false
   @spec generated_transform_impl_asts() :: [AST.Function.t()]
-  def generated_transform_impl_asts, do: TransformImpls.generated_asts()
+  def generated_transform_impl_asts, do: Rusty.Transforms.generated_asts()
 
   @spec generated_shapes() :: String.t()
   def generated_shapes do
@@ -747,7 +746,7 @@ defmodule Skia.Codegen do
 
     legacy_items =
       Shapes.commands()
-      |> Keyword.drop(ShapeImpls.commands())
+      |> Keyword.drop(Rusty.Shapes.commands())
       |> generated_body_impls(:shape_draw)
 
     render_items(defrust_items ++ legacy_items, "generated_shapes.rs")
@@ -755,7 +754,7 @@ defmodule Skia.Codegen do
 
   @doc false
   @spec generated_shape_impl_asts() :: [AST.Function.t()]
-  def generated_shape_impl_asts, do: ShapeImpls.generated_asts()
+  def generated_shape_impl_asts, do: Rusty.Shapes.generated_asts()
 
   @spec generated_text() :: String.t()
   def generated_text do

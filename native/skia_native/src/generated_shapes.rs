@@ -20,8 +20,7 @@ fn draw_rect_impl<'a>(
     let rect = Rect::from_xywh(opts.x, opts.y, opts.width, opts.height);
     let radius = opts.radius.unwrap_or(0.0);
     match opt_fill_paint(raw_opts, atoms::fill())? {
-        Some(paint) => {
-            let mut paint = paint;
+        Some(mut paint) => {
             apply_blend_mode(&mut paint, raw_opts)?;
             draw_rect_shape(canvas, rect, radius, &paint);
         }
@@ -47,8 +46,7 @@ fn draw_oval_impl<'a>(
 ) -> NifResult<()> {
     let rect = Rect::from_xywh(opts.x, opts.y, opts.width, opts.height);
     match opt_fill_paint(raw_opts, atoms::fill())? {
-        Some(paint) => {
-            let mut paint = paint;
+        Some(mut paint) => {
             apply_blend_mode(&mut paint, raw_opts)?;
             canvas.draw_oval(rect, &paint);
         }
@@ -75,8 +73,7 @@ fn draw_arc_impl<'a>(
     let rect = Rect::from_xywh(opts.x, opts.y, opts.width, opts.height);
     let use_center = opts.use_center.unwrap_or(false);
     match opt_fill_paint(raw_opts, atoms::fill())? {
-        Some(paint) => {
-            let mut paint = paint;
+        Some(mut paint) => {
             apply_blend_mode(&mut paint, raw_opts)?;
             canvas
                 .draw_arc(
@@ -116,8 +113,7 @@ fn draw_circle_impl<'a>(
 ) -> NifResult<()> {
     let center = Point::new(opts.x, opts.y);
     match opt_fill_paint(raw_opts, atoms::fill())? {
-        Some(paint) => {
-            let mut paint = paint;
+        Some(mut paint) => {
             apply_blend_mode(&mut paint, raw_opts)?;
             canvas.draw_circle(center, opts.radius, &paint);
         }

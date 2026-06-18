@@ -1,9 +1,9 @@
-defmodule Skia.Codegen.RustyPaint do
+defmodule Skia.Codegen.Rusty.Paint do
   @moduledoc false
 
   defmacro __using__(_opts) do
     quote do
-      import Skia.Codegen.RustyPaint
+      import Skia.Codegen.Rusty.Paint
     end
   end
 
@@ -11,7 +11,6 @@ defmodule Skia.Codegen.RustyPaint do
     quote do
       case unwrap!(opt_fill_paint(var!(raw_opts), Atoms.fill())) do
         {:some, var!(paint)} ->
-          var!(paint) = var!(paint)
           unwrap!(apply_blend_mode(mut_ref(var!(paint)), var!(raw_opts)))
           unquote(body)
 
