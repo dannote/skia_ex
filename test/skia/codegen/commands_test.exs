@@ -17,4 +17,11 @@ defmodule Skia.Codegen.CommandsTest do
            ] =
              method.args
   end
+
+  test "overlay defaults are merged into command metadata" do
+    assert Keyword.fetch!(Skia.Codegen.Commands.fetch!(:rect), :defaults) == [radius: 0]
+
+    assert Keyword.fetch!(Skia.Codegen.Commands.fetch!(:clip_path), :defaults) ==
+             [antialias: true, fill_rule: :winding, clip_op: :intersect]
+  end
 end
