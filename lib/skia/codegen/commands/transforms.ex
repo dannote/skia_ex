@@ -3,14 +3,6 @@ defmodule Skia.Codegen.Commands.Transforms do
 
   @type matrix :: {number(), number(), number(), number(), number(), number()}
 
-  @native_refs %{
-    translate: ["skia_safe::Canvas::translate"],
-    scale: ["skia_safe::Canvas::scale"],
-    rotate: ["skia_safe::Canvas::rotate"],
-    rotate_at: ["skia_safe::Canvas::rotate"],
-    concat: ["skia_safe::Canvas::concat"]
-  }
-
   @type translate_opts :: %{required(:x) => number(), required(:y) => number()}
   @type scale_opts :: %{required(:x) => number(), required(:y) => number()}
   @type rotate_opts :: %{required(:degrees) => number()}
@@ -30,8 +22,7 @@ defmodule Skia.Codegen.Commands.Transforms do
        [
          handler: handler(command.name),
          args: command.args,
-         opts: command.opts,
-         native_refs: Map.fetch!(@native_refs, command.name)
+         opts: command.opts
        ]}
     end)
   end

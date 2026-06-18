@@ -5,18 +5,8 @@ defmodule Skia.Codegen.Commands.Images do
   @type source_rect :: {number(), number(), number(), number()}
 
   @metadata %{
-    image: [
-      handler: :draw_image,
-      native_refs: [
-        "skia_safe::Canvas::draw_image_with_sampling_options",
-        "skia_safe::Canvas::draw_image_rect_with_sampling_options"
-      ]
-    ],
-    picture: [
-      handler: :draw_picture,
-      defaults: [x: 0, y: 0],
-      native_refs: ["skia_safe::Canvas::draw_picture"]
-    ]
+    image: [handler: :draw_image],
+    picture: [handler: :draw_picture, defaults: [x: 0, y: 0]]
   }
 
   @type image_opts :: %{

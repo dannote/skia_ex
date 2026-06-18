@@ -8,16 +8,8 @@ defmodule Skia.Codegen.Commands.Text do
   @type font :: term()
 
   @metadata %{
-    text_blob: [
-      handler: :draw_text_blob,
-      defaults: [fill: :black],
-      native_refs: ["skia_safe::Canvas::draw_text_blob"]
-    ],
-    text: [
-      handler: :draw_text,
-      defaults: [size: 16, fill: :black],
-      native_refs: ["skia_safe::Canvas::draw_str", "skia_safe::Font::measure_str"]
-    ]
+    text_blob: [handler: :draw_text_blob, defaults: [fill: :black]],
+    text: [handler: :draw_text, defaults: [size: 16, fill: :black]]
   }
 
   @type paint_opts :: %{

@@ -8,15 +8,6 @@ defmodule Skia.Codegen.Commands.Paths do
   @type fill_rule :: :winding | :even_odd | :inverse_winding | :inverse_even_odd
   @type path_op :: :difference | :intersect | :union | :xor | :reverse_difference
 
-  @native_refs %{
-    path: ["skia_safe::Canvas::draw_path"],
-    path_op: ["skia_safe::Path::op", "skia_safe::Canvas::draw_path"],
-    path_outline: [
-      "skia_safe::path_utils::fill_path_with_paint",
-      "skia_safe::Canvas::draw_path"
-    ]
-  }
-
   @type paint_opts :: %{
           optional(:paint) => Skia.Paint.t(),
           optional(:fill) => color(),
@@ -91,8 +82,7 @@ defmodule Skia.Codegen.Commands.Paths do
        [
          handler: handler(command.name),
          args: command.args,
-         opts: command.opts,
-         native_refs: Map.fetch!(@native_refs, command.name)
+         opts: command.opts
        ]}
     end)
   end

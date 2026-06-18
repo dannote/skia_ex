@@ -5,13 +5,9 @@ defmodule Skia.Codegen.Commands.Layers do
   @type bounds :: {number(), number(), number(), number()}
 
   @metadata %{
-    save: [handler: :draw_save, native_refs: ["skia_safe::Canvas::save"]],
-    save_layer: [
-      handler: :draw_save_layer,
-      defaults: [opacity: 1.0],
-      native_refs: ["skia_safe::Canvas::save_layer", "skia_safe::ImageFilter::blur"]
-    ],
-    restore: [handler: :draw_restore, native_refs: ["skia_safe::Canvas::restore"]],
+    save: [handler: :draw_save],
+    save_layer: [handler: :draw_save_layer, defaults: [opacity: 1.0]],
+    restore: [handler: :draw_restore],
     push_style: [],
     pop_style: []
   }

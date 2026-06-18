@@ -2,35 +2,35 @@
 
 # Skia command reference
 
-| Command | Args | Options | Defaults | Native references |
-| --- | --- | --- | --- | --- |
-| `clear` | `color: color` | — | — | `skia_safe::Canvas::clear` |
-| `rect` | — | `x: number` required<br>`y: number` required<br>`width: number` required<br>`height: number` required<br>`radius: number`<br>`paint: paint`<br>`fill: color`<br>`stroke: color`<br>`stroke_width: number`<br>`stroke_cap: stroke_cap`<br>`stroke_join: stroke_join`<br>`stroke_miter: number`<br>`blend_mode: blend_mode`<br>`image_filter: image_filter`<br>`path_effect: path_effect`<br>`color_filter: color_filter`<br>`mask_filter: mask_filter` | `radius: 0` | `skia_safe::Canvas::draw_rect`<br>`skia_safe::Canvas::draw_rrect` |
-| `oval` | — | `x: number` required<br>`y: number` required<br>`width: number` required<br>`height: number` required<br>`paint: paint`<br>`fill: color`<br>`stroke: color`<br>`stroke_width: number`<br>`stroke_cap: stroke_cap`<br>`stroke_join: stroke_join`<br>`stroke_miter: number`<br>`blend_mode: blend_mode`<br>`image_filter: image_filter`<br>`path_effect: path_effect`<br>`color_filter: color_filter`<br>`mask_filter: mask_filter` | — | `skia_safe::Canvas::draw_oval` |
-| `arc` | — | `x: number` required<br>`y: number` required<br>`width: number` required<br>`height: number` required<br>`start_degrees: number` required<br>`sweep_degrees: number` required<br>`use_center: boolean`<br>`paint: paint`<br>`fill: color`<br>`stroke: color`<br>`stroke_width: number`<br>`stroke_cap: stroke_cap`<br>`stroke_join: stroke_join`<br>`stroke_miter: number`<br>`blend_mode: blend_mode`<br>`image_filter: image_filter`<br>`path_effect: path_effect`<br>`color_filter: color_filter`<br>`mask_filter: mask_filter` | `use_center: false` | `skia_safe::Canvas::draw_arc` |
-| `circle` | — | `x: number` required<br>`y: number` required<br>`radius: number` required<br>`paint: paint`<br>`fill: color`<br>`stroke: color`<br>`stroke_width: number`<br>`stroke_cap: stroke_cap`<br>`stroke_join: stroke_join`<br>`stroke_miter: number`<br>`blend_mode: blend_mode`<br>`image_filter: image_filter`<br>`path_effect: path_effect`<br>`color_filter: color_filter`<br>`mask_filter: mask_filter` | — | `skia_safe::Canvas::draw_circle` |
-| `vertices` | `vertices: vertices` | `paint: paint`<br>`fill: color`<br>`stroke: color`<br>`stroke_width: number`<br>`stroke_cap: stroke_cap`<br>`stroke_join: stroke_join`<br>`stroke_miter: number`<br>`blend_mode: blend_mode`<br>`image_filter: image_filter`<br>`path_effect: path_effect`<br>`color_filter: color_filter`<br>`mask_filter: mask_filter` | `blend_mode: :src_over` | `skia_safe::Canvas::draw_vertices` |
-| `line` | — | `from: {number, number}` required<br>`to: {number, number}` required<br>`stroke: color` required<br>`stroke_width: number`<br>`stroke_cap: stroke_cap`<br>`stroke_join: stroke_join`<br>`stroke_miter: number`<br>`blend_mode: blend_mode` | — | `skia_safe::Canvas::draw_line` |
-| `text_blob` | `blob: text_blob` | `x: number` required<br>`y: number` required<br>`paint: paint`<br>`fill: color`<br>`stroke: color`<br>`stroke_width: number`<br>`stroke_cap: stroke_cap`<br>`stroke_join: stroke_join`<br>`stroke_miter: number`<br>`blend_mode: blend_mode`<br>`image_filter: image_filter`<br>`path_effect: path_effect`<br>`color_filter: color_filter`<br>`mask_filter: mask_filter` | `fill: :black` | `skia_safe::Canvas::draw_text_blob` |
-| `text` | `text: string` | `x: number` required<br>`y: number` required<br>`width: number`<br>`size: number`<br>`fill: color`<br>`font: font`<br>`weight: integer`<br>`align: atom`<br>`direction: atom`<br>`font_family: string`<br>`line_height: number`<br>`spans: term` | `size: 16`<br>`fill: :black` | `skia_safe::Canvas::draw_str`<br>`skia_safe::Font::measure_str` |
-| `image` | `image: image` | `x: number` required<br>`y: number` required<br>`width: number`<br>`height: number`<br>`source: {number, number, number, number}`<br>`opacity: number`<br>`sampling: sampling_options`<br>`blend_mode: blend_mode` | — | `skia_safe::Canvas::draw_image_with_sampling_options`<br>`skia_safe::Canvas::draw_image_rect_with_sampling_options` |
-| `picture` | `picture: picture` | `x: number`<br>`y: number`<br>`opacity: number`<br>`blend_mode: blend_mode` | `x: 0`<br>`y: 0` | `skia_safe::Canvas::draw_picture` |
-| `save` | — | — | — | `skia_safe::Canvas::save` |
-| `save_layer` | — | `opacity: number`<br>`bounds: {number, number, number, number}`<br>`blend_mode: blend_mode`<br>`blur: number`<br>`image_filter: image_filter` | `opacity: 1.0` | `skia_safe::Canvas::save_layer`<br>`skia_safe::ImageFilter::blur` |
-| `restore` | — | — | — | `skia_safe::Canvas::restore` |
-| `push_style` | — | `style: term` required | — | — |
-| `pop_style` | — | — | — | — |
-| `translate` | — | `x: number` required<br>`y: number` required | — | `skia_safe::Canvas::translate` |
-| `scale` | — | `x: number` required<br>`y: number` required | — | `skia_safe::Canvas::scale` |
-| `rotate` | — | `degrees: number` required | — | `skia_safe::Canvas::rotate` |
-| `rotate_at` | — | `degrees: number` required<br>`x: number` required<br>`y: number` required | — | `skia_safe::Canvas::rotate` |
-| `concat` | — | `matrix: {number, number, number, number, number, number}` required | — | `skia_safe::Canvas::concat` |
-| `path` | `path: path` | `paint: paint`<br>`fill: color`<br>`stroke: color`<br>`stroke_width: number`<br>`stroke_cap: stroke_cap`<br>`stroke_join: stroke_join`<br>`stroke_miter: number`<br>`blend_mode: blend_mode`<br>`image_filter: image_filter`<br>`path_effect: path_effect`<br>`color_filter: color_filter`<br>`mask_filter: mask_filter`<br>`fill_rule: fill_rule` | — | `skia_safe::Canvas::draw_path` |
-| `path_op` | `a: path`<br>`b: path` | `paint: paint`<br>`fill: color`<br>`stroke: color`<br>`stroke_width: number`<br>`stroke_cap: stroke_cap`<br>`stroke_join: stroke_join`<br>`stroke_miter: number`<br>`blend_mode: blend_mode`<br>`image_filter: image_filter`<br>`path_effect: path_effect`<br>`color_filter: color_filter`<br>`mask_filter: mask_filter`<br>`path_op: path_op` required<br>`fill_rule: fill_rule` | — | `skia_safe::Path::op`<br>`skia_safe::Canvas::draw_path` |
-| `path_outline` | `path: path` | `paint: paint`<br>`fill: color`<br>`stroke: color`<br>`stroke_width: number`<br>`stroke_cap: stroke_cap`<br>`stroke_join: stroke_join`<br>`stroke_miter: number`<br>`blend_mode: blend_mode`<br>`image_filter: image_filter`<br>`path_effect: path_effect`<br>`color_filter: color_filter`<br>`mask_filter: mask_filter`<br>`outline_width: number` required<br>`fill_rule: fill_rule` | — | `skia_safe::path_utils::fill_path_with_paint`<br>`skia_safe::Canvas::draw_path` |
-| `clip_rect` | — | `x: number` required<br>`y: number` required<br>`width: number` required<br>`height: number` required<br>`radius: number`<br>`antialias: boolean`<br>`clip_op: clip_op` | `radius: 0`<br>`antialias: true`<br>`clip_op: :intersect` | `skia_safe::Canvas::clip_rect`<br>`skia_safe::Canvas::clip_rrect` |
-| `clip_circle` | — | `x: number` required<br>`y: number` required<br>`radius: number` required<br>`antialias: boolean`<br>`clip_op: clip_op` | `antialias: true`<br>`clip_op: :intersect` | `skia_safe::Canvas::clip_path` |
-| `clip_path` | `path: path` | `antialias: boolean`<br>`fill_rule: fill_rule`<br>`clip_op: clip_op` | `antialias: true`<br>`fill_rule: :winding`<br>`clip_op: :intersect` | `skia_safe::Canvas::clip_path` |
+| Command | Args | Options | Defaults |
+| --- | --- | --- | --- |
+| `clear` | `color: color` | — | — |
+| `rect` | — | `x: number` required<br>`y: number` required<br>`width: number` required<br>`height: number` required<br>`radius: number`<br>`paint: paint`<br>`fill: color`<br>`stroke: color`<br>`stroke_width: number`<br>`stroke_cap: stroke_cap`<br>`stroke_join: stroke_join`<br>`stroke_miter: number`<br>`blend_mode: blend_mode`<br>`image_filter: image_filter`<br>`path_effect: path_effect`<br>`color_filter: color_filter`<br>`mask_filter: mask_filter` | `radius: 0` |
+| `oval` | — | `x: number` required<br>`y: number` required<br>`width: number` required<br>`height: number` required<br>`paint: paint`<br>`fill: color`<br>`stroke: color`<br>`stroke_width: number`<br>`stroke_cap: stroke_cap`<br>`stroke_join: stroke_join`<br>`stroke_miter: number`<br>`blend_mode: blend_mode`<br>`image_filter: image_filter`<br>`path_effect: path_effect`<br>`color_filter: color_filter`<br>`mask_filter: mask_filter` | — |
+| `arc` | — | `x: number` required<br>`y: number` required<br>`width: number` required<br>`height: number` required<br>`start_degrees: number` required<br>`sweep_degrees: number` required<br>`use_center: boolean`<br>`paint: paint`<br>`fill: color`<br>`stroke: color`<br>`stroke_width: number`<br>`stroke_cap: stroke_cap`<br>`stroke_join: stroke_join`<br>`stroke_miter: number`<br>`blend_mode: blend_mode`<br>`image_filter: image_filter`<br>`path_effect: path_effect`<br>`color_filter: color_filter`<br>`mask_filter: mask_filter` | `use_center: false` |
+| `circle` | — | `x: number` required<br>`y: number` required<br>`radius: number` required<br>`paint: paint`<br>`fill: color`<br>`stroke: color`<br>`stroke_width: number`<br>`stroke_cap: stroke_cap`<br>`stroke_join: stroke_join`<br>`stroke_miter: number`<br>`blend_mode: blend_mode`<br>`image_filter: image_filter`<br>`path_effect: path_effect`<br>`color_filter: color_filter`<br>`mask_filter: mask_filter` | — |
+| `vertices` | `vertices: vertices` | `paint: paint`<br>`fill: color`<br>`stroke: color`<br>`stroke_width: number`<br>`stroke_cap: stroke_cap`<br>`stroke_join: stroke_join`<br>`stroke_miter: number`<br>`blend_mode: blend_mode`<br>`image_filter: image_filter`<br>`path_effect: path_effect`<br>`color_filter: color_filter`<br>`mask_filter: mask_filter` | `blend_mode: :src_over` |
+| `line` | — | `from: {number, number}` required<br>`to: {number, number}` required<br>`stroke: color` required<br>`stroke_width: number`<br>`stroke_cap: stroke_cap`<br>`stroke_join: stroke_join`<br>`stroke_miter: number`<br>`blend_mode: blend_mode` | — |
+| `text_blob` | `blob: text_blob` | `x: number` required<br>`y: number` required<br>`paint: paint`<br>`fill: color`<br>`stroke: color`<br>`stroke_width: number`<br>`stroke_cap: stroke_cap`<br>`stroke_join: stroke_join`<br>`stroke_miter: number`<br>`blend_mode: blend_mode`<br>`image_filter: image_filter`<br>`path_effect: path_effect`<br>`color_filter: color_filter`<br>`mask_filter: mask_filter` | `fill: :black` |
+| `text` | `text: string` | `x: number` required<br>`y: number` required<br>`width: number`<br>`size: number`<br>`fill: color`<br>`font: font`<br>`weight: integer`<br>`align: atom`<br>`direction: atom`<br>`font_family: string`<br>`line_height: number`<br>`spans: term` | `size: 16`<br>`fill: :black` |
+| `image` | `image: image` | `x: number` required<br>`y: number` required<br>`width: number`<br>`height: number`<br>`source: {number, number, number, number}`<br>`opacity: number`<br>`sampling: sampling_options`<br>`blend_mode: blend_mode` | — |
+| `picture` | `picture: picture` | `x: number`<br>`y: number`<br>`opacity: number`<br>`blend_mode: blend_mode` | `x: 0`<br>`y: 0` |
+| `save` | — | — | — |
+| `save_layer` | — | `opacity: number`<br>`bounds: {number, number, number, number}`<br>`blend_mode: blend_mode`<br>`blur: number`<br>`image_filter: image_filter` | `opacity: 1.0` |
+| `restore` | — | — | — |
+| `push_style` | — | `style: term` required | — |
+| `pop_style` | — | — | — |
+| `translate` | — | `x: number` required<br>`y: number` required | — |
+| `scale` | — | `x: number` required<br>`y: number` required | — |
+| `rotate` | — | `degrees: number` required | — |
+| `rotate_at` | — | `degrees: number` required<br>`x: number` required<br>`y: number` required | — |
+| `concat` | — | `matrix: {number, number, number, number, number, number}` required | — |
+| `path` | `path: path` | `paint: paint`<br>`fill: color`<br>`stroke: color`<br>`stroke_width: number`<br>`stroke_cap: stroke_cap`<br>`stroke_join: stroke_join`<br>`stroke_miter: number`<br>`blend_mode: blend_mode`<br>`image_filter: image_filter`<br>`path_effect: path_effect`<br>`color_filter: color_filter`<br>`mask_filter: mask_filter`<br>`fill_rule: fill_rule` | — |
+| `path_op` | `a: path`<br>`b: path` | `paint: paint`<br>`fill: color`<br>`stroke: color`<br>`stroke_width: number`<br>`stroke_cap: stroke_cap`<br>`stroke_join: stroke_join`<br>`stroke_miter: number`<br>`blend_mode: blend_mode`<br>`image_filter: image_filter`<br>`path_effect: path_effect`<br>`color_filter: color_filter`<br>`mask_filter: mask_filter`<br>`path_op: path_op` required<br>`fill_rule: fill_rule` | — |
+| `path_outline` | `path: path` | `paint: paint`<br>`fill: color`<br>`stroke: color`<br>`stroke_width: number`<br>`stroke_cap: stroke_cap`<br>`stroke_join: stroke_join`<br>`stroke_miter: number`<br>`blend_mode: blend_mode`<br>`image_filter: image_filter`<br>`path_effect: path_effect`<br>`color_filter: color_filter`<br>`mask_filter: mask_filter`<br>`outline_width: number` required<br>`fill_rule: fill_rule` | — |
+| `clip_rect` | — | `x: number` required<br>`y: number` required<br>`width: number` required<br>`height: number` required<br>`radius: number`<br>`antialias: boolean`<br>`clip_op: clip_op` | `radius: 0`<br>`antialias: true`<br>`clip_op: :intersect` |
+| `clip_circle` | — | `x: number` required<br>`y: number` required<br>`radius: number` required<br>`antialias: boolean`<br>`clip_op: clip_op` | `antialias: true`<br>`clip_op: :intersect` |
+| `clip_path` | `path: path` | `antialias: boolean`<br>`fill_rule: fill_rule`<br>`clip_op: clip_op` | `antialias: true`<br>`fill_rule: :winding`<br>`clip_op: :intersect` |
 
 ## Enums
 
@@ -45,172 +45,3 @@
 - `stroke_cap`: `:butt`, `:round`, `:square`
 - `stroke_join`: `:miter`, `:round`, `:bevel`
 - `tile_mode`: `:clamp`, `:repeat`, `:mirror`, `:decal`
-
-## Rust doc excerpts
-
-### `skia_safe::Canvas::clear`
-
-> Fills clip with color `color` using [`BlendMode::Src`].
-> This has the effect of replacing all pixels contained by clip with `color`.
-> - `color` [`Color4f`] representing unpremultiplied color.
-
-### `skia_safe::Canvas::clip_path`
-
-> Replaces clip with the intersection or difference of clip and `path`,
-> with an aliased or anti-aliased clip edge. [`crate::PathFillType`] determines if `path`
-> describes the area inside or outside its contours; and if path contour overlaps
-> itself or another path contour, whether the overlaps form part of the area.
-
-### `skia_safe::Canvas::clip_rect`
-
-> Replaces clip with the intersection or difference of clip and `rect`,
-> with an aliased or anti-aliased clip edge. `rect` is transformed by [`Matrix`]
-> before it is combined with clip.
-> - `rect` [`Rect`] to combine with clip
-
-### `skia_safe::Canvas::clip_rrect`
-
-> Replaces clip with the intersection or difference of clip and `rrect`,
-> with an aliased or anti-aliased clip edge.
-> `rrect` is transformed by [`Matrix`]
-> before it is combined with clip.
-
-### `skia_safe::Canvas::concat`
-
-> Replaces [`Matrix`] with matrix premultiplied with existing [`Matrix`].
-> This has the effect of transforming the drawn geometry by matrix, before transforming the
-> result with existing [`Matrix`].
-> - `matrix` matrix to premultiply with existing [`Matrix`]
-
-### `skia_safe::Canvas::draw_arc`
-
-> Draws arc using clip, [`Matrix`], and [`Paint`] paint.
-> Arc is part of oval bounded by oval, sweeping from `start_angle` to `start_angle` plus
-> `sweep_angle`. `start_angle` and `sweep_angle` are in degrees.
-> `start_angle` of zero places start point at the right middle edge of oval.
-
-### `skia_safe::Canvas::draw_circle`
-
-> Draws circle at center with radius using clip, [`Matrix`], and [`Paint`] `paint`.
-> If radius is zero or less, nothing is drawn.
-> In `paint`: [`crate::paint::Style`] determines if circle is stroked or filled;
-> if stroked, [`Paint`] stroke width describes the line thickness.
-
-### `skia_safe::Canvas::draw_line`
-
-> Draws line segment from `p1` to `p2` using clip, [`Matrix`], and [`Paint`] paint.
-> In paint: [`Paint`] stroke width describes the line thickness;
-> [`crate::paint::Cap`] draws the end rounded or square;
-> [`crate::paint::Style`] is ignored, as if were set to [`crate::paint::Style::Stroke`].
-
-### `skia_safe::Canvas::draw_oval`
-
-> Draws oval oval using clip, [`Matrix`], and [`Paint`].
-> In `paint`: [`crate::paint::Style`] determines if oval is stroked or filled;
-> if stroked, [`Paint`] stroke width describes the line thickness.
-> - `oval` [`Rect`] bounds of oval
-
-### `skia_safe::Canvas::draw_path`
-
-> Draws [`Path`] path using clip, [`Matrix`], and [`Paint`] `paint`.
-> [`Path`] contains an array of path contour, each of which may be open or closed.
-> In `paint`: [`crate::paint::Style`] determines if [`RRect`] is stroked or filled:
-> if filled, [`crate::PathFillType`] determines whether path contour describes inside or
-
-### `skia_safe::Canvas::draw_picture`
-
-> Draws [`Picture`] picture, using clip and [`Matrix`]; transforming picture with
-> [`Matrix`] matrix, if provided; and use [`Paint`] `paint` alpha, [`crate::ColorFilter`],
-> [`ImageFilter`], and [`BlendMode`], if provided.
-> If paint is not `None`, then the picture is always drawn into a temporary layer before
-
-### `skia_safe::Canvas::draw_rect`
-
-> Draws [`Rect`] rect using clip, [`Matrix`], and [`Paint`] `paint`.
-> In paint: [`crate::paint::Style`] determines if rectangle is stroked or filled;
-> if stroked, [`Paint`] stroke width describes the line thickness, and
-> [`crate::paint::Join`] draws the corners rounded or square.
-
-### `skia_safe::Canvas::draw_rrect`
-
-> Draws [`RRect`] rrect using clip, [`Matrix`], and [`Paint`] `paint`.
-> In `paint`: [`crate::paint::Style`] determines if rrect is stroked or filled;
-> if stroked, [`Paint`] stroke width describes the line thickness.
-> `rrect` may represent a rectangle, circle, oval, uniformly rounded rectangle, or
-
-### `skia_safe::Canvas::draw_str`
-
-> Draws [`String`], with origin at `(origin.x, origin.y)`, using clip, [`Matrix`], [`Font`]
-> `font`, and [`Paint`] `paint`.
-> This function uses the default character-to-glyph mapping from the [`crate::Typeface`] in
-> font.  It does not perform typeface fallback for characters not found in the
-
-### `skia_safe::Canvas::draw_text_blob`
-
-> Draws [`TextBlob`] blob at `(origin.x, origin.y)`, using clip, [`Matrix`], and [`Paint`]
-> paint.
-> `blob` contains glyphs, their positions, and paint attributes specific to text:
-> [`crate::Typeface`], [`Paint`] text size, [`Paint`] text scale x, [`Paint`] text skew x,
-
-### `skia_safe::Canvas::draw_vertices`
-
-> - `vertices` triangle mesh to draw
-> - `mode` combines vertices' colors with [`Shader`] if present or [`Paint`] opaque color if
-> not. Ignored if the vertices do not contain color.
-> - `paint` specifies the [`Shader`], used as [`Vertices`] texture, and
-
-### `skia_safe::Canvas::restore`
-
-> Removes changes to [`Matrix`] and clip since [`Canvas`] state was
-> last saved. The state is removed from the stack.
-> Does nothing if the stack is empty.
-> example: <https://fiddle.skia.org/c/@AutoCanvasRestore_restore>
-
-### `skia_safe::Canvas::rotate`
-
-> Rotates [`Matrix`] by degrees about a point at `(p.x, p.y)`. Positive degrees rotates
-> clockwise.
-> Mathematically, constructs a rotation matrix; premultiplies the rotation matrix by a
-> translation matrix; then replaces [`Matrix`] with the resulting matrix premultiplied with
-
-### `skia_safe::Canvas::save`
-
-> Saves [`Matrix`] and clip.
-> Calling [`Self::restore()`] discards changes to [`Matrix`] and clip,
-> restoring the [`Matrix`] and clip to their state when [`Self::save()`] was called.
-> [`Matrix`] may be changed by [`Self::translate()`], [`Self::scale()`], [`Self::rotate()`],
-
-### `skia_safe::Canvas::save_layer`
-
-> Saves [`Matrix`] and clip, and allocates [`Surface`] for subsequent drawing.
-> Calling [`Self::restore()`] discards changes to [`Matrix`] and clip, and blends layer with
-> alpha opacity onto prior layer.
-> [`Matrix`] may be changed by [`Self::translate()`], [`Self::scale()`], [`Self::rotate()`],
-
-### `skia_safe::Canvas::scale`
-
-> Scales [`Matrix`] by `sx` on the x-axis and `sy` on the y-axis.
-> Mathematically, replaces [`Matrix`] with a scale matrix premultiplied with [`Matrix`].
-> This has the effect of scaling the drawing by `(sx, sy)` before transforming the result with
-> [`Matrix`].
-
-### `skia_safe::Canvas::translate`
-
-> Translates [`Matrix`] by `d`.
-> Mathematically, replaces [`Matrix`] with a translation matrix premultiplied with [`Matrix`].
-> This has the effect of moving the drawing by `(d.x, d.y)` before transforming the result
-> with [`Matrix`].
-
-### `skia_safe::ImageFilter::blur`
-
-> Create a filter that blurs its input by the separate X and Y sigmas. The provided tile mode
-> is used when the blur kernel goes outside the input image.
-> * `sigma_x` - The Gaussian sigma value for blurring along the X axis.
-> * `sigma_y` - The Gaussian sigma value for blurring along the Y axis.
-
-### `skia_safe::path_utils::fill_path_with_paint`
-
-> Returns the filled equivalent of the stroked path.
-> * `src` - [`Path`] read to create a filled version
-> * `paint` - uses settings for stroke cap, width, miter, join, and path effect.
-> * `dst` - results are written to this builder.

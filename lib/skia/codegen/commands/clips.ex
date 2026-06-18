@@ -4,12 +4,6 @@ defmodule Skia.Codegen.Commands.Clips do
   @type clip_op :: :difference | :intersect
   @type fill_rule :: :winding | :even_odd | :inverse_winding | :inverse_even_odd
 
-  @native_refs %{
-    clip_rect: ["skia_safe::Canvas::clip_rect", "skia_safe::Canvas::clip_rrect"],
-    clip_circle: ["skia_safe::Canvas::clip_path"],
-    clip_path: ["skia_safe::Canvas::clip_path"]
-  }
-
   @defaults %{
     clip_rect: [radius: 0, antialias: true, clip_op: :intersect],
     clip_circle: [antialias: true, clip_op: :intersect],
@@ -50,8 +44,7 @@ defmodule Skia.Codegen.Commands.Clips do
          handler: command.name,
          args: command.args,
          opts: command.opts,
-         defaults: Map.get(@defaults, command.name, []),
-         native_refs: Map.fetch!(@native_refs, command.name)
+         defaults: Map.get(@defaults, command.name, [])
        ]}
     end)
   end

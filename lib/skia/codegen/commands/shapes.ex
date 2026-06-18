@@ -7,16 +7,6 @@ defmodule Skia.Codegen.Commands.Shapes do
   @type stroke_join :: atom()
   @type point :: {number(), number()}
 
-  @native_refs %{
-    clear: ["skia_safe::Canvas::clear"],
-    rect: ["skia_safe::Canvas::draw_rect", "skia_safe::Canvas::draw_rrect"],
-    oval: ["skia_safe::Canvas::draw_oval"],
-    arc: ["skia_safe::Canvas::draw_arc"],
-    circle: ["skia_safe::Canvas::draw_circle"],
-    vertices: ["skia_safe::Canvas::draw_vertices"],
-    line: ["skia_safe::Canvas::draw_line"]
-  }
-
   @defaults %{
     rect: [radius: 0],
     arc: [use_center: false],
@@ -142,8 +132,7 @@ defmodule Skia.Codegen.Commands.Shapes do
          handler: handler(command.name),
          args: command.args,
          opts: command.opts,
-         defaults: Map.get(@defaults, command.name, []),
-         native_refs: Map.fetch!(@native_refs, command.name)
+         defaults: Map.get(@defaults, command.name, [])
        ]}
     end)
   end
