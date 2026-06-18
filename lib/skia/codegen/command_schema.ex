@@ -2,7 +2,7 @@ defmodule Skia.Codegen.CommandSchema do
   @moduledoc """
   Derives command metadata from Elixir command typespecs.
 
-  This is the replacement direction for `Skia.CommandSpec`: real Elixir
+  Real Elixir
   `@type`/`@spec` declarations are the source of truth, and this module reads
   their quoted Elixir AST. It intentionally does not parse rendered Rust source
   and does not use Rust module resolver tables.

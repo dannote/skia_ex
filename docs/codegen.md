@@ -62,7 +62,7 @@ Family modules are plural (`Shapes`, `Transforms`, `Clips`). Helper macro module
 
 ## Command metadata direction
 
-`Skia.CommandSpec` is transitional scaffolding. It must shrink and disappear; do not add new parallel command metadata there. Command args/options should be declared as real Elixir `@type`/`@spec` declarations and reflected structurally from quoted Elixir AST. For example, option requirements belong in map types such as:
+`Skia.Codegen.Commands` is the command aggregate. Command args/options are declared as real Elixir `@type`/`@spec` declarations in `Skia.Codegen.Commands.*` modules and reflected structurally from quoted Elixir AST. Do not reintroduce parallel keyword-list command specs. For example, option requirements belong in map types such as:
 
 ```elixir
 @type path_op_opts :: %{

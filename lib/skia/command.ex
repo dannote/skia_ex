@@ -9,7 +9,7 @@ defmodule Skia.Command do
   Rustler NIF.
   """
 
-  alias Skia.CommandSpec
+  alias Skia.Codegen.Commands
 
   @type color ::
           {:rgba, non_neg_integer(), non_neg_integer(), non_neg_integer(), non_neg_integer()}
@@ -19,7 +19,7 @@ defmodule Skia.Command do
 
   @spec build!(atom(), [term()], keyword()) :: t()
   def build!(name, args, opts) when is_atom(name) and is_list(args) and is_list(opts) do
-    spec = CommandSpec.fetch!(name)
+    spec = Commands.fetch!(name)
     args = normalize_args!(name, args, Keyword.get(spec, :args, []))
 
     opts =

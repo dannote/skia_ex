@@ -6,7 +6,7 @@ defmodule Skia.DSL do
   both APIs share validation and command normalization.
   """
 
-  alias Skia.CommandSpec
+  alias Skia.Codegen.Commands
 
   defmacro __using__(_opts) do
     quote do
@@ -55,7 +55,7 @@ defmodule Skia.DSL do
 
   defp compile_document_statement({name, _meta, args}, acc)
        when is_atom(name) and is_list(args) do
-    if name in CommandSpec.drawable_names() do
+    if name in Commands.drawable_names() do
       quote do
         apply(Skia, unquote(name), [unquote(acc) | unquote(args)])
       end

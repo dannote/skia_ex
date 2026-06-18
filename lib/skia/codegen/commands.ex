@@ -1,11 +1,5 @@
-defmodule Skia.CommandSpec do
-  @moduledoc """
-  Source of truth for the curated Elixir drawing API.
-
-  Domain modules define small command groups. Skia enum variants and Rust
-  doc/native-reference checks are inferred from local `skia-safe`/
-  `skia-bindings` sources by `Skia.Codegen.SkiaSafe`.
-  """
+defmodule Skia.Codegen.Commands do
+  @moduledoc false
 
   @domains [
     Skia.Codegen.Commands.Shapes,

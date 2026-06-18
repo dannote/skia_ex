@@ -5,6 +5,7 @@ defmodule Skia.Codegen do
   alias RustQ.Rust.AST
   alias RustQ.Rust.AST.Builder, as: A
   alias RustQ.Rustler.Decode, as: R
+  alias Skia.Codegen.Commands
   alias Skia.Codegen.Rusty
   alias Skia.Codegen.SkiaSafe
 
@@ -390,7 +391,7 @@ defmodule Skia.Codegen do
   @spec generated_atoms() :: String.t()
   def generated_atoms do
     atoms =
-      Skia.CommandSpec.all()
+      Commands.all()
       |> Enum.flat_map(fn {name, spec} ->
         option_atoms = spec |> Keyword.get(:opts, []) |> Enum.map(&Keyword.fetch!(&1, :name))
         arg_atoms = spec |> Keyword.get(:args, []) |> Keyword.keys()
@@ -458,7 +459,7 @@ defmodule Skia.Codegen do
 
   defp enum_defs do
     specs =
-      Skia.CommandSpec.all()
+      Commands.all()
       |> Enum.flat_map(fn {_name, spec} -> Keyword.get(spec, :opts, []) end)
       |> Enum.flat_map(fn opt -> opt |> Keyword.fetch!(:type) |> enum_type_spec() end)
       |> Kernel.++(Map.to_list(@extra_enum_specs))
@@ -502,7 +503,7 @@ defmodule Skia.Codegen do
   @spec generated_dispatch() :: String.t()
   def generated_dispatch do
     cases =
-      Skia.CommandSpec.all()
+      Commands.all()
       |> Enum.flat_map(fn {name, spec} ->
         case Keyword.fetch(spec, :handler) do
           {:ok, handler} -> [{Keyword.get(spec, :op, name), "#{handler}(canvas, command)"}]
@@ -547,7 +548,7 @@ defmodule Skia.Codegen do
   end
 
   defp compact_ops do
-    Skia.CommandSpec.all()
+    Commands.all()
     |> Enum.flat_map(fn {name, spec} -> [name, Keyword.get(spec, :op, name)] end)
     |> Enum.uniq()
     |> Enum.with_index(1)
@@ -651,7 +652,7 @@ defmodule Skia.Codegen do
       |> Enum.map(&render_rustq_item/1)
 
     handlers =
-      Skia.Codegen.HandlerShells.generated_asts(Skia.CommandSpec.all(), except: [:save, :restore])
+      Skia.Codegen.HandlerShells.generated_asts(Commands.all(), except: [:save, :restore])
       |> Enum.map(&render_rustq_item/1)
 
     "generated_handlers.rs"
@@ -876,7 +877,7 @@ defmodule Skia.Codegen do
   @spec generated_opts() :: String.t()
   def generated_opts do
     commands =
-      Skia.CommandSpec.all()
+      Commands.all()
       |> Enum.reject(fn {_name, spec} -> Keyword.get(spec, :opts, []) == [] end)
       |> Enum.flat_map(fn {name, spec} ->
         struct_name = name |> Atom.to_string() |> Macro.camelize() |> Kernel.<>("Opts")
@@ -897,7 +898,7 @@ defmodule Skia.Codegen do
   @spec generated_docs() :: String.t()
   def generated_docs do
     rows =
-      Skia.CommandSpec.all()
+      Commands.all()
       |> Enum.map_join("\n", fn {name, spec} ->
         args = spec |> Keyword.get(:args, []) |> format_args()
         opts = spec |> Keyword.get(:opts, []) |> format_opts()
@@ -1109,7 +1110,7 @@ defmodule Skia.Codegen do
 
   defp native_refs(command) do
     command
-    |> Skia.CommandSpec.fetch!()
+    |> Commands.fetch!()
     |> Keyword.get(:native_refs, [])
     |> Enum.filter(&SkiaSafe.native_ref_exists?/1)
   end
@@ -1123,7 +1124,7 @@ defmodule Skia.Codegen do
 
   defp generated_rust_doc_section do
     docs =
-      Skia.CommandSpec.all()
+      Commands.all()
       |> Enum.flat_map(fn {_name, spec} -> Keyword.get(spec, :native_refs, []) end)
       |> Enum.filter(&SkiaSafe.native_ref_exists?/1)
       |> Enum.uniq()

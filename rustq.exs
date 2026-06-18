@@ -1,6 +1,5 @@
 use RustQ.Config
 
-require_file("lib/skia/command_spec/types.ex")
 require_file("lib/skia/codegen/command_schema.ex")
 require_file("lib/skia/codegen/commands/shapes.ex")
 require_file("lib/skia/codegen/commands/text.ex")
@@ -9,7 +8,7 @@ require_file("lib/skia/codegen/commands/layers.ex")
 require_file("lib/skia/codegen/commands/transforms.ex")
 require_file("lib/skia/codegen/commands/paths.ex")
 require_file("lib/skia/codegen/commands/clips.ex")
-require_file("lib/skia/command_spec.ex")
+require_file("lib/skia/codegen/commands.ex")
 require_file("lib/skia/codegen/skia_safe.ex")
 require_file("lib/skia/codegen/handler_shells.ex")
 require_file("lib/skia/codegen/rusty/args.ex")

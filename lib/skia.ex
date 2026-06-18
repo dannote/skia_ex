@@ -12,7 +12,8 @@ defmodule Skia do
         |> Skia.to_png()
   """
 
-  alias Skia.{Command, CommandSpec, Document}
+  alias Skia.{Command, Document}
+  alias Skia.Codegen.Commands
 
   @type document :: Document.t()
 
@@ -37,7 +38,7 @@ defmodule Skia do
     end
   end
 
-  for {name, spec} <- CommandSpec.all(),
+  for {name, spec} <- Commands.all(),
       name not in [
         :save,
         :save_layer,
