@@ -6,32 +6,35 @@ defmodule Skia.Codegen.NativeSchemaTest do
              name: "draw_rect",
              visibility: :public,
              docs: ["Draws [`Rect`] rect using clip, [`Matrix`], and [`Paint`] `paint`." | _],
-             args: [
-               %RustQ.Syn.Arg{
-                 name: "self",
-                 type: "& self",
-                 type_ast: %RustQ.Syn.Type.Ref{inner: %RustQ.Syn.Type.Self{}}
-               },
-               %RustQ.Syn.Arg{
-                 name: "rect",
-                 type: "impl AsRef < Rect >",
-                 type_ast: %RustQ.Syn.Type.ImplTrait{
-                   traits: [
-                     %RustQ.Syn.Type.Path{
-                       name: "AsRef",
-                       args: [%RustQ.Syn.Type.Path{name: "Rect"}]
-                     }
-                   ]
-                 }
-               },
-               %RustQ.Syn.Arg{
-                 name: "paint",
-                 type: "& Paint",
-                 type_ast: %RustQ.Syn.Type.Ref{inner: %RustQ.Syn.Type.Path{name: "Paint"}}
-               }
-             ],
+             args: [self_arg, rect_arg, paint_arg],
              returns: "& Self",
              returns_ast: %RustQ.Syn.Type.Ref{inner: %RustQ.Syn.Type.Self{}}
            } = Skia.Codegen.NativeSchema.method!("Canvas", "draw_rect")
+
+    assert %RustQ.Syn.Arg{
+             name: "self",
+             type: "& self",
+             type_ast: %RustQ.Syn.Type.Ref{inner: %RustQ.Syn.Type.Self{}}
+           } =
+             self_arg
+
+    assert %RustQ.Syn.Arg{name: "rect", type: "impl AsRef < Rect >"} = rect_arg
+    assert RustQ.Syn.Type.impl_trait?(rect_arg.type_ast, "AsRef", ["Rect"])
+
+    assert %RustQ.Syn.Arg{name: "paint", type: "& Paint"} = paint_arg
+    assert RustQ.Syn.Type.ref_to?(paint_arg.type_ast, "Paint")
+  end
+
+  test "indexes native methods across skia-safe source files" do
+    assert_method("Canvas", "draw_path")
+    assert_method("Canvas", "clip_path")
+    assert_method("Canvas", "save_layer")
+    assert_method("Path", "op")
+    assert_method("ImageFilter", "blur")
+  end
+
+  defp assert_method(target, name) do
+    assert %RustQ.Syn.Method{name: ^name, visibility: :public} =
+             Skia.Codegen.NativeSchema.method!(target, name)
   end
 end
