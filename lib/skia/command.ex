@@ -70,8 +70,7 @@ defmodule Skia.Command do
       :number when is_integer(value) or is_float(value) -> value * 1.0
       :integer when is_integer(value) -> value
       :boolean when is_boolean(value) -> value
-      :atom when is_atom(value) -> value
-      :enum when is_atom(value) -> value
+      category when category in [:atom, :enum] and is_atom(value) -> value
       :string when is_binary(value) -> value
       :term when key == :spans -> normalize_spans!(value)
       :term -> value
