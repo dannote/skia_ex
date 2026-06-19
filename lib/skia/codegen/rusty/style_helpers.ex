@@ -8,6 +8,66 @@ defmodule Skia.Codegen.Rusty.StyleHelpers do
   @spec generated_asts() :: [RustQ.Rust.AST.Function.t()]
   def generated_asts, do: __rustq_asts__()
 
+  @spec apply_blend_mode(R.mut_ref(Paint.t()), R.slice({R.atom(), R.term()})) ::
+          R.nif_result(R.unit())
+  defrust apply_blend_mode(paint, opts) do
+    case opt_term(opts, Atoms.blend_mode()) do
+      {:some, term} ->
+        atom = decode_as!(term, R.atom())
+        paint.set_blend_mode(unwrap!(GeneratedEnums.decode_blend_mode(atom)))
+
+      :none ->
+        :ok
+    end
+
+    unwrap!(apply_paint_effects(paint, opts))
+    :ok
+  end
+
+  @spec apply_stroke_options(R.mut_ref(Paint.t()), R.slice({R.atom(), R.term()})) ::
+          R.nif_result(R.unit())
+  defrust apply_stroke_options(paint, opts) do
+    case opt_term(opts, Atoms.stroke_cap()) do
+      {:some, term} ->
+        atom = decode_as!(term, R.atom())
+        paint.set_stroke_cap(unwrap!(GeneratedEnums.decode_stroke_cap(atom)))
+
+      :none ->
+        :ok
+    end
+
+    case opt_term(opts, Atoms.stroke_join()) do
+      {:some, term} ->
+        atom = decode_as!(term, R.atom())
+        paint.set_stroke_join(unwrap!(GeneratedEnums.decode_stroke_join(atom)))
+
+      :none ->
+        :ok
+    end
+
+    case unwrap!(opt_f32_option(opts, Atoms.stroke_miter())) do
+      {:some, miter} -> paint.set_stroke_miter(miter)
+      :none -> :ok
+    end
+
+    :ok
+  end
+
+  @spec apply_fill_rule(R.mut_ref(SkiaSafe.Path.t()), R.slice({R.atom(), R.term()})) ::
+          R.nif_result(R.unit())
+  defrust apply_fill_rule(path, opts) do
+    case opt_term(opts, Atoms.fill_rule()) do
+      {:some, term} ->
+        atom = decode_as!(term, R.atom())
+        path.set_fill_type(unwrap!(GeneratedEnums.decode_fill_rule(atom)))
+
+      :none ->
+        :ok
+    end
+
+    :ok
+  end
+
   @spec decode_clip_op(R.atom()) :: R.nif_result(R.option(ClipOp.t()))
   defrust decode_clip_op(value) do
     {:ok, some(unwrap!(GeneratedEnums.decode_clip_op(value)))}

@@ -190,19 +190,6 @@ defmodule Skia.Codegen do
     ]
   ]
 
-  @paint_enum_options [
-    [name: :blend_mode, setter: :set_blend_mode, decoder: :decode_blend_mode]
-  ]
-
-  @stroke_enum_options [
-    [name: :stroke_cap, setter: :set_stroke_cap, decoder: :decode_stroke_cap],
-    [name: :stroke_join, setter: :set_stroke_join, decoder: :decode_stroke_join]
-  ]
-
-  @path_enum_options [
-    [name: :fill_rule, setter: :set_fill_type, decoder: :decode_fill_rule]
-  ]
-
   defp template_path(name) do
     __DIR__
     |> Path.join("../../priv/codegen/templates/#{name}")
@@ -379,68 +366,9 @@ defmodule Skia.Codegen do
 
   @spec generated_style_helpers() :: String.t()
   def generated_style_helpers do
-    helpers = [
-      enum_option_applicator(:apply_blend_mode, :paint, "&mut Paint", @paint_enum_options),
-      style_helper_item(:apply_paint_effects),
-      style_helper_item(:decode_clip_op),
-      stroke_options_applicator(),
-      enum_option_applicator(:apply_fill_rule, :path, "&mut skia_safe::Path", @path_enum_options)
-    ]
-
-    render_items(helpers, "generated_style_helpers.rs")
-  end
-
-  defp enum_option_applicator(:apply_blend_mode = name, target_name, target_type, options) do
-    "enum_option_applicator.rs"
-    |> template_path()
-    |> RustQ.render_file!(
-      bind: [function: name],
-      splice: [
-        args: [Rust.arg(target_name, target_type), Rust.arg(:opts, "&[(Atom, Term<'a>)]")],
-        options:
-          enum_option_lines(target_name, options) ++
-            [Rust.stmt("apply_paint_effects(paint, opts)?;")]
-      ]
-    )
-    |> Rust.item()
-  end
-
-  defp enum_option_applicator(name, target_name, target_type, options) do
-    "enum_option_applicator.rs"
-    |> template_path()
-    |> RustQ.render_file!(
-      bind: [function: name],
-      splice: [
-        args: [Rust.arg(target_name, target_type), Rust.arg(:opts, "&[(Atom, Term<'a>)]")],
-        options: enum_option_lines(target_name, options)
-      ]
-    )
-    |> Rust.item()
-  end
-
-  defp style_helper_item(name) do
     Skia.Codegen.Rusty.StyleHelpers.generated_asts()
-    |> Enum.find(&(&1.name == name))
-    |> render_rustq_item()
-  end
-
-  defp stroke_options_applicator do
-    "stroke_options_applicator.rs"
-    |> template_path()
-    |> RustQ.render_file!(splice: [options: enum_option_lines(:paint, @stroke_enum_options)])
-    |> Rust.item()
-  end
-
-  defp enum_option_lines(target_name, options) do
-    Enum.map(options, fn option ->
-      name = Keyword.fetch!(option, :name)
-      setter = Keyword.fetch!(option, :setter)
-      decoder = Keyword.fetch!(option, :decoder)
-
-      Rust.stmt(
-        "if let Some(term) = opt_term(opts, atoms::#{name}()) { #{target_name}.#{setter}(generated_enums::#{decoder}(term.decode::<Atom>()?)?); }"
-      )
-    end)
+    |> Enum.map(&render_rustq_item/1)
+    |> render_items("generated_style_helpers.rs")
   end
 
   @spec generated_opts_helpers() :: String.t()
