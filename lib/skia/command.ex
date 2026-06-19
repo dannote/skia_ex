@@ -81,28 +81,28 @@ defmodule Skia.Command do
 
   defp normalize_external_value!(name, key, type, value) do
     cond do
-      RustQ.Meta.Type.external?(type, Skia.Paint, :t) and match?(%Skia.Paint{}, value) ->
+      external_struct?(type, value, Skia.Paint) ->
         value
 
       RustQ.Meta.Type.external?(type, Skia.Command, :color) ->
         normalize_color!(value)
 
-      RustQ.Meta.Type.external?(type, Skia.Path, :t) and match?(%Skia.Path{}, value) ->
+      external_struct?(type, value, Skia.Path) ->
         value
 
-      RustQ.Meta.Type.external?(type, Skia.Image, :t) and match?(%Skia.Image{}, value) ->
+      external_struct?(type, value, Skia.Image) ->
         value
 
-      RustQ.Meta.Type.external?(type, Skia.Picture, :t) and match?(%Skia.Picture{}, value) ->
+      external_struct?(type, value, Skia.Picture) ->
         value
 
-      RustQ.Meta.Type.external?(type, Skia.TextBlob, :t) and match?(%Skia.TextBlob{}, value) ->
+      external_struct?(type, value, Skia.TextBlob) ->
         value
 
-      RustQ.Meta.Type.external?(type, Skia.Vertices, :t) and match?(%Skia.Vertices{}, value) ->
+      external_struct?(type, value, Skia.Vertices) ->
         normalize_vertices!(value)
 
-      RustQ.Meta.Type.external?(type, Skia.Font, :t) and match?(%Skia.Font{}, value) ->
+      external_struct?(type, value, Skia.Font) ->
         value
 
       RustQ.Meta.Type.external?(type, Skia.ImageFilter, :t) ->
@@ -124,6 +124,10 @@ defmodule Skia.Command do
         raise ArgumentError,
               "invalid #{inspect(key)} for #{name}: expected #{inspect(type)}, got #{inspect(value)}"
     end
+  end
+
+  defp external_struct?(type, value, module) do
+    RustQ.Meta.Type.external?(type, module, :t) and is_struct(value, module)
   end
 
   defp normalize_value!(name, key, %RustQ.Meta.Type{} = type, value) do
