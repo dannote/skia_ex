@@ -2,6 +2,7 @@ defmodule Skia.Codegen.Enums do
   @moduledoc false
 
   alias RustQ.Rust
+  alias RustQ.Rust.AST.Builder, as: A
   alias RustQ.Rust.AST.TypeBuilder, as: T
   alias Skia.Codegen.SkiaSafe
 
@@ -30,7 +31,9 @@ defmodule Skia.Codegen.Enums do
         Rust.const(
           enum_const_name(name),
           T.ref(T.slice(T.ref(:str))),
-          Rust.expr(enum_values(values)), vis: :pub)
+          Rust.expr(enum_values(values)),
+          vis: :pub
+        )
       end)
 
     decoders =
@@ -80,8 +83,10 @@ defmodule Skia.Codegen.Enums do
   end
 
   defp enum_values(values) do
-    values = Enum.map_join(values, ", ", &inspect(to_string(&1)))
-    "&[#{values}]"
+    values
+    |> Enum.map(&to_string/1)
+    |> A.slice()
+    |> RustQ.Rust.AST.Render.render_expr()
   end
 
   defp enum_decoder(name, spec) do
