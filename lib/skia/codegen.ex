@@ -3,6 +3,8 @@ defmodule Skia.Codegen do
 
   alias RustQ.Rust
   alias RustQ.Rust.AST
+  alias RustQ.Rust.AST.Builder, as: A
+  alias RustQ.Rust.AST.PatternBuilder, as: P
   alias Skia.Codegen.Commands
   alias Skia.Codegen.Enums
   alias Skia.Codegen.Rusty
@@ -347,25 +349,29 @@ defmodule Skia.Codegen do
         unknown: "Err(rustler::Error::BadArg)"
       )
 
-    compact_cases =
-      compact_ops()
-      |> Enum.map_join("\n", fn {atom, id} -> "        #{id} => Ok(atoms::#{atom}())," end)
-
-    items = [
-      dispatch,
-      Rust.item("""
-      fn compact_op_atom(id: i64) -> NifResult<Atom> {
-          match id {
-      #{compact_cases}
-              _ => Err(rustler::Error::BadArg),
-          }
-      }
-      """)
-    ]
+    items = [dispatch, render_rustq_item(compact_op_atom_ast())]
 
     "generated_dispatch.rs"
     |> template_path()
     |> RustQ.render_file!(preamble: generated_rust_preamble(), splice: [items: items])
+  end
+
+  defp compact_op_atom_ast do
+    %AST.Function{
+      name: :compact_op_atom,
+      args: [A.arg(:id, :i64)],
+      returns: "NifResult<Atom>",
+      body: [
+        A.return_stmt(
+          A.match_expr(
+            A.var(:id),
+            Enum.map(compact_ops(), fn {atom, id} ->
+              %AST.Arm{pattern: P.lit(id), body: [A.return_stmt(A.ok(A.atom(atom)))]}
+            end) ++ [%AST.Arm{pattern: P.wildcard(), body: [A.return_stmt(A.err(A.badarg()))]}]
+          )
+        )
+      ]
+    }
   end
 
   defp compact_ops do
