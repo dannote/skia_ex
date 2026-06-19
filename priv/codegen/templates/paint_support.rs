@@ -545,26 +545,6 @@ fn decode_sampling_options(term: Term) -> NifResult<SamplingOptions> {
 
 
 
-fn decode_gradient_stops(stops: Vec<Term>) -> NifResult<(Vec<Color>, Option<Vec<f32>>)> {
-    let mut colors = Vec::with_capacity(stops.len());
-    let mut positions = Vec::with_capacity(stops.len());
-    let mut explicit_positions = true;
-
-    for stop in stops {
-        if let Ok((tag, color_term, position)) = stop.decode::<(Atom, Term, f64)>() {
-            if tag == atoms::gradient_stop() {
-                colors.push(decode_color(color_term)?);
-                positions.push(position as f32);
-                continue;
-            }
-        }
-
-        explicit_positions = false;
-        colors.push(decode_color(stop)?);
-    }
-
-    Ok((colors, if explicit_positions { Some(positions) } else { None }))
-}
 
 fn decode_color(term: Term) -> NifResult<Color> {
     if let Ok((tag, rgba)) = term.decode::<(Atom, u32)>() {

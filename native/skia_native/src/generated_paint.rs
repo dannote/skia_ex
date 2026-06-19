@@ -40,6 +40,31 @@ fn optional_rect_from_term<'a>(rect_term: Term<'a>) -> NifResult<Option<Rect>> {
         Err(_reason) => Ok(Some(rect_from_term(rect_term)?)),
     }
 }
+fn decode_gradient_stops<'a>(
+    stops: Vec<Term<'a>>,
+) -> NifResult<(Vec<Color>, Option<Vec<f32>>)> {
+    let mut colors = Vec::with_capacity(stops.len());
+    let mut positions = Vec::with_capacity(stops.len());
+    let mut explicit_positions = true;
+    for stop in stops {
+        match stop.decode::<(Atom, Term<'a>, f64)>() {
+            Ok((tag, color_term, position)) => {
+                if tag == atoms::gradient_stop() {
+                    colors.push(decode_color(color_term)?);
+                    positions.push(position as f32);
+                } else {
+                    explicit_positions = false;
+                    colors.push(decode_color(stop)?);
+                };
+            }
+            Err(_reason) => {
+                explicit_positions = false;
+                colors.push(decode_color(stop)?);
+            }
+        };
+    }
+    if explicit_positions { Ok((colors, Some(positions))) } else { Ok((colors, None)) }
+}
 fn runtime_uniform_data(
     effect: &RuntimeEffect,
     float_uniforms: Vec<(String, Vec<f64>)>,
@@ -644,23 +669,6 @@ fn decode_sampling_options(term: Term) -> NifResult<SamplingOptions> {
         }
     }
     Err(rustler::Error::BadArg)
-}
-fn decode_gradient_stops(stops: Vec<Term>) -> NifResult<(Vec<Color>, Option<Vec<f32>>)> {
-    let mut colors = Vec::with_capacity(stops.len());
-    let mut positions = Vec::with_capacity(stops.len());
-    let mut explicit_positions = true;
-    for stop in stops {
-        if let Ok((tag, color_term, position)) = stop.decode::<(Atom, Term, f64)>() {
-            if tag == atoms::gradient_stop() {
-                colors.push(decode_color(color_term)?);
-                positions.push(position as f32);
-                continue;
-            }
-        }
-        explicit_positions = false;
-        colors.push(decode_color(stop)?);
-    }
-    Ok((colors, if explicit_positions { Some(positions) } else { None }))
 }
 fn decode_color(term: Term) -> NifResult<Color> {
     if let Ok((tag, rgba)) = term.decode::<(Atom, u32)>() {
