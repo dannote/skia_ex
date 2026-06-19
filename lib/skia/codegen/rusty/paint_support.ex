@@ -110,6 +110,306 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
     {:error, badarg()}
   end
 
+  @spec decode_image_filter(R.term()) :: R.nif_result(R.path({:skia_safe, :ImageFilter}))
+  defrust decode_image_filter(term) do
+    case decode_as(term, {R.atom(), R.f64(), R.f64(), R.atom()}) do
+      {:ok, {tag, sigma_x, sigma_y, tile_mode}} ->
+        if tag == Atoms.blur_filter() do
+          return!(
+            {:ok,
+             unwrap!(
+               ImageFilters.blur(
+                 {cast(sigma_x, :f32), cast(sigma_y, :f32)},
+                 unwrap!(GeneratedEnums.decode_tile_mode(tile_mode)),
+                 none(),
+                 none()
+               ).ok_or(badarg())
+             )}
+          )
+        end
+
+      {:error, _reason} ->
+        :ok
+    end
+
+    case decode_as(term, {R.atom(), R.term(), R.term()}) do
+      {:ok, {tag, outer, inner}} ->
+        if tag == Atoms.compose_filter() do
+          return!(
+            {:ok,
+             unwrap!(
+               ImageFilters.compose(
+                 unwrap!(decode_image_filter(outer)),
+                 unwrap!(decode_image_filter(inner))
+               ).ok_or(badarg())
+             )}
+          )
+        end
+
+      {:error, _reason} ->
+        :ok
+    end
+
+    case decode_as(term, {R.atom(), R.f64(), R.f64(), R.term()}) do
+      {:ok, {tag, x, y, input_term}} ->
+        if tag == Atoms.offset_filter() do
+          return!(
+            {:ok,
+             unwrap!(
+               ImageFilters.offset(
+                 {cast(x, :f32), cast(y, :f32)},
+                 unwrap!(optional_image_filter_from_term(input_term)),
+                 none()
+               ).ok_or(badarg())
+             )}
+          )
+        end
+
+      {:error, _reason} ->
+        :ok
+    end
+
+    case decode_as(term, {R.atom(), R.f64(), R.f64(), R.f64(), R.f64(), R.term(), R.term()}) do
+      {:ok, {tag, dx, dy, sigma_x, sigma_y, color_term, shadow_opts}} ->
+        if tag == Atoms.drop_shadow_filter() do
+          {input_term, shadow_only} = decode_as!(shadow_opts, {R.term(), R.bool()})
+          color = unwrap!(decode_color(color_term))
+          input = unwrap!(optional_image_filter_from_term(input_term))
+
+          filter =
+            if shadow_only do
+              ImageFilters.drop_shadow_only(
+                {cast(dx, :f32), cast(dy, :f32)},
+                {cast(sigma_x, :f32), cast(sigma_y, :f32)},
+                color,
+                none(),
+                input,
+                none()
+              )
+            else
+              ImageFilters.drop_shadow(
+                {cast(dx, :f32), cast(dy, :f32)},
+                {cast(sigma_x, :f32), cast(sigma_y, :f32)},
+                color,
+                none(),
+                input,
+                none()
+              )
+            end
+
+          return!({:ok, unwrap!(filter.ok_or(badarg()))})
+        end
+
+      {:error, _reason} ->
+        :ok
+    end
+
+    case decode_as(term, {R.atom(), R.term(), R.term()}) do
+      {:ok, {tag, filter_term, input_term}} ->
+        if tag == Atoms.color_filter_image_filter() do
+          return!(
+            {:ok,
+             unwrap!(
+               ImageFilters.color_filter(
+                 unwrap!(decode_color_filter(filter_term)),
+                 unwrap!(optional_image_filter_from_term(input_term)),
+                 none()
+               ).ok_or(badarg())
+             )}
+          )
+        end
+
+      {:error, _reason} ->
+        :ok
+    end
+
+    case decode_as(term, {R.atom(), R.term()}) do
+      {:ok, {tag, shader_term}} ->
+        if tag == Atoms.shader_image_filter() do
+          return!(
+            {:ok,
+             unwrap!(
+               ImageFilters.shader(unwrap!(decode_shader(shader_term)), none()).ok_or(badarg())
+             )}
+          )
+        end
+
+      {:error, _reason} ->
+        :ok
+    end
+
+    case decode_as(
+           term,
+           {R.atom(), {R.f64(), R.f64(), R.f64(), R.f64()}, R.f64(), R.f64(), R.term(), R.term()}
+         ) do
+      {:ok, {tag, {x, y, width, height}, zoom, inset, sampling_term, input_term}} ->
+        if tag == Atoms.magnifier_filter() do
+          return!(
+            {:ok,
+             unwrap!(
+               ImageFilters.magnifier(
+                 Rect.from_xywh(
+                   cast(x, :f32),
+                   cast(y, :f32),
+                   cast(width, :f32),
+                   cast(height, :f32)
+                 ),
+                 cast(zoom, :f32),
+                 cast(inset, :f32),
+                 unwrap!(decode_sampling_options(sampling_term)),
+                 unwrap!(optional_image_filter_from_term(input_term)),
+                 none()
+               ).ok_or(badarg())
+             )}
+          )
+        end
+
+      {:error, _reason} ->
+        :ok
+    end
+
+    case decode_as(term, {R.atom(), {R.i64(), R.i64()}, R.vec(R.f64()), R.term()}) do
+      {:ok, {tag, {kernel_width, kernel_height}, kernel, conv_opts}} ->
+        if tag == Atoms.matrix_convolution_filter() do
+          {gain, bias, {offset_x, offset_y}, tile, convolve_alpha, input_term} =
+            decode_as!(
+              conv_opts,
+              {R.f64(), R.f64(), {R.i64(), R.i64()}, R.atom(), R.bool(), R.term()}
+            )
+
+          mapped_kernel = Vec.with_capacity(kernel.len())
+
+          for value <- kernel do
+            mapped_kernel.push(cast(value, :f32))
+          end
+
+          return!(
+            {:ok,
+             unwrap!(
+               ImageFilters.matrix_convolution(
+                 {cast(kernel_width, :i32), cast(kernel_height, :i32)},
+                 mapped_kernel.as_slice(),
+                 cast(gain, :f32),
+                 cast(bias, :f32),
+                 {cast(offset_x, :i32), cast(offset_y, :i32)},
+                 unwrap!(GeneratedEnums.decode_tile_mode(tile)),
+                 convolve_alpha,
+                 unwrap!(optional_image_filter_from_term(input_term)),
+                 none()
+               ).ok_or(badarg())
+             )}
+          )
+        end
+
+      {:error, _reason} ->
+        :ok
+    end
+
+    case decode_as(term, {R.atom(), R.term(), R.term(), R.term()}) do
+      {:ok, {tag, matrix_term, sampling_term, input_term}} ->
+        if tag == Atoms.matrix_transform_filter() do
+          return!(
+            {:ok,
+             unwrap!(
+               ImageFilters.matrix_transform(
+                 ref(unwrap!(matrix_from_term(matrix_term))),
+                 unwrap!(decode_sampling_options(sampling_term)),
+                 unwrap!(optional_image_filter_from_term(input_term))
+               ).ok_or(badarg())
+             )}
+          )
+        end
+
+      {:error, _reason} ->
+        :ok
+    end
+
+    case decode_as(term, {R.atom(), R.vec(R.term())}) do
+      {:ok, {tag, filters}} ->
+        if tag == Atoms.merge_filter() do
+          mapped_filters = Vec.with_capacity(filters.len())
+
+          for filter <- filters do
+            mapped_filters.push(unwrap!(optional_image_filter_from_term(filter)))
+          end
+
+          return!({:ok, unwrap!(ImageFilters.merge(mapped_filters, none()).ok_or(badarg()))})
+        end
+
+      {:error, _reason} ->
+        :ok
+    end
+
+    case decode_as(
+           term,
+           {R.atom(), {R.f64(), R.f64(), R.f64(), R.f64()}, {R.f64(), R.f64(), R.f64(), R.f64()},
+            R.term()}
+         ) do
+      {:ok, {tag, {src_x, src_y, src_w, src_h}, {dst_x, dst_y, dst_w, dst_h}, input_term}} ->
+        if tag == Atoms.tile_filter() do
+          return!(
+            {:ok,
+             unwrap!(
+               ImageFilters.tile(
+                 Rect.from_xywh(
+                   cast(src_x, :f32),
+                   cast(src_y, :f32),
+                   cast(src_w, :f32),
+                   cast(src_h, :f32)
+                 ),
+                 Rect.from_xywh(
+                   cast(dst_x, :f32),
+                   cast(dst_y, :f32),
+                   cast(dst_w, :f32),
+                   cast(dst_h, :f32)
+                 ),
+                 unwrap!(optional_image_filter_from_term(input_term))
+               ).ok_or(badarg())
+             )}
+          )
+        end
+
+      {:error, _reason} ->
+        :ok
+    end
+
+    case decode_as(term, {R.atom(), R.atom(), R.f64(), R.f64(), R.term()}) do
+      {:ok, {tag, op, radius_x, radius_y, input_term}} ->
+        if tag == Atoms.morphology_filter() do
+          input = unwrap!(optional_image_filter_from_term(input_term))
+
+          if op == Atoms.dilate() do
+            return!(
+              {:ok,
+               unwrap!(
+                 ImageFilters.dilate({cast(radius_x, :f32), cast(radius_y, :f32)}, input, none()).ok_or(
+                   badarg()
+                 )
+               )}
+            )
+          end
+
+          if op == Atoms.erode() do
+            return!(
+              {:ok,
+               unwrap!(
+                 ImageFilters.erode({cast(radius_x, :f32), cast(radius_y, :f32)}, input, none()).ok_or(
+                   badarg()
+                 )
+               )}
+            )
+          end
+
+          return!({:error, badarg()})
+        end
+
+      {:error, _reason} ->
+        :ok
+    end
+
+    {:error, badarg()}
+  end
+
   @spec optional_image_filter_from_term(R.term()) ::
           R.nif_result(R.option(R.path({:skia_safe, :ImageFilter})))
   defrust optional_image_filter_from_term(term) do

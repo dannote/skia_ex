@@ -484,6 +484,7 @@ defmodule Skia.Codegen do
             :optional_matrix_from_term,
             :optional_rect_from_term,
             :optional_image_filter_from_term,
+            :decode_image_filter,
             :decode_shader,
             :decode_mask_filter,
             :decode_path_effect,

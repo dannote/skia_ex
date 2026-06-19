@@ -54,6 +54,253 @@ fn optional_image_filter_from_term<'a>(
         Err(_reason) => Ok(Some(decode_image_filter(term)?)),
     }
 }
+fn decode_image_filter<'a>(term: Term<'a>) -> NifResult<skia_safe::ImageFilter> {
+    match term.decode::<(Atom, f64, f64, Atom)>() {
+        Ok((tag, sigma_x, sigma_y, tile_mode)) => {
+            if tag == atoms::blur_filter() {
+                return Ok(
+                    image_filters::blur(
+                            (sigma_x as f32, sigma_y as f32),
+                            generated_enums::decode_tile_mode(tile_mode)?,
+                            None,
+                            None,
+                        )
+                        .ok_or(rustler::Error::BadArg)?,
+                );
+            } else {};
+        }
+        Err(_reason) => {}
+    };
+    match term.decode::<(Atom, Term<'a>, Term<'a>)>() {
+        Ok((tag, outer, inner)) => {
+            if tag == atoms::compose_filter() {
+                return Ok(
+                    image_filters::compose(
+                            decode_image_filter(outer)?,
+                            decode_image_filter(inner)?,
+                        )
+                        .ok_or(rustler::Error::BadArg)?,
+                );
+            } else {};
+        }
+        Err(_reason) => {}
+    };
+    match term.decode::<(Atom, f64, f64, Term<'a>)>() {
+        Ok((tag, x, y, input_term)) => {
+            if tag == atoms::offset_filter() {
+                return Ok(
+                    image_filters::offset(
+                            (x as f32, y as f32),
+                            optional_image_filter_from_term(input_term)?,
+                            None,
+                        )
+                        .ok_or(rustler::Error::BadArg)?,
+                );
+            } else {};
+        }
+        Err(_reason) => {}
+    };
+    match term.decode::<(Atom, f64, f64, f64, f64, Term<'a>, Term<'a>)>() {
+        Ok((tag, dx, dy, sigma_x, sigma_y, color_term, shadow_opts)) => {
+            if tag == atoms::drop_shadow_filter() {
+                let (input_term, shadow_only) = shadow_opts
+                    .decode::<(Term<'a>, bool)>()?;
+                let color = decode_color(color_term)?;
+                let input = optional_image_filter_from_term(input_term)?;
+                let filter = if shadow_only {
+                    image_filters::drop_shadow_only(
+                        (dx as f32, dy as f32),
+                        (sigma_x as f32, sigma_y as f32),
+                        color,
+                        None,
+                        input,
+                        None,
+                    )
+                } else {
+                    image_filters::drop_shadow(
+                        (dx as f32, dy as f32),
+                        (sigma_x as f32, sigma_y as f32),
+                        color,
+                        None,
+                        input,
+                        None,
+                    )
+                };
+                return Ok(filter.ok_or(rustler::Error::BadArg)?);
+            } else {};
+        }
+        Err(_reason) => {}
+    };
+    match term.decode::<(Atom, Term<'a>, Term<'a>)>() {
+        Ok((tag, filter_term, input_term)) => {
+            if tag == atoms::color_filter_image_filter() {
+                return Ok(
+                    image_filters::color_filter(
+                            decode_color_filter(filter_term)?,
+                            optional_image_filter_from_term(input_term)?,
+                            None,
+                        )
+                        .ok_or(rustler::Error::BadArg)?,
+                );
+            } else {};
+        }
+        Err(_reason) => {}
+    };
+    match term.decode::<(Atom, Term<'a>)>() {
+        Ok((tag, shader_term)) => {
+            if tag == atoms::shader_image_filter() {
+                return Ok(
+                    image_filters::shader(decode_shader(shader_term)?, None)
+                        .ok_or(rustler::Error::BadArg)?,
+                );
+            } else {};
+        }
+        Err(_reason) => {}
+    };
+    match term.decode::<(Atom, (f64, f64, f64, f64), f64, f64, Term<'a>, Term<'a>)>() {
+        Ok((tag, (x, y, width, height), zoom, inset, sampling_term, input_term)) => {
+            if tag == atoms::magnifier_filter() {
+                return Ok(
+                    image_filters::magnifier(
+                            Rect::from_xywh(
+                                x as f32,
+                                y as f32,
+                                width as f32,
+                                height as f32,
+                            ),
+                            zoom as f32,
+                            inset as f32,
+                            decode_sampling_options(sampling_term)?,
+                            optional_image_filter_from_term(input_term)?,
+                            None,
+                        )
+                        .ok_or(rustler::Error::BadArg)?,
+                );
+            } else {};
+        }
+        Err(_reason) => {}
+    };
+    match term.decode::<(Atom, (i64, i64), Vec<f64>, Term<'a>)>() {
+        Ok((tag, (kernel_width, kernel_height), kernel, conv_opts)) => {
+            if tag == atoms::matrix_convolution_filter() {
+                let (
+                    gain,
+                    bias,
+                    (offset_x, offset_y),
+                    tile,
+                    convolve_alpha,
+                    input_term,
+                ) = conv_opts.decode::<(f64, f64, (i64, i64), Atom, bool, Term<'a>)>()?;
+                let mut mapped_kernel = Vec::with_capacity(kernel.len());
+                for value in kernel {
+                    mapped_kernel.push(value as f32);
+                }
+                return Ok(
+                    image_filters::matrix_convolution(
+                            (kernel_width as i32, kernel_height as i32),
+                            mapped_kernel.as_slice(),
+                            gain as f32,
+                            bias as f32,
+                            (offset_x as i32, offset_y as i32),
+                            generated_enums::decode_tile_mode(tile)?,
+                            convolve_alpha,
+                            optional_image_filter_from_term(input_term)?,
+                            None,
+                        )
+                        .ok_or(rustler::Error::BadArg)?,
+                );
+            } else {};
+        }
+        Err(_reason) => {}
+    };
+    match term.decode::<(Atom, Term<'a>, Term<'a>, Term<'a>)>() {
+        Ok((tag, matrix_term, sampling_term, input_term)) => {
+            if tag == atoms::matrix_transform_filter() {
+                return Ok(
+                    image_filters::matrix_transform(
+                            &matrix_from_term(matrix_term)?,
+                            decode_sampling_options(sampling_term)?,
+                            optional_image_filter_from_term(input_term)?,
+                        )
+                        .ok_or(rustler::Error::BadArg)?,
+                );
+            } else {};
+        }
+        Err(_reason) => {}
+    };
+    match term.decode::<(Atom, Vec<Term<'a>>)>() {
+        Ok((tag, filters)) => {
+            if tag == atoms::merge_filter() {
+                let mut mapped_filters = Vec::with_capacity(filters.len());
+                for filter in filters {
+                    mapped_filters.push(optional_image_filter_from_term(filter)?);
+                }
+                return Ok(
+                    image_filters::merge(mapped_filters, None)
+                        .ok_or(rustler::Error::BadArg)?,
+                );
+            } else {};
+        }
+        Err(_reason) => {}
+    };
+    match term.decode::<(Atom, (f64, f64, f64, f64), (f64, f64, f64, f64), Term<'a>)>() {
+        Ok(
+            (tag, (src_x, src_y, src_w, src_h), (dst_x, dst_y, dst_w, dst_h), input_term),
+        ) => {
+            if tag == atoms::tile_filter() {
+                return Ok(
+                    image_filters::tile(
+                            Rect::from_xywh(
+                                src_x as f32,
+                                src_y as f32,
+                                src_w as f32,
+                                src_h as f32,
+                            ),
+                            Rect::from_xywh(
+                                dst_x as f32,
+                                dst_y as f32,
+                                dst_w as f32,
+                                dst_h as f32,
+                            ),
+                            optional_image_filter_from_term(input_term)?,
+                        )
+                        .ok_or(rustler::Error::BadArg)?,
+                );
+            } else {};
+        }
+        Err(_reason) => {}
+    };
+    match term.decode::<(Atom, Atom, f64, f64, Term<'a>)>() {
+        Ok((tag, op, radius_x, radius_y, input_term)) => {
+            if tag == atoms::morphology_filter() {
+                let input = optional_image_filter_from_term(input_term)?;
+                if op == atoms::dilate() {
+                    return Ok(
+                        image_filters::dilate(
+                                (radius_x as f32, radius_y as f32),
+                                input,
+                                None,
+                            )
+                            .ok_or(rustler::Error::BadArg)?,
+                    );
+                } else {};
+                if op == atoms::erode() {
+                    return Ok(
+                        image_filters::erode(
+                                (radius_x as f32, radius_y as f32),
+                                input,
+                                None,
+                            )
+                            .ok_or(rustler::Error::BadArg)?,
+                    );
+                } else {};
+                return Err(rustler::Error::BadArg);
+            } else {};
+        }
+        Err(_reason) => {}
+    };
+    Err(rustler::Error::BadArg)
+}
 fn decode_shader<'a>(term: Term<'a>) -> NifResult<Shader> {
     let paint = decode_paint(term)?;
     paint.shader().ok_or(rustler::Error::BadArg)
@@ -529,189 +776,6 @@ fn decode_paint(term: Term) -> NifResult<Paint> {
                         ),
                 );
             return Ok(paint);
-        }
-    }
-    Err(rustler::Error::BadArg)
-}
-fn decode_image_filter(term: Term) -> NifResult<skia_safe::ImageFilter> {
-    if let Ok((tag, sigma_x, sigma_y, tile_mode)) = term
-        .decode::<(Atom, f64, f64, Atom)>()
-    {
-        if tag == atoms::blur_filter() {
-            let tile_mode = generated_enums::decode_tile_mode(tile_mode)?;
-            return image_filters::blur(
-                    (sigma_x as f32, sigma_y as f32),
-                    tile_mode,
-                    None,
-                    None,
-                )
-                .ok_or(rustler::Error::BadArg);
-        }
-    }
-    if let Ok((tag, outer, inner)) = term.decode::<(Atom, Term, Term)>() {
-        if tag == atoms::compose_filter() {
-            return image_filters::compose(
-                    decode_image_filter(outer)?,
-                    decode_image_filter(inner)?,
-                )
-                .ok_or(rustler::Error::BadArg);
-        }
-    }
-    if let Ok((tag, x, y, input_term)) = term.decode::<(Atom, f64, f64, Term)>() {
-        if tag == atoms::offset_filter() {
-            return image_filters::offset(
-                    (x as f32, y as f32),
-                    optional_image_filter_from_term(input_term)?,
-                    None,
-                )
-                .ok_or(rustler::Error::BadArg);
-        }
-    }
-    if let Ok((tag, dx, dy, sigma_x, sigma_y, color_term, shadow_opts)) = term
-        .decode::<(Atom, f64, f64, f64, f64, Term, Term)>()
-    {
-        if tag == atoms::drop_shadow_filter() {
-            let (input_term, shadow_only) = shadow_opts.decode::<(Term, bool)>()?;
-            let color = decode_color(color_term)?;
-            let input = optional_image_filter_from_term(input_term)?;
-            let filter = if shadow_only {
-                image_filters::drop_shadow_only(
-                    (dx as f32, dy as f32),
-                    (sigma_x as f32, sigma_y as f32),
-                    color,
-                    None,
-                    input,
-                    None,
-                )
-            } else {
-                image_filters::drop_shadow(
-                    (dx as f32, dy as f32),
-                    (sigma_x as f32, sigma_y as f32),
-                    color,
-                    None,
-                    input,
-                    None,
-                )
-            };
-            return filter.ok_or(rustler::Error::BadArg);
-        }
-    }
-    if let Ok((tag, filter_term, input_term)) = term.decode::<(Atom, Term, Term)>() {
-        if tag == atoms::color_filter_image_filter() {
-            return image_filters::color_filter(
-                    decode_color_filter(filter_term)?,
-                    optional_image_filter_from_term(input_term)?,
-                    None,
-                )
-                .ok_or(rustler::Error::BadArg);
-        }
-    }
-    if let Ok((tag, shader_term)) = term.decode::<(Atom, Term)>() {
-        if tag == atoms::shader_image_filter() {
-            return image_filters::shader(decode_shader(shader_term)?, None)
-                .ok_or(rustler::Error::BadArg);
-        }
-    }
-    if let Ok((tag, bounds, zoom, inset, sampling_term, input_term)) = term
-        .decode::<(Atom, (f64, f64, f64, f64), f64, f64, Term, Term)>()
-    {
-        if tag == atoms::magnifier_filter() {
-            return image_filters::magnifier(
-                    Rect::from_xywh(
-                        bounds.0 as f32,
-                        bounds.1 as f32,
-                        bounds.2 as f32,
-                        bounds.3 as f32,
-                    ),
-                    zoom as f32,
-                    inset as f32,
-                    decode_sampling_options(sampling_term)?,
-                    optional_image_filter_from_term(input_term)?,
-                    None,
-                )
-                .ok_or(rustler::Error::BadArg);
-        }
-    }
-    if let Ok((tag, kernel_size, kernel, conv_opts)) = term
-        .decode::<(Atom, (i64, i64), Vec<f64>, Term)>()
-    {
-        if tag == atoms::matrix_convolution_filter() {
-            let (gain, bias, offset, tile, convolve_alpha, input_term) = conv_opts
-                .decode::<(f64, f64, (i64, i64), Atom, bool, Term)>()?;
-            let kernel = kernel
-                .into_iter()
-                .map(|value| value as f32)
-                .collect::<Vec<_>>();
-            return image_filters::matrix_convolution(
-                    (kernel_size.0 as i32, kernel_size.1 as i32),
-                    kernel.as_slice(),
-                    gain as f32,
-                    bias as f32,
-                    (offset.0 as i32, offset.1 as i32),
-                    generated_enums::decode_tile_mode(tile)?,
-                    convolve_alpha,
-                    optional_image_filter_from_term(input_term)?,
-                    None,
-                )
-                .ok_or(rustler::Error::BadArg);
-        }
-    }
-    if let Ok((tag, matrix_term, sampling_term, input_term)) = term
-        .decode::<(Atom, Term, Term, Term)>()
-    {
-        if tag == atoms::matrix_transform_filter() {
-            return image_filters::matrix_transform(
-                    &matrix_from_term(matrix_term)?,
-                    decode_sampling_options(sampling_term)?,
-                    optional_image_filter_from_term(input_term)?,
-                )
-                .ok_or(rustler::Error::BadArg);
-        }
-    }
-    if let Ok((tag, filters)) = term.decode::<(Atom, Vec<Term>)>() {
-        if tag == atoms::merge_filter() {
-            let filters = filters
-                .into_iter()
-                .map(optional_image_filter_from_term)
-                .collect::<NifResult<Vec<_>>>()?;
-            return image_filters::merge(filters, None).ok_or(rustler::Error::BadArg);
-        }
-    }
-    if let Ok((tag, src, dst, input_term)) = term
-        .decode::<(Atom, (f64, f64, f64, f64), (f64, f64, f64, f64), Term)>()
-    {
-        if tag == atoms::tile_filter() {
-            return image_filters::tile(
-                    Rect::from_xywh(
-                        src.0 as f32,
-                        src.1 as f32,
-                        src.2 as f32,
-                        src.3 as f32,
-                    ),
-                    Rect::from_xywh(
-                        dst.0 as f32,
-                        dst.1 as f32,
-                        dst.2 as f32,
-                        dst.3 as f32,
-                    ),
-                    optional_image_filter_from_term(input_term)?,
-                )
-                .ok_or(rustler::Error::BadArg);
-        }
-    }
-    if let Ok((tag, op, radius_x, radius_y, input_term)) = term
-        .decode::<(Atom, Atom, f64, f64, Term)>()
-    {
-        if tag == atoms::morphology_filter() {
-            let input = optional_image_filter_from_term(input_term)?;
-            let filter = if op == atoms::dilate() {
-                image_filters::dilate((radius_x as f32, radius_y as f32), input, None)
-            } else if op == atoms::erode() {
-                image_filters::erode((radius_x as f32, radius_y as f32), input, None)
-            } else {
-                return Err(rustler::Error::BadArg);
-            };
-            return filter.ok_or(rustler::Error::BadArg);
         }
     }
     Err(rustler::Error::BadArg)
