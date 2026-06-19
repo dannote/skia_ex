@@ -95,16 +95,9 @@ defmodule Skia.Codegen.CommandSpecs do
   defp put_elixir_name(%RustQ.Meta.Type{} = type, name),
     do: put_in(type.meta[:elixir_name], name)
 
-  defp rust_type_ast(rust_type) do
-    rust_type
-    |> rust_type_parts()
-    |> RustQ.Rust.AST.TypeBuilder.path()
-  end
+  defp rust_type_ast(rust_type), do: RustQ.Rust.AST.TypeBuilder.path(rust_type)
 
   defp rust_type_string(rust_type),
     do:
       rust_type |> rust_type_ast() |> RustQ.Rust.AST.Render.render_type() |> IO.iodata_to_binary()
-
-  defp rust_type_parts(rust_type) when is_atom(rust_type), do: [rust_type]
-  defp rust_type_parts(rust_type) when is_binary(rust_type), do: String.split(rust_type, "::")
 end
