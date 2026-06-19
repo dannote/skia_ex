@@ -509,12 +509,9 @@ defmodule Skia.Codegen do
 
   @spec generated_text() :: String.t()
   def generated_text do
-    rusty_items =
-      (Rusty.Text.generated_asts() ++ Rusty.TextHelpers.generated_asts())
-      |> Enum.map(&render_rustq_item/1)
-
-    items = rusty_items ++ text_helper_impls()
-    render_items(items, "generated_text.rs")
+    (Rusty.Text.generated_asts() ++ Rusty.TextHelpers.generated_asts())
+    |> Enum.map(&render_rustq_item/1)
+    |> render_items("generated_text.rs")
   end
 
   @spec generated_images() :: String.t()
@@ -529,63 +526,6 @@ defmodule Skia.Codegen do
     Rusty.Paths.generated_asts()
     |> Enum.map(&render_rustq_item/1)
     |> render_items("generated_draw_paths.rs")
-  end
-
-  defp text_helper_impls do
-    [
-      Rust.item("""
-      fn draw_paragraph_text<'a>(
-          canvas: &skia_safe::Canvas,
-          text: &str,
-          x: f32,
-          y: f32,
-          width: f32,
-          size: f32,
-          paint: &Paint,
-          opts: &generated_opts::TextOpts<'a>,
-      ) -> NifResult<()> {
-          let mut text_style = TextStyle::new();
-          text_style.set_font_size(size);
-          text_style.set_color(paint.color());
-          if let Some(ref family) = opts.font_family {
-              text_style.set_font_families(&[family]);
-          }
-          if let Some(line_height) = opts.line_height {
-              text_style.set_height(line_height / size);
-              text_style.set_height_override(true);
-          }
-
-          let mut paragraph_style = ParagraphStyle::new();
-          paragraph_style.set_text_style(&text_style);
-          if let Some(align) = opts.align {
-              paragraph_style.set_text_align(decode_text_align(align)?);
-          }
-          if let Some(direction) = opts.direction {
-              paragraph_style.set_text_direction(decode_text_direction(direction)?);
-          }
-
-          let mut font_collection = FontCollection::new();
-          font_collection.set_default_font_manager(FontMgr::default(), None);
-          let mut paragraph_builder = ParagraphBuilder::new(&paragraph_style, font_collection);
-          if let Some(spans_term) = opts.spans {
-              for (span_text, style_opts) in spans_term.decode::<Vec<(String, Vec<(Atom, Term)>)>>()? {
-                  let span_style = text_style_from_opts(&text_style, &style_opts)?;
-                  paragraph_builder.push_style(&span_style);
-                  paragraph_builder.add_text(span_text);
-                  paragraph_builder.pop();
-              }
-          } else {
-              paragraph_builder.push_style(&text_style);
-              paragraph_builder.add_text(text);
-              paragraph_builder.pop();
-          }
-          let mut paragraph = paragraph_builder.build();
-          paragraph.layout(width);
-          paragraph.paint(canvas, Point::new(x, y));
-          Ok(())
-      }
-      """)
-    ]
   end
 
   @spec generated_clips() :: String.t()
