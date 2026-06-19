@@ -304,8 +304,7 @@ defmodule Skia.Codegen do
     |> RustQ.render!(file, preamble: generated_rust_preamble(), splice: [items: items])
   end
 
-  defp render_rustq_item(ast),
-    do: ast |> RustQ.Rust.AST.Render.render_item() |> Rust.item()
+  defp render_rustq_item(ast), do: Rust.ast_item(ast)
 
   defp rusty_asts(module), do: module.__rustq_asts__()
 
