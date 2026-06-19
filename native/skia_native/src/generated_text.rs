@@ -63,6 +63,41 @@ fn draw_text_impl<'a>(
     };
     Ok(())
 }
+fn text_style_from_opts<'a>(
+    base: &TextStyle,
+    opts: &[(Atom, Term<'a>)],
+) -> NifResult<TextStyle> {
+    let mut style = base.clone();
+    match opt_f32_option(opts, atoms::size())? {
+        Some(size) => {
+            style.set_font_size(size);
+        }
+        None => {}
+    };
+    match opt_term(opts, atoms::fill()) {
+        Some(fill) => {
+            style.set_color(decode_color(fill)?);
+        }
+        None => {}
+    };
+    match opt_term(opts, atoms::font_family()) {
+        Some(term) => {
+            let family = term.decode::<String>()?;
+            style.set_font_families(&vec![& family]);
+        }
+        None => {}
+    };
+    match opt_f32_option(opts, atoms::line_height())? {
+        Some(line_height) => {
+            let font_size = opt_f32_option(opts, atoms::size())?
+                .unwrap_or(base.font_size());
+            style.set_height(line_height / font_size);
+            style.set_height_override(true);
+        }
+        None => {}
+    };
+    Ok(style)
+}
 fn decode_text_align(value: Atom) -> NifResult<TextAlign> {
     match value {
         value if value == atoms::center() => Ok(TextAlign::Center),
@@ -128,28 +163,4 @@ fn draw_paragraph_text<'a>(
     paragraph.layout(width);
     paragraph.paint(canvas, Point::new(x, y));
     Ok(())
-}
-fn text_style_from_opts<'a>(
-    base: &TextStyle,
-    opts: &[(Atom, Term<'a>)],
-) -> NifResult<TextStyle> {
-    let mut style = base.clone();
-    if let Some(size) = opt_f32_option(opts, atoms::size())? {
-        style.set_font_size(size);
-    }
-    if let Some(fill) = opt_term(opts, atoms::fill()) {
-        style.set_color(decode_color(fill)?);
-    }
-    if let Some(ref family) = opt_term(opts, atoms::font_family())
-        .map(|term| term.decode::<String>())
-        .transpose()?
-    {
-        style.set_font_families(&[family]);
-    }
-    if let Some(line_height) = opt_f32_option(opts, atoms::line_height())? {
-        let font_size = opt_f32_option(opts, atoms::size())?.unwrap_or(base.font_size());
-        style.set_height(line_height / font_size);
-        style.set_height_override(true);
-    }
-    Ok(style)
 }

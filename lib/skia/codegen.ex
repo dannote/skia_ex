@@ -584,26 +584,6 @@ defmodule Skia.Codegen do
           paragraph.paint(canvas, Point::new(x, y));
           Ok(())
       }
-      """),
-      Rust.item("""
-      fn text_style_from_opts<'a>(base: &TextStyle, opts: &[(Atom, Term<'a>)]) -> NifResult<TextStyle> {
-          let mut style = base.clone();
-          if let Some(size) = opt_f32_option(opts, atoms::size())? {
-              style.set_font_size(size);
-          }
-          if let Some(fill) = opt_term(opts, atoms::fill()) {
-              style.set_color(decode_color(fill)?);
-          }
-          if let Some(ref family) = opt_term(opts, atoms::font_family()).map(|term| term.decode::<String>()).transpose()? {
-              style.set_font_families(&[family]);
-          }
-          if let Some(line_height) = opt_f32_option(opts, atoms::line_height())? {
-              let font_size = opt_f32_option(opts, atoms::size())?.unwrap_or(base.font_size());
-              style.set_height(line_height / font_size);
-              style.set_height_override(true);
-          }
-          Ok(style)
-      }
       """)
     ]
   end
