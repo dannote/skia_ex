@@ -40,6 +40,26 @@ fn optional_rect_from_term<'a>(rect_term: Term<'a>) -> NifResult<Option<Rect>> {
         Err(_reason) => Ok(Some(rect_from_term(rect_term)?)),
     }
 }
+fn decode_color<'a>(term: Term<'a>) -> NifResult<Color> {
+    match term.decode::<(Atom, u32)>() {
+        Ok((tag, rgba)) => {
+            if tag == atoms::c() {
+                let red = (rgba >> 24 & 255) as u8;
+                let green = (rgba >> 16 & 255) as u8;
+                let blue = (rgba >> 8 & 255) as u8;
+                let alpha = (rgba & 255) as u8;
+                return Ok(Color::from_argb(alpha, red, green, blue));
+            } else {};
+        }
+        Err(_reason) => {}
+    };
+    let (tag, red, green, blue, alpha) = term.decode::<(Atom, u8, u8, u8, u8)>()?;
+    if tag == atoms::rgba() {
+        Ok(Color::from_argb(alpha, red, green, blue))
+    } else {
+        Err(rustler::Error::BadArg)
+    }
+}
 fn decode_gradient_stops<'a>(
     stops: Vec<Term<'a>>,
 ) -> NifResult<(Vec<Color>, Option<Vec<f32>>)> {
@@ -669,21 +689,4 @@ fn decode_sampling_options(term: Term) -> NifResult<SamplingOptions> {
         }
     }
     Err(rustler::Error::BadArg)
-}
-fn decode_color(term: Term) -> NifResult<Color> {
-    if let Ok((tag, rgba)) = term.decode::<(Atom, u32)>() {
-        if tag == atoms::c() {
-            let red = ((rgba >> 24) & 0xff) as u8;
-            let green = ((rgba >> 16) & 0xff) as u8;
-            let blue = ((rgba >> 8) & 0xff) as u8;
-            let alpha = (rgba & 0xff) as u8;
-            return Ok(Color::from_argb(alpha, red, green, blue));
-        }
-    }
-    let (tag, red, green, blue, alpha) = term.decode::<(Atom, u8, u8, u8, u8)>()?;
-    if tag == atoms::rgba() {
-        Ok(Color::from_argb(alpha, red, green, blue))
-    } else {
-        Err(rustler::Error::BadArg)
-    }
 }

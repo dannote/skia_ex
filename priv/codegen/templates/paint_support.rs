@@ -546,22 +546,3 @@ fn decode_sampling_options(term: Term) -> NifResult<SamplingOptions> {
 
 
 
-fn decode_color(term: Term) -> NifResult<Color> {
-    if let Ok((tag, rgba)) = term.decode::<(Atom, u32)>() {
-        if tag == atoms::c() {
-            let red = ((rgba >> 24) & 0xff) as u8;
-            let green = ((rgba >> 16) & 0xff) as u8;
-            let blue = ((rgba >> 8) & 0xff) as u8;
-            let alpha = (rgba & 0xff) as u8;
-            return Ok(Color::from_argb(alpha, red, green, blue));
-        }
-    }
-
-    let (tag, red, green, blue, alpha) = term.decode::<(Atom, u8, u8, u8, u8)>()?;
-
-    if tag == atoms::rgba() {
-        Ok(Color::from_argb(alpha, red, green, blue))
-    } else {
-        Err(rustler::Error::BadArg)
-    }
-}

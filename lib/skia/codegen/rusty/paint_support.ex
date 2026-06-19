@@ -48,6 +48,32 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
     end
   end
 
+  @spec decode_color(R.term()) :: R.nif_result(R.path(:Color))
+  defrust decode_color(term) do
+    case decode_as(term, {R.atom(), R.u32()}) do
+      {:ok, {tag, rgba}} ->
+        if tag == Atoms.c() do
+          red = Bitwise.band(Bitwise.bsr(rgba, 24), 0xFF) |> cast(:u8)
+          green = Bitwise.band(Bitwise.bsr(rgba, 16), 0xFF) |> cast(:u8)
+          blue = Bitwise.band(Bitwise.bsr(rgba, 8), 0xFF) |> cast(:u8)
+          alpha = Bitwise.band(rgba, 0xFF) |> cast(:u8)
+
+          return!({:ok, Color.from_argb(alpha, red, green, blue)})
+        end
+
+      {:error, _reason} ->
+        :ok
+    end
+
+    {tag, red, green, blue, alpha} = decode_as!(term, {R.atom(), R.u8(), R.u8(), R.u8(), R.u8()})
+
+    if tag == Atoms.rgba() do
+      {:ok, Color.from_argb(alpha, red, green, blue)}
+    else
+      {:error, badarg()}
+    end
+  end
+
   @spec decode_gradient_stops(R.vec(R.term())) ::
           R.nif_result({R.vec(R.path(:Color)), R.option(R.vec(R.f32()))})
   defrust decode_gradient_stops(stops) do
