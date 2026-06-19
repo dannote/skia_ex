@@ -379,29 +379,6 @@ fn decode_image_filter(term: Term) -> NifResult<skia_safe::ImageFilter> {
     Err(rustler::Error::BadArg)
 }
 
-fn optional_image_filter_from_term(term: Term) -> NifResult<Option<skia_safe::ImageFilter>> {
-    if term.decode::<Atom>().is_ok_and(|atom| atom == atoms::nil()) {
-        Ok(None)
-    } else {
-        Ok(Some(decode_image_filter(term)?))
-    }
-}
-
-fn decode_shader(term: Term) -> NifResult<Shader> {
-    let paint = decode_paint(term)?;
-    paint.shader().ok_or(rustler::Error::BadArg)
-}
-
-fn decode_mask_filter(term: Term) -> NifResult<MaskFilter> {
-    if let Ok((tag, style, sigma, respect_ctm)) = term.decode::<(Atom, Atom, f64, bool)>() {
-        if tag == atoms::blur_mask_filter() {
-            return MaskFilter::blur(generated_enums::decode_blur_style(style)?, sigma as f32, respect_ctm)
-                .ok_or(rustler::Error::BadArg);
-        }
-    }
-
-    Err(rustler::Error::BadArg)
-}
 
 fn decode_color_filter(term: Term) -> NifResult<ColorFilter> {
     if let Ok((tag, color_term, blend_mode)) = term.decode::<(Atom, Term, Atom)>() {
@@ -435,81 +412,6 @@ fn decode_color_filter(term: Term) -> NifResult<ColorFilter> {
     Err(rustler::Error::BadArg)
 }
 
-fn decode_path_effect(term: Term) -> NifResult<PathEffect> {
-    if let Ok((tag, intervals, phase)) = term.decode::<(Atom, Vec<f64>, f64)>() {
-        if tag == atoms::dash_path_effect() {
-            let intervals = intervals.into_iter().map(|value| value as f32).collect::<Vec<_>>();
-            return PathEffect::dash(intervals.as_slice(), phase as f32)
-                .ok_or(rustler::Error::BadArg);
-        }
-    }
-
-    if let Ok((tag, radius)) = term.decode::<(Atom, f64)>() {
-        if tag == atoms::corner_path_effect() {
-            return PathEffect::corner_path(radius as f32).ok_or(rustler::Error::BadArg);
-        }
-    }
-
-    if let Ok((tag, start, stop, mode)) = term.decode::<(Atom, f64, f64, Atom)>() {
-        if tag == atoms::trim_path_effect() {
-            let mode = if mode == atoms::inverted() {
-                skia_safe::trim_path_effect::Mode::Inverted
-            } else if mode == atoms::normal() {
-                skia_safe::trim_path_effect::Mode::Normal
-            } else {
-                return Err(rustler::Error::BadArg);
-            };
-            return PathEffect::trim(start as f32, stop as f32, mode)
-                .ok_or(rustler::Error::BadArg);
-        }
-    }
-
-    if let Ok((tag, segment_length, deviation, seed_term)) =
-        term.decode::<(Atom, f64, f64, Term)>()
-    {
-        if tag == atoms::discrete_path_effect() {
-            let seed = if seed_term.decode::<Atom>().is_ok_and(|atom| atom == atoms::nil()) {
-                None
-            } else {
-                Some(seed_term.decode::<i64>()? as u32)
-            };
-            return PathEffect::discrete(segment_length as f32, deviation as f32, seed)
-                .ok_or(rustler::Error::BadArg);
-        }
-    }
-
-    if let Ok((tag, path_term, advance, phase, style)) = term.decode::<(Atom, Term, f64, f64, Atom)>() {
-        if tag == atoms::path_1d_effect() {
-            let style = decode_path_1d_style(style)?;
-            return PathEffect::path_1d(&build_path(path_term)?, advance as f32, phase as f32, style)
-                .ok_or(rustler::Error::BadArg);
-        }
-    }
-
-    if let Ok((tag, width, matrix_term)) = term.decode::<(Atom, f64, Term)>() {
-        if tag == atoms::line_2d_effect() {
-            return PathEffect::line_2d(width as f32, &matrix_from_term(matrix_term)?)
-                .ok_or(rustler::Error::BadArg);
-        }
-    }
-
-    if let Ok((tag, matrix_term, path_term)) = term.decode::<(Atom, Term, Term)>() {
-        if tag == atoms::path_2d_effect() {
-            return Ok(PathEffect::path_2d(&matrix_from_term(matrix_term)?, &build_path(path_term)?));
-        }
-    }
-
-    if let Ok((tag, first, second)) = term.decode::<(Atom, Term, Term)>() {
-        if tag == atoms::compose_path_effect() {
-            return Ok(PathEffect::compose(decode_path_effect(first)?, decode_path_effect(second)?));
-        }
-        if tag == atoms::sum_path_effect() {
-            return Ok(PathEffect::sum(decode_path_effect(first)?, decode_path_effect(second)?));
-        }
-    }
-
-    Err(rustler::Error::BadArg)
-}
 
 
 

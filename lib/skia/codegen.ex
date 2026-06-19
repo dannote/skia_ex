@@ -483,6 +483,10 @@ defmodule Skia.Codegen do
             :decode_path_1d_style,
             :optional_matrix_from_term,
             :optional_rect_from_term,
+            :optional_image_filter_from_term,
+            :decode_shader,
+            :decode_mask_filter,
+            :decode_path_effect,
             :decode_sampling_options,
             :decode_color,
             :decode_gradient_stops
