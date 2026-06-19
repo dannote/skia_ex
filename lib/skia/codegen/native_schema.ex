@@ -59,8 +59,7 @@ defmodule Skia.Codegen.NativeSchema do
 
   @spec safe_enum_type!(String.t()) :: String.t()
   def safe_enum_type!(binding_enum) when is_binary(binding_enum) do
-    alias = binding_alias_for!(binding_enum)
-    root_reexport(alias) || alias_name(alias)
+    RustQ.Syn.Index.public_type_name!(index(), binding_enum)
   end
 
   @spec source_paths() :: [Path.t()]
@@ -69,45 +68,6 @@ defmodule Skia.Codegen.NativeSchema do
     |> Path.join("**/*.rs")
     |> Path.wildcard()
     |> Enum.sort()
-  end
-
-  defp binding_alias_for!(binding_enum) do
-    Enum.find(safe_aliases(), &binding_alias?(&1, binding_enum)) ||
-      raise "cannot find skia-safe alias for #{binding_enum}"
-  end
-
-  defp binding_alias?(%RustQ.Syn.Use{segments: segments}, binding_enum),
-    do: List.last(segments) == binding_enum
-
-  defp binding_alias?(%RustQ.Syn.TypeAlias{type_ast: type}, binding_enum),
-    do: RustQ.Syn.Type.path?(type, binding_enum)
-
-  defp safe_aliases do
-    index = index()
-    RustQ.Syn.Index.uses(index) ++ RustQ.Syn.Index.type_aliases(index)
-  end
-
-  defp root_reexport(alias) do
-    source_module = source_module(alias.source_path)
-    alias_path = "#{source_module}::#{alias_name(alias)}"
-
-    index()
-    |> RustQ.Syn.Index.uses()
-    |> Enum.find_value(fn
-      %RustQ.Syn.Use{visibility: :public, path: ^alias_path, alias: root_alias} -> root_alias
-      _other -> nil
-    end)
-  end
-
-  defp alias_name(%RustQ.Syn.Use{alias: alias}), do: alias
-  defp alias_name(%RustQ.Syn.TypeAlias{name: name}), do: name
-
-  defp source_module(path) when is_binary(path) do
-    path
-    |> Path.relative_to(source_root!())
-    |> Path.rootname()
-    |> Path.split()
-    |> List.last()
   end
 
   defp normalize_target("path_utils"), do: "path_utils"
