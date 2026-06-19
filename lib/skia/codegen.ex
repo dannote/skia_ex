@@ -470,9 +470,17 @@ defmodule Skia.Codegen do
 
   @spec generated_paint() :: String.t()
   def generated_paint do
-    "paint_support.rs"
-    |> template_path()
-    |> RustQ.render_file!(preamble: generated_rust_preamble())
+    paint_support = File.read!(template_path("paint_support.rs"))
+
+    ["__rq_items!();\n", paint_support]
+    |> IO.iodata_to_binary()
+    |> RustQ.render!(
+      "generated_paint.rs",
+      preamble: generated_rust_preamble(),
+      splice: [
+        items: [Rusty.PaintSupport |> rusty_ast(:decode_path_1d_style) |> render_rustq_item()]
+      ]
+    )
   end
 
   @spec generated_path() :: String.t()

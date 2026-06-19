@@ -511,17 +511,6 @@ fn decode_path_effect(term: Term) -> NifResult<PathEffect> {
     Err(rustler::Error::BadArg)
 }
 
-fn decode_path_1d_style(style: Atom) -> NifResult<skia_safe::path_1d_path_effect::Style> {
-    if style == atoms::translate() {
-        Ok(skia_safe::path_1d_path_effect::Style::Translate)
-    } else if style == atoms::rotate() {
-        Ok(skia_safe::path_1d_path_effect::Style::Rotate)
-    } else if style == atoms::morph() {
-        Ok(skia_safe::path_1d_path_effect::Style::Morph)
-    } else {
-        Err(rustler::Error::BadArg)
-    }
-}
 
 fn decode_sampling_options(term: Term) -> NifResult<SamplingOptions> {
     if let Ok((tag, filter, mipmap)) = term.decode::<(Atom, Atom, Atom)>() {
