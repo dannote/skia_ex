@@ -315,6 +315,8 @@ defmodule Skia.Codegen do
 
   defp rusty_asts(module), do: module.__rustq_asts__()
 
+  defp rusty_ast(module, name), do: Enum.find(rusty_asts(module), &(&1.name == name))
+
   @spec generated_dispatch() :: String.t()
   def generated_dispatch do
     cases =
@@ -440,7 +442,7 @@ defmodule Skia.Codegen do
 
   @spec generated_text() :: String.t()
   def generated_text do
-    (Rusty.Text.generated_asts() ++ rusty_asts(Rusty.TextHelpers))
+    Rusty.Text.generated_asts()
     |> Enum.map(&render_rustq_item/1)
     |> render_items("generated_text.rs")
   end
@@ -482,7 +484,7 @@ defmodule Skia.Codegen do
     |> RustQ.render!(
       "generated_path.rs",
       preamble: generated_rust_preamble(),
-      splice: [items: Enum.map(rusty_asts(Rusty.PathSupport), &render_rustq_item/1)]
+      splice: [items: [Rusty.Paths |> rusty_ast(:decode_path_direction) |> render_rustq_item()]]
     )
   end
 
