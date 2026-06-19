@@ -6,19 +6,23 @@ defmodule Skia.Codegen.Enums do
   alias RustQ.Rust.AST.TypeBuilder, as: T
   alias Skia.Codegen.SkiaSafe
 
-  @specs %{
-    blend_mode: [skia: "SkBlendMode"],
-    stroke_cap: [skia: "SkPaint_Cap"],
-    stroke_join: [skia: "SkPaint_Join"],
-    fill_rule: [skia: "SkPathFillType"],
-    path_op: [skia: "SkPathOp"],
-    clip_op: [skia: "SkClipOp"],
-    encoded_image_format: [skia: "SkEncodedImageFormat"],
-    blur_style: [skia: "SkBlurStyle"],
-    sampling: [skia: "SkFilterMode"],
-    tile_mode: [skia: "SkTileMode"],
-    mipmap_mode: [skia: "SkMipmapMode"]
+  @api_enums %{
+    blend_mode: "SkBlendMode",
+    stroke_cap: "SkPaint_Cap",
+    stroke_join: "SkPaint_Join",
+    fill_rule: "SkPathFillType",
+    path_op: "SkPathOp",
+    clip_op: "SkClipOp",
+    encoded_image_format: "SkEncodedImageFormat",
+    blur_style: "SkBlurStyle",
+    sampling: "SkFilterMode",
+    tile_mode: "SkTileMode",
+    mipmap_mode: "SkMipmapMode"
   }
+
+  @doc false
+  @spec api_enums() :: %{atom() => String.t()}
+  def api_enums, do: @api_enums
 
   @spec generated() :: String.t()
   def generated do
@@ -59,19 +63,17 @@ defmodule Skia.Codegen.Enums do
 
   @spec defs() :: %{atom() => keyword()}
   def defs do
-    Map.new(@specs, fn {name, _spec} -> {name, spec!(name)} end)
+    Map.new(@api_enums, fn {name, _native_name} -> {name, spec!(name)} end)
   end
 
   @spec spec!(atom()) :: keyword()
-  def spec!(name), do: @specs |> Map.fetch!(name) |> resolve_spec()
+  def spec!(name), do: @api_enums |> Map.fetch!(name) |> resolve_spec()
 
-  defp resolve_spec(spec) do
-    descriptor =
-      Keyword.get_lazy(spec, :descriptor, fn ->
-        spec |> Keyword.fetch!(:skia) |> SkiaSafe.enum_descriptor!()
-      end)
+  defp resolve_spec(native_name) do
+    descriptor = SkiaSafe.enum_descriptor!(native_name)
 
-    spec
+    []
+    |> Keyword.put(:skia, native_name)
     |> Keyword.put(:descriptor, descriptor)
     |> Keyword.put(:rust, Skia.Codegen.NativeSchema.safe_enum_type!(descriptor.name))
     |> Keyword.put(:variants, RustQ.NativeEnumDescriptor.variants(descriptor))
