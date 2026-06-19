@@ -52,7 +52,6 @@ the normal generated-file preamble:
 
 ```text
 priv/codegen/templates/paint_support.rs
-priv/codegen/templates/path_support.rs
 ```
 
 Keep small generated module shells and semantic helper bodies out of

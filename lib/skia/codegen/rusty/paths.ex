@@ -14,6 +14,7 @@ defmodule Skia.Codegen.Rusty.Paths do
   alias RustQ.Type, as: R
 
   defrustmod(SkiaSafe.ArcSize, as: [:skia_safe, :path_builder, :ArcSize])
+  defrustmod(SkiaSafe.Path, as: [:skia_safe, :Path])
 
   @spec decode_path_direction(R.atom()) :: R.nif_result(R.path(:PathDirection))
   defrust decode_path_direction(value) do
@@ -22,6 +23,186 @@ defmodule Skia.Codegen.Rusty.Paths do
       :ccw -> {:ok, PathDirection.CCW}
       _ -> {:error, badarg()}
     end
+  end
+
+  @spec build_path(R.term()) :: R.nif_result(R.path({:skia_safe, :Path}))
+  defrust build_path(path_term) do
+    case decode_as(path_term, {R.atom(), R.path(:String)}) do
+      {:ok, {tag, svg}} ->
+        if tag == Atoms.svg() do
+          return!({:ok, unwrap!(SkiaSafe.Path.from_svg(svg).ok_or(badarg()))})
+        end
+
+      {:error, _reason} ->
+        :ok
+    end
+
+    case decode_as(path_term, {R.atom(), R.vec(R.term())}) do
+      {:ok, {tag, segments}} ->
+        if tag == Atoms.p() do
+          return!({:ok, unwrap!(build_compact_path(segments))})
+        end
+
+      {:error, _reason} ->
+        :ok
+    end
+
+    case path_term.map_get(Atoms.svg()) do
+      {:ok, svg_term} ->
+        case decode_as(svg_term, R.path(:String)) do
+          {:ok, svg} -> return!({:ok, unwrap!(SkiaSafe.Path.from_svg(svg).ok_or(badarg()))})
+          {:error, _reason} -> :ok
+        end
+
+      {:error, _reason} ->
+        :ok
+    end
+
+    segments = decode_as!(unwrap!(path_term.map_get(Atoms.segments())), R.vec(R.term()))
+    builder = PathBuilder.new()
+
+    for segment <- segments.into_iter().rev() do
+      case decode_as(segment, R.atom()) do
+        {:ok, op} ->
+          case op do
+            :close -> builder.close()
+            _ -> :ok
+          end
+
+        {:error, _reason} ->
+          :ok
+      end
+
+      case decode_as(segment, {R.atom(), R.f64(), R.f64()}) do
+        {:ok, {op, x, y}} ->
+          point = {cast(x, :f32), cast(y, :f32)}
+
+          case op do
+            :move_to -> builder.move_to(point)
+            :line_to -> builder.line_to(point)
+            :r_move_to -> builder.r_move_to(point)
+            :r_line_to -> builder.r_line_to(point)
+            _ -> :ok
+          end
+
+        {:error, _reason} ->
+          :ok
+      end
+
+      case decode_as(segment, {R.atom(), R.f64(), R.f64(), R.f64(), R.f64()}) do
+        {:ok, {op, cx, cy, x, y}} ->
+          control = {cast(cx, :f32), cast(cy, :f32)}
+          point = {cast(x, :f32), cast(y, :f32)}
+
+          case op do
+            :quad_to -> builder.quad_to(control, point)
+            :r_quad_to -> builder.r_quad_to(control, point)
+            _ -> :ok
+          end
+
+        {:error, _reason} ->
+          :ok
+      end
+
+      case decode_as(segment, {R.atom(), R.f64(), R.f64(), R.f64(), R.f64(), R.f64()}) do
+        {:ok, {op, cx, cy, x, y, weight}} ->
+          control = {cast(cx, :f32), cast(cy, :f32)}
+          point = {cast(x, :f32), cast(y, :f32)}
+
+          case op do
+            :conic_to -> builder.conic_to(control, point, cast(weight, :f32))
+            :r_conic_to -> builder.r_conic_to(control, point, cast(weight, :f32))
+            _ -> :ok
+          end
+
+        {:error, _reason} ->
+          :ok
+      end
+
+      case decode_as(segment, {R.atom(), R.f64(), R.f64(), R.f64(), R.f64(), R.f64(), R.term()}) do
+        {:ok, {op, x, y, width, height, start, arc_opts}} ->
+          if op == Atoms.arc_to() do
+            {sweep, force_move_to} = decode_as!(arc_opts, {R.f64(), R.bool()})
+
+            builder.arc_to(
+              Rect.from_xywh(cast(x, :f32), cast(y, :f32), cast(width, :f32), cast(height, :f32)),
+              cast(start, :f32),
+              cast(sweep, :f32),
+              force_move_to
+            )
+          end
+
+        {:error, _reason} ->
+          :ok
+      end
+
+      case decode_as(segment, {R.atom(), R.f64(), R.f64(), R.f64(), R.term()}) do
+        {:ok, {op, rx, ry, x_axis_rotate, arc_opts}} ->
+          if op == Atoms.r_arc_to() do
+            {large_arc, sweep, dx, dy} =
+              decode_as!(arc_opts, {R.bool(), R.atom(), R.f64(), R.f64()})
+
+            arc_size =
+              if large_arc do
+                SkiaSafe.ArcSize.Large
+              else
+                SkiaSafe.ArcSize.Small
+              end
+
+            builder.r_arc_to(
+              {cast(rx, :f32), cast(ry, :f32)},
+              cast(x_axis_rotate, :f32),
+              arc_size,
+              unwrap!(decode_path_direction(sweep)),
+              {cast(dx, :f32), cast(dy, :f32)}
+            )
+          end
+
+        {:error, _reason} ->
+          :ok
+      end
+
+      case decode_as(segment, {R.atom(), R.f64(), R.f64(), R.f64(), R.f64(), R.f64(), R.f64()}) do
+        {:ok, {op, x, y, width, height, rx, ry}} ->
+          if op == Atoms.rrect() do
+            builder.add_rrect(
+              RRect.new_rect_xy(
+                Rect.from_xywh(
+                  cast(x, :f32),
+                  cast(y, :f32),
+                  cast(width, :f32),
+                  cast(height, :f32)
+                ),
+                cast(rx, :f32),
+                cast(ry, :f32)
+              ),
+              none(),
+              none()
+            )
+          end
+
+        {:error, _reason} ->
+          :ok
+      end
+
+      case decode_as(segment, {R.atom(), R.f64(), R.f64(), R.f64(), R.f64(), R.f64(), R.f64()}) do
+        {:ok, {op, c1x, c1y, c2x, c2y, x, y}} ->
+          control_1 = {cast(c1x, :f32), cast(c1y, :f32)}
+          control_2 = {cast(c2x, :f32), cast(c2y, :f32)}
+          point = {cast(x, :f32), cast(y, :f32)}
+
+          case op do
+            :cubic_to -> builder.cubic_to(control_1, control_2, point)
+            :r_cubic_to -> builder.r_cubic_to(control_1, control_2, point)
+            _ -> :ok
+          end
+
+        {:error, _reason} ->
+          :ok
+      end
+    end
+
+    {:ok, builder.detach()}
   end
 
   @spec build_compact_path(R.vec(R.term())) :: R.nif_result(R.path({:skia_safe, :Path}))
