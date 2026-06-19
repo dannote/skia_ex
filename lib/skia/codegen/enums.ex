@@ -6,8 +6,8 @@ defmodule Skia.Codegen.Enums do
 
   @specs %{
     blend_mode: [skia: "SkBlendMode", rust: :BlendMode],
-    stroke_cap: [skia: "SkPaint_Cap", rust: "paint::Cap"],
-    stroke_join: [skia: "SkPaint_Join", rust: "paint::Join"],
+    stroke_cap: [skia: "SkPaint_Cap", rust: [:paint, :Cap]],
+    stroke_join: [skia: "SkPaint_Join", rust: [:paint, :Join]],
     fill_rule: [skia: "SkPathFillType", rust: :PathFillType],
     path_op: [skia: "SkPathOp", rust: :PathOp],
     clip_op: [skia: "SkClipOp", rust: :ClipOp],

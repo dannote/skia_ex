@@ -106,5 +106,5 @@ defmodule Skia.Codegen.CommandSpecs do
       rust_type |> rust_type_ast() |> RustQ.Rust.AST.Render.render_type() |> IO.iodata_to_binary()
 
   defp rust_type_parts(rust_type) when is_atom(rust_type), do: [rust_type]
-  defp rust_type_parts(rust_type) when is_binary(rust_type), do: String.split(rust_type, "::")
+  defp rust_type_parts(rust_type) when is_list(rust_type), do: rust_type
 end
