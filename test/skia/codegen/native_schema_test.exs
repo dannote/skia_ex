@@ -25,6 +25,15 @@ defmodule Skia.Codegen.NativeSchemaTest do
     assert RustQ.Syn.Type.ref_to?(paint_arg.type_ast, "Paint")
   end
 
+  test "derives safe enum type names from skia-safe aliases" do
+    assert Skia.Codegen.NativeSchema.safe_enum_type!("SkBlendMode") == "BlendMode"
+    assert Skia.Codegen.NativeSchema.safe_enum_type!("SkPaint_Cap") == "PaintCap"
+    assert Skia.Codegen.NativeSchema.safe_enum_type!("SkPaint_Join") == "PaintJoin"
+    assert Skia.Codegen.NativeSchema.safe_enum_type!("SkPathFillType") == "PathFillType"
+    assert Skia.Codegen.NativeSchema.safe_enum_type!("SkPathOp") == "PathOp"
+    assert Skia.Codegen.NativeSchema.safe_enum_type!("SkFilterMode") == "FilterMode"
+  end
+
   test "indexes native methods across skia-safe source files" do
     assert_method("Canvas", "draw_path")
     assert_method("Canvas", "clip_path")

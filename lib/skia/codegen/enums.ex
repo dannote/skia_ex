@@ -5,17 +5,17 @@ defmodule Skia.Codegen.Enums do
   alias Skia.Codegen.SkiaSafe
 
   @specs %{
-    blend_mode: [skia: "SkBlendMode", rust: :BlendMode],
-    stroke_cap: [skia: "SkPaint_Cap", rust: "paint::Cap"],
-    stroke_join: [skia: "SkPaint_Join", rust: "paint::Join"],
-    fill_rule: [skia: "SkPathFillType", rust: :PathFillType],
-    path_op: [skia: "SkPathOp", rust: :PathOp],
-    clip_op: [skia: "SkClipOp", rust: :ClipOp],
-    encoded_image_format: [skia: "SkEncodedImageFormat", rust: :EncodedImageFormat],
-    blur_style: [skia: "SkBlurStyle", rust: :BlurStyle],
-    sampling: [skia: "SkFilterMode", rust: :FilterMode],
-    tile_mode: [skia: "SkTileMode", rust: :TileMode],
-    mipmap_mode: [skia: "SkMipmapMode", rust: :MipmapMode]
+    blend_mode: [skia: "SkBlendMode"],
+    stroke_cap: [skia: "SkPaint_Cap"],
+    stroke_join: [skia: "SkPaint_Join"],
+    fill_rule: [skia: "SkPathFillType"],
+    path_op: [skia: "SkPathOp"],
+    clip_op: [skia: "SkClipOp"],
+    encoded_image_format: [skia: "SkEncodedImageFormat"],
+    blur_style: [skia: "SkBlurStyle"],
+    sampling: [skia: "SkFilterMode"],
+    tile_mode: [skia: "SkTileMode"],
+    mipmap_mode: [skia: "SkMipmapMode"]
   }
 
   @spec generated() :: String.t()
@@ -68,6 +68,7 @@ defmodule Skia.Codegen.Enums do
 
     spec
     |> Keyword.put(:descriptor, descriptor)
+    |> Keyword.put(:rust, Skia.Codegen.NativeSchema.safe_enum_type!(descriptor.name))
     |> Keyword.put(:variants, RustQ.NativeEnumDescriptor.variants(descriptor))
   end
 
