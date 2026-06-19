@@ -107,6 +107,8 @@ defmodule Skia.Codegen.ArchitectureTest do
       "required" <> "_decoder_for_kind",
       "optional" <> "_decoder_for_kind",
       "option" <> "_type_category",
+      "String" <> ".split" <> "(rust_type",
+      "String" <> ".split" <> "(" <> ~s("::"),
       "{:" <> "enum,"
     ]
 
