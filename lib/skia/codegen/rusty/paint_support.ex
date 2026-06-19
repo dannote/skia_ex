@@ -12,6 +12,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
   defrustmod(SkiaSafe.PathEffect, as: :PathEffect)
   defrustmod(SkiaSafe.MaskFilter, as: :MaskFilter)
   defrustmod(SkiaSafe.ColorFilterClamp, as: [:color_filters, :Clamp])
+  defrustmod(SkiaSafe.Shaders, as: [:skia_safe, :shaders])
 
   @spec decode_path_1d_style(R.atom()) ::
           R.nif_result(R.path({:skia_safe, :path_1d_path_effect, :Style}))
@@ -52,6 +53,236 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
       {:error, _reason} ->
         {:ok, some(unwrap!(rect_from_term(rect_term)))}
     end
+  end
+
+  @spec decode_paint(R.term()) :: R.nif_result(Paint.t())
+  defrust decode_paint(term) do
+    case decode_color(term) do
+      {:ok, color} -> return!({:ok, fill_paint(color)})
+      {:error, _reason} -> :ok
+    end
+
+    case decode_as(
+           term,
+           {R.atom(), {R.f64(), R.f64()}, {R.f64(), R.f64()}, R.vec(R.term()), R.atom(), R.term()}
+         ) do
+      {:ok, {tag, {from_x, from_y}, {to_x, to_y}, stops, tile_mode, matrix_term}} ->
+        if tag == Atoms.linear_gradient() do
+          {colors, positions} = unwrap!(decode_gradient_stops(stops))
+          tile_mode = unwrap!(GeneratedEnums.decode_tile_mode(tile_mode))
+          matrix = unwrap!(optional_matrix_from_term(matrix_term))
+          paint = Paint.default()
+          paint.set_anti_alias(true).set_style(PaintStyle.Fill)
+
+          case Shader.linear_gradient(
+                 {{cast(from_x, :f32), cast(from_y, :f32)}, {cast(to_x, :f32), cast(to_y, :f32)}},
+                 colors.as_slice(),
+                 positions.as_deref(),
+                 tile_mode,
+                 none(),
+                 matrix.as_ref()
+               ) do
+            {:some, shader} -> paint.set_shader(shader)
+            :none -> :ok
+          end
+
+          return!({:ok, paint})
+        end
+
+      {:error, _reason} ->
+        :ok
+    end
+
+    case decode_as(
+           term,
+           {R.atom(), {R.f64(), R.f64()}, R.f64(), {R.f64(), R.f64()}, R.f64(), R.term()}
+         ) do
+      {:ok, {tag, {start_x, start_y}, start_radius, {end_x, end_y}, end_radius, gradient_opts}} ->
+        if tag == Atoms.two_point_conical_gradient() do
+          {stops, tile_mode, matrix_term} =
+            decode_as!(gradient_opts, {R.vec(R.term()), R.atom(), R.term()})
+
+          {colors, positions} = unwrap!(decode_gradient_stops(stops))
+          tile_mode = unwrap!(GeneratedEnums.decode_tile_mode(tile_mode))
+          matrix = unwrap!(optional_matrix_from_term(matrix_term))
+          paint = Paint.default()
+          paint.set_anti_alias(true).set_style(PaintStyle.Fill)
+
+          case Shader.two_point_conical_gradient(
+                 {cast(start_x, :f32), cast(start_y, :f32)},
+                 cast(start_radius, :f32),
+                 {cast(end_x, :f32), cast(end_y, :f32)},
+                 cast(end_radius, :f32),
+                 colors.as_slice(),
+                 positions.as_deref(),
+                 tile_mode,
+                 none(),
+                 matrix.as_ref()
+               ) do
+            {:some, shader} -> paint.set_shader(shader)
+            :none -> :ok
+          end
+
+          return!({:ok, paint})
+        end
+
+      {:error, _reason} ->
+        :ok
+    end
+
+    case decode_as(term, {R.atom(), R.term()}) do
+      {:ok, {tag, color_term}} ->
+        if tag == Atoms.color_shader() do
+          paint = Paint.default()
+          paint.set_anti_alias(true).set_style(PaintStyle.Fill)
+          paint.set_shader(SkiaSafe.Shaders.color(unwrap!(decode_color(color_term))))
+          return!({:ok, paint})
+        end
+
+      {:error, _reason} ->
+        :ok
+    end
+
+    case decode_as(
+           term,
+           {R.atom(), {R.f64(), R.f64()}, R.f64(), R.vec(R.term()), R.atom(), R.term()}
+         ) do
+      {:ok, {tag, {center_x, center_y}, radius, stops, tile_mode, matrix_term}} ->
+        if tag == Atoms.radial_gradient() do
+          {colors, positions} = unwrap!(decode_gradient_stops(stops))
+          tile_mode = unwrap!(GeneratedEnums.decode_tile_mode(tile_mode))
+          matrix = unwrap!(optional_matrix_from_term(matrix_term))
+          paint = Paint.default()
+          paint.set_anti_alias(true).set_style(PaintStyle.Fill)
+
+          case Shader.radial_gradient(
+                 {cast(center_x, :f32), cast(center_y, :f32)},
+                 cast(radius, :f32),
+                 colors.as_slice(),
+                 positions.as_deref(),
+                 tile_mode,
+                 none(),
+                 matrix.as_ref()
+               ) do
+            {:some, shader} -> paint.set_shader(shader)
+            :none -> :ok
+          end
+
+          return!({:ok, paint})
+        end
+
+      {:error, _reason} ->
+        :ok
+    end
+
+    case decode_as(
+           term,
+           {R.atom(), {R.f64(), R.f64()}, R.f64(), R.f64(), R.vec(R.term()), R.atom(), R.term()}
+         ) do
+      {:ok,
+       {tag, {center_x, center_y}, start_degrees, end_degrees, stops, tile_mode, matrix_term}} ->
+        if tag == Atoms.sweep_gradient() do
+          {colors, positions} = unwrap!(decode_gradient_stops(stops))
+          tile_mode = unwrap!(GeneratedEnums.decode_tile_mode(tile_mode))
+          matrix = unwrap!(optional_matrix_from_term(matrix_term))
+          paint = Paint.default()
+          paint.set_anti_alias(true).set_style(PaintStyle.Fill)
+
+          case Shader.sweep_gradient(
+                 {cast(center_x, :f32), cast(center_y, :f32)},
+                 colors.as_slice(),
+                 positions.as_deref(),
+                 tile_mode,
+                 some({cast(start_degrees, :f32), cast(end_degrees, :f32)}),
+                 none(),
+                 matrix.as_ref()
+               ) do
+            {:some, shader} -> paint.set_shader(shader)
+            :none -> :ok
+          end
+
+          return!({:ok, paint})
+        end
+
+      {:error, _reason} ->
+        :ok
+    end
+
+    case decode_as(
+           term,
+           {R.atom(), R.term(), R.vec({R.path(:String), R.vec(R.f64())}),
+            R.vec({R.path(:String), R.vec(R.i64())}), R.vec({R.path(:String), R.term()}),
+            R.term()}
+         ) do
+      {:ok, {tag, effect_term, float_uniforms, int_uniforms, children, matrix_term}} ->
+        if tag == Atoms.runtime_effect_shader() do
+          effect = unwrap!(runtime_effect_from_term(effect_term))
+          uniforms = unwrap!(runtime_uniform_data(ref(effect), float_uniforms, int_uniforms))
+          children = unwrap!(runtime_children(ref(effect), children))
+          matrix = unwrap!(optional_matrix_from_term(matrix_term))
+          paint = Paint.default()
+          paint.set_anti_alias(true).set_style(PaintStyle.Fill)
+
+          paint.set_shader(
+            unwrap!(
+              effect.make_shader(uniforms, children.as_slice(), matrix.as_ref()).ok_or(badarg())
+            )
+          )
+
+          return!({:ok, paint})
+        end
+
+      {:error, _reason} ->
+        :ok
+    end
+
+    case decode_as(term, {R.atom(), R.term(), R.atom(), R.atom(), R.term(), R.term()}) do
+      {:ok, {tag, image_term, tile_x, tile_y, sampling_term, matrix_term}} ->
+        if tag == Atoms.image_shader() do
+          image = unwrap!(image_from_term(image_term))
+          tile_x = unwrap!(GeneratedEnums.decode_tile_mode(tile_x))
+          tile_y = unwrap!(GeneratedEnums.decode_tile_mode(tile_y))
+          sampling = unwrap!(decode_sampling_options(sampling_term))
+          matrix = unwrap!(optional_matrix_from_term(matrix_term))
+          paint = Paint.default()
+          paint.set_anti_alias(true).set_style(PaintStyle.Fill)
+
+          case image.to_shader({tile_x, tile_y}, sampling, matrix.as_ref()) do
+            {:some, shader} -> paint.set_shader(shader)
+            :none -> :ok
+          end
+
+          return!({:ok, paint})
+        end
+
+      {:error, _reason} ->
+        :ok
+    end
+
+    case decode_as(term, {R.atom(), R.term(), R.atom(), R.atom(), R.atom(), R.term(), R.term()}) do
+      {:ok, {tag, picture_term, tile_x, tile_y, filter_mode, matrix_term, tile_rect_term}} ->
+        if tag == Atoms.picture_shader() do
+          picture = unwrap!(picture_from_term(picture_term))
+          tile_x = unwrap!(GeneratedEnums.decode_tile_mode(tile_x))
+          tile_y = unwrap!(GeneratedEnums.decode_tile_mode(tile_y))
+          filter_mode = unwrap!(GeneratedEnums.decode_sampling(filter_mode))
+          matrix = unwrap!(optional_matrix_from_term(matrix_term))
+          tile_rect = unwrap!(optional_rect_from_term(tile_rect_term))
+          paint = Paint.default()
+          paint.set_anti_alias(true).set_style(PaintStyle.Fill)
+
+          paint.set_shader(
+            picture.to_shader({tile_x, tile_y}, filter_mode, matrix.as_ref(), tile_rect.as_ref())
+          )
+
+          return!({:ok, paint})
+        end
+
+      {:error, _reason} ->
+        :ok
+    end
+
+    {:error, badarg()}
   end
 
   @spec decode_sampling_options(R.term()) :: R.nif_result(R.path(:SamplingOptions))

@@ -54,6 +54,241 @@ fn optional_image_filter_from_term<'a>(
         Err(_reason) => Ok(Some(decode_image_filter(term)?)),
     }
 }
+fn decode_paint<'a>(term: Term<'a>) -> NifResult<Paint> {
+    match decode_color(term) {
+        Ok(color) => {
+            return Ok(fill_paint(color));
+        }
+        Err(_reason) => {}
+    };
+    match term.decode::<(Atom, (f64, f64), (f64, f64), Vec<Term<'a>>, Atom, Term<'a>)>()
+    {
+        Ok((tag, (from_x, from_y), (to_x, to_y), stops, tile_mode, matrix_term)) => {
+            if tag == atoms::linear_gradient() {
+                let (colors, positions) = decode_gradient_stops(stops)?;
+                let tile_mode = generated_enums::decode_tile_mode(tile_mode)?;
+                let matrix = optional_matrix_from_term(matrix_term)?;
+                let mut paint = Paint::default();
+                paint.set_anti_alias(true).set_style(PaintStyle::Fill);
+                match Shader::linear_gradient(
+                    ((from_x as f32, from_y as f32), (to_x as f32, to_y as f32)),
+                    colors.as_slice(),
+                    positions.as_deref(),
+                    tile_mode,
+                    None,
+                    matrix.as_ref(),
+                ) {
+                    Some(shader) => {
+                        paint.set_shader(shader);
+                    }
+                    None => {}
+                };
+                return Ok(paint);
+            } else {};
+        }
+        Err(_reason) => {}
+    };
+    match term.decode::<(Atom, (f64, f64), f64, (f64, f64), f64, Term<'a>)>() {
+        Ok(
+            (
+                tag,
+                (start_x, start_y),
+                start_radius,
+                (end_x, end_y),
+                end_radius,
+                gradient_opts,
+            ),
+        ) => {
+            if tag == atoms::two_point_conical_gradient() {
+                let (stops, tile_mode, matrix_term) = gradient_opts
+                    .decode::<(Vec<Term<'a>>, Atom, Term<'a>)>()?;
+                let (colors, positions) = decode_gradient_stops(stops)?;
+                let tile_mode = generated_enums::decode_tile_mode(tile_mode)?;
+                let matrix = optional_matrix_from_term(matrix_term)?;
+                let mut paint = Paint::default();
+                paint.set_anti_alias(true).set_style(PaintStyle::Fill);
+                match Shader::two_point_conical_gradient(
+                    (start_x as f32, start_y as f32),
+                    start_radius as f32,
+                    (end_x as f32, end_y as f32),
+                    end_radius as f32,
+                    colors.as_slice(),
+                    positions.as_deref(),
+                    tile_mode,
+                    None,
+                    matrix.as_ref(),
+                ) {
+                    Some(shader) => {
+                        paint.set_shader(shader);
+                    }
+                    None => {}
+                };
+                return Ok(paint);
+            } else {};
+        }
+        Err(_reason) => {}
+    };
+    match term.decode::<(Atom, Term<'a>)>() {
+        Ok((tag, color_term)) => {
+            if tag == atoms::color_shader() {
+                let mut paint = Paint::default();
+                paint.set_anti_alias(true).set_style(PaintStyle::Fill);
+                paint.set_shader(skia_safe::shaders::color(decode_color(color_term)?));
+                return Ok(paint);
+            } else {};
+        }
+        Err(_reason) => {}
+    };
+    match term.decode::<(Atom, (f64, f64), f64, Vec<Term<'a>>, Atom, Term<'a>)>() {
+        Ok((tag, (center_x, center_y), radius, stops, tile_mode, matrix_term)) => {
+            if tag == atoms::radial_gradient() {
+                let (colors, positions) = decode_gradient_stops(stops)?;
+                let tile_mode = generated_enums::decode_tile_mode(tile_mode)?;
+                let matrix = optional_matrix_from_term(matrix_term)?;
+                let mut paint = Paint::default();
+                paint.set_anti_alias(true).set_style(PaintStyle::Fill);
+                match Shader::radial_gradient(
+                    (center_x as f32, center_y as f32),
+                    radius as f32,
+                    colors.as_slice(),
+                    positions.as_deref(),
+                    tile_mode,
+                    None,
+                    matrix.as_ref(),
+                ) {
+                    Some(shader) => {
+                        paint.set_shader(shader);
+                    }
+                    None => {}
+                };
+                return Ok(paint);
+            } else {};
+        }
+        Err(_reason) => {}
+    };
+    match term.decode::<(Atom, (f64, f64), f64, f64, Vec<Term<'a>>, Atom, Term<'a>)>() {
+        Ok(
+            (
+                tag,
+                (center_x, center_y),
+                start_degrees,
+                end_degrees,
+                stops,
+                tile_mode,
+                matrix_term,
+            ),
+        ) => {
+            if tag == atoms::sweep_gradient() {
+                let (colors, positions) = decode_gradient_stops(stops)?;
+                let tile_mode = generated_enums::decode_tile_mode(tile_mode)?;
+                let matrix = optional_matrix_from_term(matrix_term)?;
+                let mut paint = Paint::default();
+                paint.set_anti_alias(true).set_style(PaintStyle::Fill);
+                match Shader::sweep_gradient(
+                    (center_x as f32, center_y as f32),
+                    colors.as_slice(),
+                    positions.as_deref(),
+                    tile_mode,
+                    Some((start_degrees as f32, end_degrees as f32)),
+                    None,
+                    matrix.as_ref(),
+                ) {
+                    Some(shader) => {
+                        paint.set_shader(shader);
+                    }
+                    None => {}
+                };
+                return Ok(paint);
+            } else {};
+        }
+        Err(_reason) => {}
+    };
+    match term
+        .decode::<
+            (
+                Atom,
+                Term<'a>,
+                Vec<(String, Vec<f64>)>,
+                Vec<(String, Vec<i64>)>,
+                Vec<(String, Term<'a>)>,
+                Term<'a>,
+            ),
+        >()
+    {
+        Ok((tag, effect_term, float_uniforms, int_uniforms, children, matrix_term)) => {
+            if tag == atoms::runtime_effect_shader() {
+                let effect = runtime_effect_from_term(effect_term)?;
+                let uniforms = runtime_uniform_data(
+                    &effect,
+                    float_uniforms,
+                    int_uniforms,
+                )?;
+                let children = runtime_children(&effect, children)?;
+                let matrix = optional_matrix_from_term(matrix_term)?;
+                let mut paint = Paint::default();
+                paint.set_anti_alias(true).set_style(PaintStyle::Fill);
+                paint
+                    .set_shader(
+                        effect
+                            .make_shader(uniforms, children.as_slice(), matrix.as_ref())
+                            .ok_or(rustler::Error::BadArg)?,
+                    );
+                return Ok(paint);
+            } else {};
+        }
+        Err(_reason) => {}
+    };
+    match term.decode::<(Atom, Term<'a>, Atom, Atom, Term<'a>, Term<'a>)>() {
+        Ok((tag, image_term, tile_x, tile_y, sampling_term, matrix_term)) => {
+            if tag == atoms::image_shader() {
+                let image = image_from_term(image_term)?;
+                let tile_x = generated_enums::decode_tile_mode(tile_x)?;
+                let tile_y = generated_enums::decode_tile_mode(tile_y)?;
+                let sampling = decode_sampling_options(sampling_term)?;
+                let matrix = optional_matrix_from_term(matrix_term)?;
+                let mut paint = Paint::default();
+                paint.set_anti_alias(true).set_style(PaintStyle::Fill);
+                match image.to_shader((tile_x, tile_y), sampling, matrix.as_ref()) {
+                    Some(shader) => {
+                        paint.set_shader(shader);
+                    }
+                    None => {}
+                };
+                return Ok(paint);
+            } else {};
+        }
+        Err(_reason) => {}
+    };
+    match term.decode::<(Atom, Term<'a>, Atom, Atom, Atom, Term<'a>, Term<'a>)>() {
+        Ok(
+            (tag, picture_term, tile_x, tile_y, filter_mode, matrix_term, tile_rect_term),
+        ) => {
+            if tag == atoms::picture_shader() {
+                let picture = picture_from_term(picture_term)?;
+                let tile_x = generated_enums::decode_tile_mode(tile_x)?;
+                let tile_y = generated_enums::decode_tile_mode(tile_y)?;
+                let filter_mode = generated_enums::decode_sampling(filter_mode)?;
+                let matrix = optional_matrix_from_term(matrix_term)?;
+                let tile_rect = optional_rect_from_term(tile_rect_term)?;
+                let mut paint = Paint::default();
+                paint.set_anti_alias(true).set_style(PaintStyle::Fill);
+                paint
+                    .set_shader(
+                        picture
+                            .to_shader(
+                                (tile_x, tile_y),
+                                filter_mode,
+                                matrix.as_ref(),
+                                tile_rect.as_ref(),
+                            ),
+                    );
+                return Ok(paint);
+            } else {};
+        }
+        Err(_reason) => {}
+    };
+    Err(rustler::Error::BadArg)
+}
 fn decode_color_filter<'a>(term: Term<'a>) -> NifResult<ColorFilter> {
     match term.decode::<(Atom, Term<'a>, Atom)>() {
         Ok((tag, color_term, blend_mode)) => {
@@ -667,187 +902,4 @@ fn runtime_children(
         ordered[child.index()] = Some(ChildPtr::from(shader));
     }
     ordered.into_iter().collect::<Option<Vec<_>>>().ok_or(rustler::Error::BadArg)
-}
-fn decode_paint(term: Term) -> NifResult<Paint> {
-    if let Ok(color) = decode_color(term) {
-        return Ok(fill_paint(color));
-    }
-    if let Ok((tag, from, to, stops, tile_mode, matrix_term)) = term
-        .decode::<(Atom, (f64, f64), (f64, f64), Vec<Term>, Atom, Term)>()
-    {
-        if tag == atoms::linear_gradient() {
-            let (colors, positions) = decode_gradient_stops(stops)?;
-            let tile_mode = generated_enums::decode_tile_mode(tile_mode)?;
-            let matrix = optional_matrix_from_term(matrix_term)?;
-            let mut paint = Paint::default();
-            paint.set_anti_alias(true).set_style(PaintStyle::Fill);
-            if let Some(shader) = Shader::linear_gradient(
-                ((from.0 as f32, from.1 as f32), (to.0 as f32, to.1 as f32)),
-                colors.as_slice(),
-                positions.as_deref(),
-                tile_mode,
-                None,
-                matrix.as_ref(),
-            ) {
-                paint.set_shader(shader);
-            }
-            return Ok(paint);
-        }
-    }
-    if let Ok((tag, start, start_radius, end, end_radius, gradient_opts)) = term
-        .decode::<(Atom, (f64, f64), f64, (f64, f64), f64, Term)>()
-    {
-        if tag == atoms::two_point_conical_gradient() {
-            let (stops, tile_mode, matrix_term) = gradient_opts
-                .decode::<(Vec<Term>, Atom, Term)>()?;
-            let (colors, positions) = decode_gradient_stops(stops)?;
-            let tile_mode = generated_enums::decode_tile_mode(tile_mode)?;
-            let matrix = optional_matrix_from_term(matrix_term)?;
-            let mut paint = Paint::default();
-            paint.set_anti_alias(true).set_style(PaintStyle::Fill);
-            if let Some(shader) = Shader::two_point_conical_gradient(
-                (start.0 as f32, start.1 as f32),
-                start_radius as f32,
-                (end.0 as f32, end.1 as f32),
-                end_radius as f32,
-                colors.as_slice(),
-                positions.as_deref(),
-                tile_mode,
-                None,
-                matrix.as_ref(),
-            ) {
-                paint.set_shader(shader);
-            }
-            return Ok(paint);
-        }
-    }
-    if let Ok((tag, color_term)) = term.decode::<(Atom, Term)>() {
-        if tag == atoms::color_shader() {
-            let mut paint = Paint::default();
-            paint.set_anti_alias(true).set_style(PaintStyle::Fill);
-            paint.set_shader(skia_safe::shaders::color(decode_color(color_term)?));
-            return Ok(paint);
-        }
-    }
-    if let Ok((tag, center, radius, stops, tile_mode, matrix_term)) = term
-        .decode::<(Atom, (f64, f64), f64, Vec<Term>, Atom, Term)>()
-    {
-        if tag == atoms::radial_gradient() {
-            let (colors, positions) = decode_gradient_stops(stops)?;
-            let tile_mode = generated_enums::decode_tile_mode(tile_mode)?;
-            let matrix = optional_matrix_from_term(matrix_term)?;
-            let mut paint = Paint::default();
-            paint.set_anti_alias(true).set_style(PaintStyle::Fill);
-            if let Some(shader) = Shader::radial_gradient(
-                (center.0 as f32, center.1 as f32),
-                radius as f32,
-                colors.as_slice(),
-                positions.as_deref(),
-                tile_mode,
-                None,
-                matrix.as_ref(),
-            ) {
-                paint.set_shader(shader);
-            }
-            return Ok(paint);
-        }
-    }
-    if let Ok(
-        (tag, center, start_degrees, end_degrees, stops, tile_mode, matrix_term),
-    ) = term.decode::<(Atom, (f64, f64), f64, f64, Vec<Term>, Atom, Term)>()
-    {
-        if tag == atoms::sweep_gradient() {
-            let (colors, positions) = decode_gradient_stops(stops)?;
-            let tile_mode = generated_enums::decode_tile_mode(tile_mode)?;
-            let matrix = optional_matrix_from_term(matrix_term)?;
-            let mut paint = Paint::default();
-            paint.set_anti_alias(true).set_style(PaintStyle::Fill);
-            if let Some(shader) = Shader::sweep_gradient(
-                (center.0 as f32, center.1 as f32),
-                colors.as_slice(),
-                positions.as_deref(),
-                tile_mode,
-                Some((start_degrees as f32, end_degrees as f32)),
-                None,
-                matrix.as_ref(),
-            ) {
-                paint.set_shader(shader);
-            }
-            return Ok(paint);
-        }
-    }
-    if let Ok((tag, effect_term, float_uniforms, int_uniforms, children, matrix_term)) = term
-        .decode::<
-            (
-                Atom,
-                Term,
-                Vec<(String, Vec<f64>)>,
-                Vec<(String, Vec<i64>)>,
-                Vec<(String, Term)>,
-                Term,
-            ),
-        >()
-    {
-        if tag == atoms::runtime_effect_shader() {
-            let effect = runtime_effect_from_term(effect_term)?;
-            let uniforms = runtime_uniform_data(&effect, float_uniforms, int_uniforms)?;
-            let children = runtime_children(&effect, children)?;
-            let matrix = optional_matrix_from_term(matrix_term)?;
-            let mut paint = Paint::default();
-            paint.set_anti_alias(true).set_style(PaintStyle::Fill);
-            paint
-                .set_shader(
-                    effect
-                        .make_shader(uniforms, children.as_slice(), matrix.as_ref())
-                        .ok_or(rustler::Error::BadArg)?,
-                );
-            return Ok(paint);
-        }
-    }
-    if let Ok((tag, image_term, tile_x, tile_y, sampling_term, matrix_term)) = term
-        .decode::<(Atom, Term, Atom, Atom, Term, Term)>()
-    {
-        if tag == atoms::image_shader() {
-            let image = image_from_term(image_term)?;
-            let tile_x = generated_enums::decode_tile_mode(tile_x)?;
-            let tile_y = generated_enums::decode_tile_mode(tile_y)?;
-            let sampling = decode_sampling_options(sampling_term)?;
-            let matrix = optional_matrix_from_term(matrix_term)?;
-            let mut paint = Paint::default();
-            paint.set_anti_alias(true).set_style(PaintStyle::Fill);
-            if let Some(shader) = image
-                .to_shader((tile_x, tile_y), sampling, matrix.as_ref())
-            {
-                paint.set_shader(shader);
-            }
-            return Ok(paint);
-        }
-    }
-    if let Ok(
-        (tag, picture_term, tile_x, tile_y, filter_mode, matrix_term, tile_rect_term),
-    ) = term.decode::<(Atom, Term, Atom, Atom, Atom, Term, Term)>()
-    {
-        if tag == atoms::picture_shader() {
-            let picture = picture_from_term(picture_term)?;
-            let tile_x = generated_enums::decode_tile_mode(tile_x)?;
-            let tile_y = generated_enums::decode_tile_mode(tile_y)?;
-            let filter_mode = generated_enums::decode_sampling(filter_mode)?;
-            let matrix = optional_matrix_from_term(matrix_term)?;
-            let tile_rect = optional_rect_from_term(tile_rect_term)?;
-            let mut paint = Paint::default();
-            paint.set_anti_alias(true).set_style(PaintStyle::Fill);
-            paint
-                .set_shader(
-                    picture
-                        .to_shader(
-                            (tile_x, tile_y),
-                            filter_mode,
-                            matrix.as_ref(),
-                            tile_rect.as_ref(),
-                        ),
-                );
-            return Ok(paint);
-        }
-    }
-    Err(rustler::Error::BadArg)
 }
