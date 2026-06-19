@@ -1,13 +1,16 @@
 defmodule Skia.Codegen.ArchitectureTest do
   use ExUnit.Case, async: true
 
+  alias Skia.Codegen.CommandOverlay
+  alias Skia.Codegen.Commands
+
   test "legacy command specs are gone" do
     refute File.exists?("lib/skia/command_spec")
     refute File.exists?("lib/skia/command_spec.ex")
   end
 
   test "command metadata does not carry native_refs" do
-    refute Enum.any?(Skia.Codegen.Commands.all(), fn {_name, spec} ->
+    refute Enum.any?(Commands.all(), fn {_name, spec} ->
              Keyword.has_key?(spec, :native_refs)
            end)
   end
@@ -25,7 +28,7 @@ defmodule Skia.Codegen.ArchitectureTest do
     source = File.read!("lib/skia/codegen/skia_safe.ex")
 
     assert source =~ "RustQ.NativeEnumDescriptor"
-    assert source =~ "RustQ.Syn.Index.cached_package"
+    assert source =~ "Index.cached_package"
     refute source =~ "RustQ.Cargo"
     refute source =~ ".cargo/registry"
   end
@@ -83,7 +86,7 @@ defmodule Skia.Codegen.ArchitectureTest do
   end
 
   test "native overlays stay ergonomic and validate native methods" do
-    assert Skia.Codegen.CommandOverlay.validate_native!() == :ok
+    assert CommandOverlay.validate_native!() == :ok
 
     source = File.read!("lib/skia/codegen/command_overlay.ex")
     refute source =~ "opts:"

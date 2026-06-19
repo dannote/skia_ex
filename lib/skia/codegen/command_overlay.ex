@@ -1,7 +1,11 @@
 defmodule Skia.Codegen.CommandOverlay do
   @moduledoc false
 
-  use Skia.Codegen.CommandOverlay.DSL
+  alias RustQ.NativeRef
+  alias Skia.Codegen.CommandOverlay.DSL
+  alias Skia.Codegen.NativeSchema
+
+  use DSL
 
   command(:clear, native: Canvas.clear())
 
@@ -78,5 +82,5 @@ defmodule Skia.Codegen.CommandOverlay do
   end
 
   defp validate_ref(nil), do: :ok
-  defp validate_ref(%RustQ.NativeRef{} = ref), do: Skia.Codegen.NativeSchema.descriptor!(ref)
+  defp validate_ref(%NativeRef{} = ref), do: NativeSchema.descriptor!(ref)
 end

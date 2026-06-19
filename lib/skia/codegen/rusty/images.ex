@@ -16,9 +16,9 @@ defmodule Skia.Codegen.Rusty.Images do
 
   @spec draw_image_impl(
           R.ref(SkiaSafe.Canvas.t()),
-          R.vec(R.term()),
+          R.vec(term()),
           GeneratedOpts.ImageOpts.t(R.lifetime(:a)),
-          R.slice({R.atom(), R.term()})
+          R.slice({atom(), term()})
         ) :: R.nif_result(R.unit())
   defrust draw_image_impl(canvas, args, opts, raw_opts) do
     image = unwrap!(image_from_term(first_arg_term!()))
@@ -96,9 +96,9 @@ defmodule Skia.Codegen.Rusty.Images do
 
   @spec draw_picture_impl(
           R.ref(SkiaSafe.Canvas.t()),
-          R.vec(R.term()),
+          R.vec(term()),
           GeneratedOpts.PictureOpts.t(R.lifetime(:a)),
-          R.slice({R.atom(), R.term()})
+          R.slice({atom(), term()})
         ) :: R.nif_result(R.unit())
   defrust draw_picture_impl(canvas, args, opts, raw_opts) do
     picture = unwrap!(picture_from_term(first_arg_term!()))

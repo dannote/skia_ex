@@ -1,37 +1,40 @@
 defmodule Skia.Codegen.NativeSchemaTest do
   use ExUnit.Case, async: true
 
+  alias RustQ.Syn
+  alias Skia.Codegen.NativeSchema
+
   test "reads skia-safe Canvas methods structurally from Rust source" do
-    assert %RustQ.Syn.Method{
+    assert %Syn.Method{
              name: "draw_rect",
              visibility: :public,
              docs: ["Draws [`Rect`] rect using clip, [`Matrix`], and [`Paint`] `paint`." | _],
              args: [self_arg, rect_arg, paint_arg],
              returns: "& Self",
-             returns_ast: %RustQ.Syn.Type.Ref{inner: %RustQ.Syn.Type.Self{}}
-           } = Skia.Codegen.NativeSchema.method!("Canvas", "draw_rect")
+             returns_ast: %Syn.Type.Ref{inner: %Syn.Type.Self{}}
+           } = NativeSchema.method!("Canvas", "draw_rect")
 
-    assert %RustQ.Syn.Arg{
+    assert %Syn.Arg{
              name: "self",
              type: "& self",
-             type_ast: %RustQ.Syn.Type.Ref{inner: %RustQ.Syn.Type.Self{}}
+             type_ast: %Syn.Type.Ref{inner: %Syn.Type.Self{}}
            } =
              self_arg
 
-    assert %RustQ.Syn.Arg{name: "rect", type: "impl AsRef < Rect >"} = rect_arg
-    assert RustQ.Syn.Type.impl_trait?(rect_arg.type_ast, "AsRef", ["Rect"])
+    assert %Syn.Arg{name: "rect", type: "impl AsRef < Rect >"} = rect_arg
+    assert Syn.Type.impl_trait?(rect_arg.type_ast, "AsRef", ["Rect"])
 
-    assert %RustQ.Syn.Arg{name: "paint", type: "& Paint"} = paint_arg
-    assert RustQ.Syn.Type.ref_to?(paint_arg.type_ast, "Paint")
+    assert %Syn.Arg{name: "paint", type: "& Paint"} = paint_arg
+    assert Syn.Type.ref_to?(paint_arg.type_ast, "Paint")
   end
 
   test "derives safe enum type names from skia-safe aliases" do
-    assert Skia.Codegen.NativeSchema.safe_enum_type!("SkBlendMode") == "BlendMode"
-    assert Skia.Codegen.NativeSchema.safe_enum_type!("SkPaint_Cap") == "PaintCap"
-    assert Skia.Codegen.NativeSchema.safe_enum_type!("SkPaint_Join") == "PaintJoin"
-    assert Skia.Codegen.NativeSchema.safe_enum_type!("SkPathFillType") == "PathFillType"
-    assert Skia.Codegen.NativeSchema.safe_enum_type!("SkPathOp") == "PathOp"
-    assert Skia.Codegen.NativeSchema.safe_enum_type!("SkFilterMode") == "FilterMode"
+    assert NativeSchema.safe_enum_type!("SkBlendMode") == "BlendMode"
+    assert NativeSchema.safe_enum_type!("SkPaint_Cap") == "PaintCap"
+    assert NativeSchema.safe_enum_type!("SkPaint_Join") == "PaintJoin"
+    assert NativeSchema.safe_enum_type!("SkPathFillType") == "PathFillType"
+    assert NativeSchema.safe_enum_type!("SkPathOp") == "PathOp"
+    assert NativeSchema.safe_enum_type!("SkFilterMode") == "FilterMode"
   end
 
   test "indexes native methods across skia-safe source files" do
@@ -43,7 +46,6 @@ defmodule Skia.Codegen.NativeSchemaTest do
   end
 
   defp assert_method(target, name) do
-    assert %RustQ.Syn.Method{name: ^name, visibility: :public} =
-             Skia.Codegen.NativeSchema.method!(target, name)
+    assert %Syn.Method{name: ^name, visibility: :public} = NativeSchema.method!(target, name)
   end
 end

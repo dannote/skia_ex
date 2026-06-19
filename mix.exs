@@ -1,7 +1,7 @@
 defmodule Skia.MixProject do
   use Mix.Project
 
-  @version "0.1.1"
+  @version "0.2.0"
   @source_url "https://github.com/dannote/skia_ex"
 
   def project do
@@ -12,7 +12,7 @@ defmodule Skia.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       aliases: aliases(),
-      dialyzer: [plt_add_apps: [:mix, :rustq]],
+      dialyzer: [plt_add_apps: [:mix, :rustq], ignore_warnings: ".dialyzer_ignore.exs"],
       name: "Skia",
       description: "Elixir drawing API backed by a batched Rustler Skia renderer",
       source_url: @source_url,
@@ -41,11 +41,10 @@ defmodule Skia.MixProject do
       {:ex_dna, "~> 1.0", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.0", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.0", only: [:dev, :test], runtime: false},
-      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
+      {:ex_doc, ">= 0.0.0", only: [:dev, :test], runtime: false},
       {:rustler_precompiled, "~> 0.8"},
       {:rustler, "~> 0.38.0", optional: true, runtime: false},
-      {:rustq,
-       github: "dannote/rustq", branch: "defrust-meta-mvp", only: [:dev, :test], runtime: false},
+      {:rustq, "~> 0.6", only: [:dev, :test], runtime: false},
       {:vibe_kit, "~> 0.1"},
       {:igniter, "~> 0.6", only: [:dev, :test]}
     ]

@@ -1,6 +1,8 @@
 defmodule Skia.Codegen.Commands.Layers do
   @moduledoc false
 
+  alias Skia.Codegen.CommandSpecs
+
   @type blend_mode :: RustQ.Type.enum(:blend_mode)
   @type bounds :: {RustQ.Type.f32(), RustQ.Type.f32(), RustQ.Type.f32(), RustQ.Type.f32()}
 
@@ -25,7 +27,7 @@ defmodule Skia.Codegen.Commands.Layers do
   @spec commands() :: keyword()
   def commands do
     __ENV__.file
-    |> Skia.Codegen.CommandSpecs.from_file()
+    |> CommandSpecs.from_file()
     |> Enum.map(fn command ->
       {command.name,
        @metadata
@@ -35,17 +37,19 @@ defmodule Skia.Codegen.Commands.Layers do
   end
 
   @spec save(Skia.Document.t(), empty_opts()) :: Skia.Document.t()
-  def save(document, opts), do: {document, opts}
+  def save(document, opts), do: keep_command_shape(document, opts)
 
   @spec save_layer(Skia.Document.t(), save_layer_opts()) :: Skia.Document.t()
-  def save_layer(document, opts), do: {document, opts}
+  def save_layer(document, opts), do: keep_command_shape(document, opts)
 
   @spec restore(Skia.Document.t(), empty_opts()) :: Skia.Document.t()
-  def restore(document, opts), do: {document, opts}
+  def restore(document, opts), do: keep_command_shape(document, opts)
 
   @spec push_style(Skia.Document.t(), push_style_opts()) :: Skia.Document.t()
-  def push_style(document, opts), do: {document, opts}
+  def push_style(document, opts), do: keep_command_shape(document, opts)
 
   @spec pop_style(Skia.Document.t(), empty_opts()) :: Skia.Document.t()
-  def pop_style(document, opts), do: {document, opts}
+  def pop_style(document, opts), do: keep_command_shape(document, opts)
+
+  defp keep_command_shape(document, _opts), do: document
 end

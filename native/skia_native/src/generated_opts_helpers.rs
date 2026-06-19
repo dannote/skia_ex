@@ -10,14 +10,17 @@ fn opt_term<'a>(opts: &[(Atom, Term<'a>)], key: Atom) -> Option<Term<'a>> {
     for (atom, term) in opts.iter() {
         if *atom == key {
             return Some(*term);
-        } else {};
+        }
     }
     None
 }
 fn opt_f32<'a>(opts: &[(Atom, Term<'a>)], key: Atom) -> NifResult<f32> {
-    match opt_f32_default(opts, key, 0.0 / 0.0) {
-        Ok(value) => if value.is_nan() { Err(rustler::Error::BadArg) } else { Ok(value) }
-        Err(reason) => Err(reason),
+    match opt_term(opts, key) {
+        Some(term) => {
+            let value = term.decode::<f64>()? as f32;
+            if value.is_nan() { Err(rustler::Error::BadArg) } else { Ok(value) }
+        }
+        None => Err(rustler::Error::BadArg),
     }
 }
 fn opt_f32_option<'a>(opts: &[(Atom, Term<'a>)], key: Atom) -> NifResult<Option<f32>> {

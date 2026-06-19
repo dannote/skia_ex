@@ -9,7 +9,10 @@ defmodule Skia.Command do
   Rustler NIF.
   """
 
+  alias RustQ.Meta.Type
   alias Skia.Codegen.Commands
+  alias Skia.{ColorFilter, Command, Font, Image, ImageFilter, MaskFilter, Paint, Path, PathEffect}
+  alias Skia.{Picture, SamplingOptions, TextBlob, Vertices}
 
   @type color ::
           {:rgba, non_neg_integer(), non_neg_integer(), non_neg_integer(), non_neg_integer()}
@@ -66,71 +69,82 @@ defmodule Skia.Command do
   end
 
   defp normalize_meta_value!(name, key, type, value) do
-    case RustQ.Meta.Type.category(type) do
-      :number when is_integer(value) or is_float(value) -> value * 1.0
-      :integer when is_integer(value) -> value
-      :boolean when is_boolean(value) -> value
-      category when category in [:atom, :enum] and is_atom(value) -> value
-      :string when is_binary(value) -> value
-      :term when key == :spans -> normalize_spans!(value)
-      :term -> value
-      {:tuple, types} when is_tuple(value) -> normalize_tuple!(types, value)
-      _category -> normalize_external_value!(name, key, type, value)
+    type
+    |> Type.category()
+    |> normalize_category_value(name, key, type, value)
+  end
+
+  defp normalize_category_value(:number, _name, _key, _type, value)
+       when is_integer(value) or is_float(value),
+       do: value * 1.0
+
+  defp normalize_category_value(:integer, _name, _key, _type, value) when is_integer(value),
+    do: value
+
+  defp normalize_category_value(:boolean, _name, _key, _type, value) when is_boolean(value),
+    do: value
+
+  defp normalize_category_value(category, _name, _key, _type, value)
+       when category in [:atom, :enum] and is_atom(value),
+       do: value
+
+  defp normalize_category_value(:string, _name, _key, _type, value) when is_binary(value),
+    do: value
+
+  defp normalize_category_value(:term, _name, :spans, _type, value), do: normalize_spans!(value)
+  defp normalize_category_value(:term, _name, _key, _type, value), do: value
+
+  defp normalize_category_value({:tuple, types}, _name, _key, _type, value) when is_tuple(value),
+    do: normalize_tuple!(types, value)
+
+  defp normalize_category_value(_category, name, key, type, value),
+    do: normalize_external_value!(name, key, type, value)
+
+  defp normalize_external_value!(name, key, type, value) do
+    with :error <- normalize_external_struct(type, value),
+         :error <- normalize_external_filter(type, value),
+         :error <- normalize_external_special(type, value) do
+      raise ArgumentError,
+            "invalid #{inspect(key)} for #{name}: expected #{inspect(type)}, got #{inspect(value)}"
     end
   end
 
-  defp normalize_external_value!(name, key, type, value) do
+  defp normalize_external_struct(type, value) do
     cond do
-      external_struct?(type, value, Skia.Paint) ->
-        value
+      external_struct?(type, value, Paint) -> value
+      external_struct?(type, value, Path) -> value
+      external_struct?(type, value, Image) -> value
+      external_struct?(type, value, Picture) -> value
+      external_struct?(type, value, TextBlob) -> value
+      external_struct?(type, value, Font) -> value
+      true -> :error
+    end
+  end
 
-      RustQ.Meta.Type.external?(type, Skia.Command, :color) ->
-        normalize_color!(value)
+  defp normalize_external_filter(type, value) do
+    cond do
+      Type.external?(type, ImageFilter, :t) -> normalize_image_filter!(value)
+      Type.external?(type, ColorFilter, :t) -> normalize_color_filter!(value)
+      Type.external?(type, MaskFilter, :t) -> normalize_mask_filter!(value)
+      Type.external?(type, PathEffect, :t) -> normalize_path_effect!(value)
+      Type.external?(type, SamplingOptions, :t) -> normalize_sampling_options!(value)
+      true -> :error
+    end
+  end
 
-      external_struct?(type, value, Skia.Path) ->
-        value
-
-      external_struct?(type, value, Skia.Image) ->
-        value
-
-      external_struct?(type, value, Skia.Picture) ->
-        value
-
-      external_struct?(type, value, Skia.TextBlob) ->
-        value
-
-      external_struct?(type, value, Skia.Vertices) ->
-        normalize_vertices!(value)
-
-      external_struct?(type, value, Skia.Font) ->
-        value
-
-      RustQ.Meta.Type.external?(type, Skia.ImageFilter, :t) ->
-        normalize_image_filter!(value)
-
-      RustQ.Meta.Type.external?(type, Skia.ColorFilter, :t) ->
-        normalize_color_filter!(value)
-
-      RustQ.Meta.Type.external?(type, Skia.MaskFilter, :t) ->
-        normalize_mask_filter!(value)
-
-      RustQ.Meta.Type.external?(type, Skia.PathEffect, :t) ->
-        normalize_path_effect!(value)
-
-      RustQ.Meta.Type.external?(type, Skia.SamplingOptions, :t) ->
-        normalize_sampling_options!(value)
-
-      true ->
-        raise ArgumentError,
-              "invalid #{inspect(key)} for #{name}: expected #{inspect(type)}, got #{inspect(value)}"
+  defp normalize_external_special(type, value) do
+    cond do
+      Type.external?(type, Command, :color) -> normalize_color!(value)
+      external_struct?(type, value, Vertices) -> normalize_vertices!(value)
+      true -> :error
     end
   end
 
   defp external_struct?(type, value, module) do
-    RustQ.Meta.Type.external?(type, module, :t) and is_struct(value, module)
+    Type.external?(type, module, :t) and is_struct(value, module)
   end
 
-  defp normalize_value!(name, key, %RustQ.Meta.Type{} = type, value) do
+  defp normalize_value!(name, key, %Type{} = type, value) do
     normalize_meta_value!(name, key, type, value)
   end
 
@@ -142,7 +156,7 @@ defmodule Skia.Command do
   defp expand_paint_opts(opts) do
     case Keyword.pop(opts, :paint) do
       {nil, opts} -> opts
-      {%Skia.Paint{} = paint, opts} -> Keyword.merge(Skia.Paint.to_opts(paint), opts)
+      {%Paint{} = paint, opts} -> Keyword.merge(Paint.to_opts(paint), opts)
       {paint, _opts} -> raise ArgumentError, "invalid paint #{inspect(paint)}"
     end
   end

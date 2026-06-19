@@ -1,6 +1,8 @@
 defmodule Skia.Codegen.Commands.Images do
   @moduledoc false
 
+  alias Skia.Codegen.CommandSpecs
+
   @type blend_mode :: RustQ.Type.enum(:blend_mode)
   @type source_rect :: {RustQ.Type.f32(), RustQ.Type.f32(), RustQ.Type.f32(), RustQ.Type.f32()}
 
@@ -30,7 +32,7 @@ defmodule Skia.Codegen.Commands.Images do
   @spec commands() :: keyword()
   def commands do
     __ENV__.file
-    |> Skia.Codegen.CommandSpecs.from_file()
+    |> CommandSpecs.from_file()
     |> Enum.map(fn command ->
       {command.name,
        @metadata
@@ -40,8 +42,10 @@ defmodule Skia.Codegen.Commands.Images do
   end
 
   @spec image(Skia.Document.t(), Skia.Image.t(), image_opts()) :: Skia.Document.t()
-  def image(document, image, opts), do: {document, image, opts}
+  def image(document, image, opts), do: keep_command_shape(document, image, opts)
 
   @spec picture(Skia.Document.t(), Skia.Picture.t(), picture_opts()) :: Skia.Document.t()
-  def picture(document, picture, opts), do: {document, picture, opts}
+  def picture(document, picture, opts), do: keep_command_shape(document, picture, opts)
+
+  defp keep_command_shape(document, _arg, _opts), do: document
 end

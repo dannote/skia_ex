@@ -1,6 +1,8 @@
 defmodule Skia.Codegen.Commands.Clips do
   @moduledoc false
 
+  alias Skia.Codegen.CommandSpecs
+
   @type clip_op :: RustQ.Type.enum(:clip_op)
   @type fill_rule :: RustQ.Type.enum(:fill_rule)
 
@@ -37,7 +39,7 @@ defmodule Skia.Codegen.Commands.Clips do
   @spec commands() :: keyword()
   def commands do
     __ENV__.file
-    |> Skia.Codegen.CommandSpecs.from_file()
+    |> CommandSpecs.from_file()
     |> Enum.map(fn command ->
       {command.name,
        [
@@ -50,11 +52,14 @@ defmodule Skia.Codegen.Commands.Clips do
   end
 
   @spec clip_rect(Skia.Document.t(), clip_rect_opts()) :: Skia.Document.t()
-  def clip_rect(document, opts), do: {document, opts}
+  def clip_rect(document, opts), do: keep_command_shape(document, opts)
 
   @spec clip_circle(Skia.Document.t(), clip_circle_opts()) :: Skia.Document.t()
-  def clip_circle(document, opts), do: {document, opts}
+  def clip_circle(document, opts), do: keep_command_shape(document, opts)
 
   @spec clip_path(Skia.Document.t(), Skia.Path.t(), clip_path_opts()) :: Skia.Document.t()
-  def clip_path(document, path, opts), do: {document, path, opts}
+  def clip_path(document, path, opts), do: keep_command_shape(document, path, opts)
+
+  defp keep_command_shape(document, _opts), do: document
+  defp keep_command_shape(document, _arg, _opts), do: document
 end

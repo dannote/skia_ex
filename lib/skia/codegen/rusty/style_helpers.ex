@@ -5,12 +5,12 @@ defmodule Skia.Codegen.Rusty.StyleHelpers do
 
   alias RustQ.Type, as: R
 
-  @spec apply_blend_mode(R.mut_ref(Paint.t()), R.slice({R.atom(), R.term()})) ::
+  @spec apply_blend_mode(R.mut_ref(Paint.t()), R.slice({atom(), term()})) ::
           R.nif_result(R.unit())
   defrust apply_blend_mode(paint, opts) do
     case opt_term(opts, Atoms.blend_mode()) do
       {:some, term} ->
-        atom = decode_as!(term, R.atom())
+        atom = decode_as!(term, atom())
         paint.set_blend_mode(unwrap!(GeneratedEnums.decode_blend_mode(atom)))
 
       :none ->
@@ -21,12 +21,12 @@ defmodule Skia.Codegen.Rusty.StyleHelpers do
     :ok
   end
 
-  @spec apply_stroke_options(R.mut_ref(Paint.t()), R.slice({R.atom(), R.term()})) ::
+  @spec apply_stroke_options(R.mut_ref(Paint.t()), R.slice({atom(), term()})) ::
           R.nif_result(R.unit())
   defrust apply_stroke_options(paint, opts) do
     case opt_term(opts, Atoms.stroke_cap()) do
       {:some, term} ->
-        atom = decode_as!(term, R.atom())
+        atom = decode_as!(term, atom())
         paint.set_stroke_cap(unwrap!(GeneratedEnums.decode_stroke_cap(atom)))
 
       :none ->
@@ -35,7 +35,7 @@ defmodule Skia.Codegen.Rusty.StyleHelpers do
 
     case opt_term(opts, Atoms.stroke_join()) do
       {:some, term} ->
-        atom = decode_as!(term, R.atom())
+        atom = decode_as!(term, atom())
         paint.set_stroke_join(unwrap!(GeneratedEnums.decode_stroke_join(atom)))
 
       :none ->
@@ -50,12 +50,12 @@ defmodule Skia.Codegen.Rusty.StyleHelpers do
     :ok
   end
 
-  @spec apply_fill_rule(R.mut_ref(SkiaSafe.Path.t()), R.slice({R.atom(), R.term()})) ::
+  @spec apply_fill_rule(R.mut_ref(SkiaSafe.Path.t()), R.slice({atom(), term()})) ::
           R.nif_result(R.unit())
   defrust apply_fill_rule(path, opts) do
     case opt_term(opts, Atoms.fill_rule()) do
       {:some, term} ->
-        atom = decode_as!(term, R.atom())
+        atom = decode_as!(term, atom())
         path.set_fill_type(unwrap!(GeneratedEnums.decode_fill_rule(atom)))
 
       :none ->
@@ -65,12 +65,12 @@ defmodule Skia.Codegen.Rusty.StyleHelpers do
     :ok
   end
 
-  @spec decode_clip_op(R.atom()) :: R.nif_result(R.option(ClipOp.t()))
+  @spec decode_clip_op(atom()) :: R.nif_result(R.option(ClipOp.t()))
   defrust decode_clip_op(value) do
     {:ok, some(unwrap!(GeneratedEnums.decode_clip_op(value)))}
   end
 
-  @spec apply_paint_effects(R.mut_ref(Paint.t()), R.slice({R.atom(), R.term()})) ::
+  @spec apply_paint_effects(R.mut_ref(Paint.t()), R.slice({atom(), term()})) ::
           R.nif_result(R.unit())
   defrust apply_paint_effects(paint, opts) do
     case opt_term(opts, Atoms.image_filter()) do

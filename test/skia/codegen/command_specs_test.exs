@@ -1,12 +1,16 @@
 defmodule Skia.Codegen.CommandSpecsTest do
   use ExUnit.Case, async: true
 
+  alias RustQ.Meta.Type
+  alias RustQ.NativeEnumDescriptor
+  alias Skia.Codegen.CommandSpecs
+  alias Skia.Path
+
   test "derives path command args and opts from declaration typespecs" do
-    schema =
-      Skia.Codegen.CommandSpecs.from_file("lib/skia/codegen/commands/paths.ex")
+    schema = CommandSpecs.from_file("lib/skia/codegen/commands/paths.ex")
 
     assert %{args: [path: path_type], opts: path_opts} = command!(schema, :path)
-    assert external_type?(path_type, Skia.Path, :t)
+    assert external_type?(path_type, Path, :t)
 
     assert opt_names(path_opts) == [
              :paint,
@@ -25,8 +29,8 @@ defmodule Skia.Codegen.CommandSpecsTest do
            ]
 
     assert %{args: [a: a_type, b: b_type], opts: path_op_opts} = command!(schema, :path_op)
-    assert external_type?(a_type, Skia.Path, :t)
-    assert external_type?(b_type, Skia.Path, :t)
+    assert external_type?(a_type, Path, :t)
+    assert external_type?(b_type, Path, :t)
     assert required_opts(path_op_opts) == [:path_op]
     assert :fill_rule in opt_names(path_op_opts)
     assert enum_type?(opt_type(path_op_opts, :path_op), :path_op, "SkPathOp")
@@ -34,7 +38,7 @@ defmodule Skia.Codegen.CommandSpecsTest do
     assert %{args: [path: outline_path_type], opts: outline_opts} =
              command!(schema, :path_outline)
 
-    assert external_type?(outline_path_type, Skia.Path, :t)
+    assert external_type?(outline_path_type, Path, :t)
     assert required_opts(outline_opts) == [:outline_width]
   end
 
@@ -47,9 +51,9 @@ defmodule Skia.Codegen.CommandSpecsTest do
     do: opts |> Enum.find(&(Keyword.fetch!(&1, :name) == name)) |> Keyword.fetch!(:type)
 
   defp enum_type?(
-         %RustQ.Meta.Type{
+         %Type{
            kind: :enum,
-           meta: %{elixir_name: name, native_enum: %RustQ.NativeEnumDescriptor{name: native_name}}
+           meta: %{elixir_name: name, native_enum: %NativeEnumDescriptor{name: native_name}}
          },
          name,
          native_name
@@ -58,12 +62,8 @@ defmodule Skia.Codegen.CommandSpecsTest do
 
   defp enum_type?(_other, _name, _native_name), do: false
 
-  defp external_type?(
-         %RustQ.Meta.Type{meta: %{elixir_module: module, elixir_type: type}},
-         module,
-         type
-       ),
-       do: true
+  defp external_type?(%Type{meta: %{elixir_module: module, elixir_type: type}}, module, type),
+    do: true
 
   defp external_type?(_other, _module, _type), do: false
 

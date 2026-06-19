@@ -1,6 +1,8 @@
 defmodule Skia.Codegen.Commands.Shapes do
   @moduledoc false
 
+  alias Skia.Codegen.CommandSpecs
+
   @type color :: Skia.Command.color()
   @type blend_mode :: RustQ.Type.enum(:blend_mode)
   @type stroke_cap :: RustQ.Type.enum(:stroke_cap)
@@ -125,7 +127,7 @@ defmodule Skia.Codegen.Commands.Shapes do
   @spec commands() :: keyword()
   def commands do
     __ENV__.file
-    |> Skia.Codegen.CommandSpecs.from_file()
+    |> CommandSpecs.from_file()
     |> Enum.map(fn command ->
       {command.name,
        [
@@ -137,26 +139,29 @@ defmodule Skia.Codegen.Commands.Shapes do
     end)
   end
 
-  defp handler(name), do: String.to_atom("draw_#{name}")
+  defp handler(name), do: Skia.Codegen.Atom.identifier!("draw_#{name}")
 
   @spec clear(Skia.Document.t(), color(), clear_opts()) :: Skia.Document.t()
-  def clear(document, color, opts), do: {document, color, opts}
+  def clear(document, color, opts), do: keep_command_shape(document, color, opts)
 
   @spec rect(Skia.Document.t(), rect_opts()) :: Skia.Document.t()
-  def rect(document, opts), do: {document, opts}
+  def rect(document, opts), do: keep_command_shape(document, opts)
 
   @spec oval(Skia.Document.t(), oval_opts()) :: Skia.Document.t()
-  def oval(document, opts), do: {document, opts}
+  def oval(document, opts), do: keep_command_shape(document, opts)
 
   @spec arc(Skia.Document.t(), arc_opts()) :: Skia.Document.t()
-  def arc(document, opts), do: {document, opts}
+  def arc(document, opts), do: keep_command_shape(document, opts)
 
   @spec circle(Skia.Document.t(), circle_opts()) :: Skia.Document.t()
-  def circle(document, opts), do: {document, opts}
+  def circle(document, opts), do: keep_command_shape(document, opts)
 
   @spec vertices(Skia.Document.t(), Skia.Vertices.t(), vertices_opts()) :: Skia.Document.t()
-  def vertices(document, vertices, opts), do: {document, vertices, opts}
+  def vertices(document, vertices, opts), do: keep_command_shape(document, vertices, opts)
 
   @spec line(Skia.Document.t(), line_opts()) :: Skia.Document.t()
-  def line(document, opts), do: {document, opts}
+  def line(document, opts), do: keep_command_shape(document, opts)
+
+  defp keep_command_shape(document, _opts), do: document
+  defp keep_command_shape(document, _arg, _opts), do: document
 end

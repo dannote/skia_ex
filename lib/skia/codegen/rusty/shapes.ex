@@ -17,7 +17,7 @@ defmodule Skia.Codegen.Rusty.Shapes do
 
   alias RustQ.Type, as: R
 
-  @spec draw_clear_impl(R.ref(SkiaSafe.Canvas.t()), R.vec(R.term())) :: R.nif_result(R.unit())
+  @spec draw_clear_impl(R.ref(SkiaSafe.Canvas.t()), R.vec(term())) :: R.nif_result(R.unit())
   defrust draw_clear_impl(canvas, args) do
     case args.first().and_then(fn term -> decode_color(deref(term)).ok() end) do
       {:some, color} -> canvas.clear(color)
@@ -30,7 +30,7 @@ defmodule Skia.Codegen.Rusty.Shapes do
   @spec draw_rect_impl(
           R.ref(SkiaSafe.Canvas.t()),
           GeneratedOpts.RectOpts.t(R.lifetime(:a)),
-          R.slice({R.atom(), R.term()})
+          R.slice({atom(), term()})
         ) :: R.nif_result(R.unit())
   defrust draw_rect_impl(canvas, opts, raw_opts) do
     rect = Rect.from_xywh(opts.x, opts.y, opts.width, opts.height)
@@ -50,7 +50,7 @@ defmodule Skia.Codegen.Rusty.Shapes do
   @spec draw_circle_impl(
           R.ref(SkiaSafe.Canvas.t()),
           GeneratedOpts.CircleOpts.t(R.lifetime(:a)),
-          R.slice({R.atom(), R.term()})
+          R.slice({atom(), term()})
         ) :: R.nif_result(R.unit())
   defrust draw_circle_impl(canvas, opts, raw_opts) do
     center = Point.new(opts.x, opts.y)
@@ -69,7 +69,7 @@ defmodule Skia.Codegen.Rusty.Shapes do
   @spec draw_oval_impl(
           R.ref(SkiaSafe.Canvas.t()),
           GeneratedOpts.OvalOpts.t(R.lifetime(:a)),
-          R.slice({R.atom(), R.term()})
+          R.slice({atom(), term()})
         ) :: R.nif_result(R.unit())
   defrust draw_oval_impl(canvas, opts, raw_opts) do
     rect = Rect.from_xywh(opts.x, opts.y, opts.width, opts.height)
@@ -88,7 +88,7 @@ defmodule Skia.Codegen.Rusty.Shapes do
   @spec draw_arc_impl(
           R.ref(SkiaSafe.Canvas.t()),
           GeneratedOpts.ArcOpts.t(R.lifetime(:a)),
-          R.slice({R.atom(), R.term()})
+          R.slice({atom(), term()})
         ) :: R.nif_result(R.unit())
   defrust draw_arc_impl(canvas, opts, raw_opts) do
     rect = Rect.from_xywh(opts.x, opts.y, opts.width, opts.height)
@@ -113,9 +113,9 @@ defmodule Skia.Codegen.Rusty.Shapes do
 
   @spec draw_vertices_impl(
           R.ref(SkiaSafe.Canvas.t()),
-          R.vec(R.term()),
+          R.vec(term()),
           GeneratedOpts.VerticesOpts.t(R.lifetime(:a)),
-          R.slice({R.atom(), R.term()})
+          R.slice({atom(), term()})
         ) :: R.nif_result(R.unit())
   defrust draw_vertices_impl(canvas, args, opts, raw_opts) do
     vertices = unwrap!(vertices_from_term(deref(unwrap!(args.first().ok_or(badarg())))))
@@ -138,7 +138,7 @@ defmodule Skia.Codegen.Rusty.Shapes do
   @spec draw_line_impl(
           R.ref(SkiaSafe.Canvas.t()),
           GeneratedOpts.LineOpts.t(R.lifetime(:a)),
-          R.slice({R.atom(), R.term()})
+          R.slice({atom(), term()})
         ) :: R.nif_result(R.unit())
   defrust draw_line_impl(canvas, opts, raw_opts) do
     color = unwrap!(decode_color(opts.stroke))

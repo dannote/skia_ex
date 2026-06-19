@@ -1,6 +1,8 @@
 defmodule Skia.Codegen.Commands.Text do
   @moduledoc false
 
+  alias Skia.Codegen.CommandSpecs
+
   @type color :: Skia.Command.color()
   @type blend_mode :: RustQ.Type.enum(:blend_mode)
   @type stroke_cap :: RustQ.Type.enum(:stroke_cap)
@@ -62,7 +64,7 @@ defmodule Skia.Codegen.Commands.Text do
   @spec commands() :: keyword()
   def commands do
     __ENV__.file
-    |> Skia.Codegen.CommandSpecs.from_file()
+    |> CommandSpecs.from_file()
     |> Enum.map(fn command ->
       {command.name,
        @metadata
@@ -72,8 +74,10 @@ defmodule Skia.Codegen.Commands.Text do
   end
 
   @spec text_blob(Skia.Document.t(), Skia.TextBlob.t(), text_blob_opts()) :: Skia.Document.t()
-  def text_blob(document, blob, opts), do: {document, blob, opts}
+  def text_blob(document, blob, opts), do: keep_command_shape(document, blob, opts)
 
   @spec text(Skia.Document.t(), String.t(), text_opts()) :: Skia.Document.t()
-  def text(document, text, opts), do: {document, text, opts}
+  def text(document, text, opts), do: keep_command_shape(document, text, opts)
+
+  defp keep_command_shape(document, _arg, _opts), do: document
 end

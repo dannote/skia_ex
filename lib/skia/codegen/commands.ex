@@ -1,19 +1,18 @@
 defmodule Skia.Codegen.Commands do
   @moduledoc false
 
-  @domains [
-    Skia.Codegen.Commands.Shapes,
-    Skia.Codegen.Commands.Text,
-    Skia.Codegen.Commands.Images,
-    Skia.Codegen.Commands.Layers,
-    Skia.Codegen.Commands.Transforms,
-    Skia.Codegen.Commands.Paths,
-    Skia.Codegen.Commands.Clips
-  ]
+  alias RustQ.NativeRef
+  alias RustQ.Syn
+  alias RustQ.Syn.Doc
+  alias Skia.Codegen.CommandOverlay
+  alias Skia.Codegen.Commands.{Clips, Images, Layers, Paths, Shapes, Text, Transforms}
+  alias Skia.Codegen.NativeSchema
+
+  @domains [Shapes, Text, Images, Layers, Transforms, Paths, Clips]
 
   @spec all() :: keyword()
   def all do
-    overlays = Map.new(Skia.Codegen.CommandOverlay.overlays())
+    overlays = Map.new(CommandOverlay.overlays())
 
     @domains
     |> Enum.flat_map(& &1.commands())
@@ -71,7 +70,7 @@ defmodule Skia.Codegen.Commands do
   defp attach_native(spec, overlay) do
     case Keyword.fetch(overlay, :native) do
       {:ok, native_ref} ->
-        Keyword.put(spec, :native, Skia.Codegen.NativeSchema.descriptor!(native_ref))
+        Keyword.put(spec, :native, NativeSchema.descriptor!(native_ref))
 
       :error ->
         spec
@@ -80,16 +79,18 @@ defmodule Skia.Codegen.Commands do
 
   defp attach_expands_to(spec, overlay) do
     refs = Keyword.get(overlay, :expands_to, [])
-    descriptors = Enum.map(refs, &Skia.Codegen.NativeSchema.descriptor!/1)
+    descriptors = Enum.map(refs, &NativeSchema.descriptor!/1)
 
     if descriptors == [], do: spec, else: Keyword.put(spec, :expands_to, descriptors)
   end
 
   defp native_signature(spec) do
-    with %{ref: ref, method: %{signature_ast: signature}} <- Keyword.get(spec, :native) do
-      "Native: `#{RustQ.NativeRef.format(ref)}`\n\nNative signature: `#{RustQ.Syn.Signature.render(signature)}`"
-    else
-      _ -> nil
+    case Keyword.get(spec, :native) do
+      %{ref: ref, method: %{signature_ast: signature}} ->
+        "Native: `#{NativeRef.format(ref)}`\n\nNative signature: `#{Syn.Signature.render(signature)}`"
+
+      _other ->
+        nil
     end
   end
 
@@ -101,8 +102,7 @@ defmodule Skia.Codegen.Commands do
       descriptors ->
         refs =
           descriptors
-          |> Enum.map(fn %{ref: ref} -> "`#{RustQ.NativeRef.format(ref)}`" end)
-          |> Enum.join(", ")
+          |> Enum.map_join(", ", fn %{ref: ref} -> "`#{NativeRef.format(ref)}`" end)
 
         "Implemented via native calls: #{refs}"
     end
@@ -113,7 +113,7 @@ defmodule Skia.Codegen.Commands do
            Keyword.get(spec, :native),
          true <- is_binary(path),
          true <- is_integer(line) do
-      relative = Path.relative_to(path, Skia.Codegen.NativeSchema.source_root!())
+      relative = Path.relative_to(path, NativeSchema.source_root!())
 
       if source_url do
         "Native source: [`#{relative}:#{line}`](#{source_url})"
@@ -126,11 +126,13 @@ defmodule Skia.Codegen.Commands do
   end
 
   defp native_doc(spec) do
-    with %{ref: ref, method: %{docs: [_ | _] = docs}} <- Keyword.get(spec, :native) do
-      ["Native `#{RustQ.NativeRef.format(ref)}` docs:" | docs]
-      |> RustQ.Syn.Doc.markdown()
-    else
-      _ -> nil
+    case Keyword.get(spec, :native) do
+      %{ref: ref, method: %{docs: [_ | _] = docs}} ->
+        ["Native `#{NativeRef.format(ref)}` docs:" | docs]
+        |> Doc.markdown()
+
+      _other ->
+        nil
     end
   end
 end

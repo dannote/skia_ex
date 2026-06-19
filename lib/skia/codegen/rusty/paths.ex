@@ -16,7 +16,7 @@ defmodule Skia.Codegen.Rusty.Paths do
   defrustmod(SkiaSafe.ArcSize, as: [:skia_safe, :path_builder, :ArcSize])
   defrustmod(SkiaSafe.Path, as: [:skia_safe, :Path])
 
-  @spec decode_path_direction(R.atom()) :: R.nif_result(R.path(:PathDirection))
+  @spec decode_path_direction(atom()) :: R.nif_result(R.path(:PathDirection))
   defrust decode_path_direction(value) do
     case value do
       :cw -> {:ok, PathDirection.CW}
@@ -25,9 +25,9 @@ defmodule Skia.Codegen.Rusty.Paths do
     end
   end
 
-  @spec build_path(R.term()) :: R.nif_result(R.path({:skia_safe, :Path}))
+  @spec build_path(term()) :: R.nif_result(R.path({:skia_safe, :Path}))
   defrust build_path(path_term) do
-    case decode_as(path_term, {R.atom(), R.path(:String)}) do
+    case decode_as(path_term, {atom(), R.path(:String)}) do
       {:ok, {tag, svg}} ->
         if tag == Atoms.svg() do
           return!({:ok, unwrap!(SkiaSafe.Path.from_svg(svg).ok_or(badarg()))})
@@ -37,7 +37,7 @@ defmodule Skia.Codegen.Rusty.Paths do
         :ok
     end
 
-    case decode_as(path_term, {R.atom(), R.vec(R.term())}) do
+    case decode_as(path_term, {atom(), R.vec(term())}) do
       {:ok, {tag, segments}} ->
         if tag == Atoms.p() do
           return!({:ok, unwrap!(build_compact_path(segments))})
@@ -58,11 +58,11 @@ defmodule Skia.Codegen.Rusty.Paths do
         :ok
     end
 
-    segments = decode_as!(unwrap!(path_term.map_get(Atoms.segments())), R.vec(R.term()))
+    segments = decode_as!(unwrap!(path_term.map_get(Atoms.segments())), R.vec(term()))
     builder = PathBuilder.new()
 
     for segment <- segments.into_iter().rev() do
-      case decode_as(segment, R.atom()) do
+      case decode_as(segment, atom()) do
         {:ok, op} ->
           case op do
             :close -> builder.close()
@@ -73,7 +73,7 @@ defmodule Skia.Codegen.Rusty.Paths do
           :ok
       end
 
-      case decode_as(segment, {R.atom(), R.f64(), R.f64()}) do
+      case decode_as(segment, {atom(), R.f64(), R.f64()}) do
         {:ok, {op, x, y}} ->
           point = {cast(x, :f32), cast(y, :f32)}
 
@@ -89,7 +89,7 @@ defmodule Skia.Codegen.Rusty.Paths do
           :ok
       end
 
-      case decode_as(segment, {R.atom(), R.f64(), R.f64(), R.f64(), R.f64()}) do
+      case decode_as(segment, {atom(), R.f64(), R.f64(), R.f64(), R.f64()}) do
         {:ok, {op, cx, cy, x, y}} ->
           control = {cast(cx, :f32), cast(cy, :f32)}
           point = {cast(x, :f32), cast(y, :f32)}
@@ -104,7 +104,7 @@ defmodule Skia.Codegen.Rusty.Paths do
           :ok
       end
 
-      case decode_as(segment, {R.atom(), R.f64(), R.f64(), R.f64(), R.f64(), R.f64()}) do
+      case decode_as(segment, {atom(), R.f64(), R.f64(), R.f64(), R.f64(), R.f64()}) do
         {:ok, {op, cx, cy, x, y, weight}} ->
           control = {cast(cx, :f32), cast(cy, :f32)}
           point = {cast(x, :f32), cast(y, :f32)}
@@ -119,7 +119,7 @@ defmodule Skia.Codegen.Rusty.Paths do
           :ok
       end
 
-      case decode_as(segment, {R.atom(), R.f64(), R.f64(), R.f64(), R.f64(), R.f64(), R.term()}) do
+      case decode_as(segment, {atom(), R.f64(), R.f64(), R.f64(), R.f64(), R.f64(), term()}) do
         {:ok, {op, x, y, width, height, start, arc_opts}} ->
           if op == Atoms.arc_to() do
             {sweep, force_move_to} = decode_as!(arc_opts, {R.f64(), R.bool()})
@@ -136,11 +136,11 @@ defmodule Skia.Codegen.Rusty.Paths do
           :ok
       end
 
-      case decode_as(segment, {R.atom(), R.f64(), R.f64(), R.f64(), R.term()}) do
+      case decode_as(segment, {atom(), R.f64(), R.f64(), R.f64(), term()}) do
         {:ok, {op, rx, ry, x_axis_rotate, arc_opts}} ->
           if op == Atoms.r_arc_to() do
             {large_arc, sweep, dx, dy} =
-              decode_as!(arc_opts, {R.bool(), R.atom(), R.f64(), R.f64()})
+              decode_as!(arc_opts, {R.bool(), atom(), R.f64(), R.f64()})
 
             arc_size =
               if large_arc do
@@ -162,7 +162,7 @@ defmodule Skia.Codegen.Rusty.Paths do
           :ok
       end
 
-      case decode_as(segment, {R.atom(), R.f64(), R.f64(), R.f64(), R.f64(), R.f64(), R.f64()}) do
+      case decode_as(segment, {atom(), R.f64(), R.f64(), R.f64(), R.f64(), R.f64(), R.f64()}) do
         {:ok, {op, x, y, width, height, rx, ry}} ->
           if op == Atoms.rrect() do
             builder.add_rrect(
@@ -185,7 +185,7 @@ defmodule Skia.Codegen.Rusty.Paths do
           :ok
       end
 
-      case decode_as(segment, {R.atom(), R.f64(), R.f64(), R.f64(), R.f64(), R.f64(), R.f64()}) do
+      case decode_as(segment, {atom(), R.f64(), R.f64(), R.f64(), R.f64(), R.f64(), R.f64()}) do
         {:ok, {op, c1x, c1y, c2x, c2y, x, y}} ->
           control_1 = {cast(c1x, :f32), cast(c1y, :f32)}
           control_2 = {cast(c2x, :f32), cast(c2y, :f32)}
@@ -205,7 +205,7 @@ defmodule Skia.Codegen.Rusty.Paths do
     {:ok, builder.detach()}
   end
 
-  @spec build_compact_path(R.vec(R.term())) :: R.nif_result(R.path({:skia_safe, :Path}))
+  @spec build_compact_path(R.vec(term())) :: R.nif_result(R.path({:skia_safe, :Path}))
   defrust build_compact_path(segments) do
     builder = PathBuilder.new()
 
@@ -303,7 +303,7 @@ defmodule Skia.Codegen.Rusty.Paths do
           :ok
       end
 
-      case decode_as(segment, {R.i64(), R.f64(), R.f64(), R.f64(), R.f64(), R.f64(), R.term()}) do
+      case decode_as(segment, {R.i64(), R.f64(), R.f64(), R.f64(), R.f64(), R.f64(), term()}) do
         {:ok, {op, x, y, width, height, start, arc_opts}} ->
           if op == 11 do
             {sweep, force_move_to} = decode_as!(arc_opts, {R.f64(), R.bool()})
@@ -320,11 +320,11 @@ defmodule Skia.Codegen.Rusty.Paths do
           :ok
       end
 
-      case decode_as(segment, {R.i64(), R.f64(), R.f64(), R.f64(), R.term()}) do
+      case decode_as(segment, {R.i64(), R.f64(), R.f64(), R.f64(), term()}) do
         {:ok, {op, rx, ry, x_axis_rotate, arc_opts}} ->
           if op == 12 do
             {large_arc, sweep, dx, dy} =
-              decode_as!(arc_opts, {R.bool(), R.atom(), R.f64(), R.f64()})
+              decode_as!(arc_opts, {R.bool(), atom(), R.f64(), R.f64()})
 
             arc_size =
               if large_arc do
@@ -352,9 +352,9 @@ defmodule Skia.Codegen.Rusty.Paths do
 
   @spec draw_path_impl(
           R.ref(SkiaSafe.Canvas.t()),
-          R.vec(R.term()),
+          R.vec(term()),
           GeneratedOpts.PathOpts.t(R.lifetime(:a)),
-          R.slice({R.atom(), R.term()})
+          R.slice({atom(), term()})
         ) :: R.nif_result(R.unit())
   defrust draw_path_impl(canvas, args, opts, raw_opts) do
     path = unwrap!(build_path(first_arg_term!()))
@@ -392,9 +392,9 @@ defmodule Skia.Codegen.Rusty.Paths do
 
   @spec draw_path_op_impl(
           R.ref(SkiaSafe.Canvas.t()),
-          R.vec(R.term()),
+          R.vec(term()),
           GeneratedOpts.PathOpOpts.t(R.lifetime(:a)),
-          R.slice({R.atom(), R.term()})
+          R.slice({atom(), term()})
         ) :: R.nif_result(R.unit())
   defrust draw_path_op_impl(canvas, args, opts, raw_opts) do
     a = unwrap!(build_path(first_arg_term!()))
@@ -435,9 +435,9 @@ defmodule Skia.Codegen.Rusty.Paths do
 
   @spec draw_path_outline_impl(
           R.ref(SkiaSafe.Canvas.t()),
-          R.vec(R.term()),
+          R.vec(term()),
           GeneratedOpts.PathOutlineOpts.t(R.lifetime(:a)),
-          R.slice({R.atom(), R.term()})
+          R.slice({atom(), term()})
         ) :: R.nif_result(R.unit())
   defrust draw_path_outline_impl(canvas, args, opts, raw_opts) do
     path = unwrap!(build_path(first_arg_term!()))

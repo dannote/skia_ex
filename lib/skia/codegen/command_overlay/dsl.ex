@@ -9,6 +9,8 @@ defmodule Skia.Codegen.CommandOverlay.DSL do
     end
   end
 
+  alias RustQ.NativeRef
+
   @allowed_keys [:native, :expands_to, :expand, :defaults]
   @forbidden_schema_keys [:args, :opts, :native_refs, :native_shape]
 
@@ -49,10 +51,10 @@ defmodule Skia.Codegen.CommandOverlay.DSL do
 
   defp normalize_native_ref!(_name, {{:., _, [{:__aliases__, _, [target]}, method]}, _, []})
        when is_atom(target) and is_atom(method) do
-    RustQ.NativeRef.new(Atom.to_string(target), Atom.to_string(method), package: "skia-safe")
+    NativeRef.new(Atom.to_string(target), Atom.to_string(method), package: "skia-safe")
   end
 
-  defp normalize_native_ref!(_name, %RustQ.NativeRef{} = ref), do: ref
+  defp normalize_native_ref!(_name, %NativeRef{} = ref), do: ref
 
   defp normalize_native_ref!(name, ref) do
     raise ArgumentError,

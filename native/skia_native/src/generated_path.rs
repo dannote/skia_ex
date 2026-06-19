@@ -12,7 +12,7 @@ fn build_path<'a>(path_term: Term<'a>) -> NifResult<skia_safe::Path> {
         Ok((tag, svg)) => {
             if tag == atoms::svg() {
                 return Ok(skia_safe::Path::from_svg(svg).ok_or(rustler::Error::BadArg)?);
-            } else {};
+            }
         }
         Err(_reason) => {}
     };
@@ -20,7 +20,7 @@ fn build_path<'a>(path_term: Term<'a>) -> NifResult<skia_safe::Path> {
         Ok((tag, segments)) => {
             if tag == atoms::p() {
                 return Ok(build_compact_path(segments)?);
-            } else {};
+            }
         }
         Err(_reason) => {}
     };
@@ -120,7 +120,7 @@ fn build_path<'a>(path_term: Term<'a>) -> NifResult<skia_safe::Path> {
                             sweep as f32,
                             force_move_to,
                         );
-                } else {};
+                }
             }
             Err(_reason) => {}
         };
@@ -142,7 +142,7 @@ fn build_path<'a>(path_term: Term<'a>) -> NifResult<skia_safe::Path> {
                             decode_path_direction(sweep)?,
                             (dx as f32, dy as f32),
                         );
-                } else {};
+                }
             }
             Err(_reason) => {}
         };
@@ -164,7 +164,7 @@ fn build_path<'a>(path_term: Term<'a>) -> NifResult<skia_safe::Path> {
                             None,
                             None,
                         );
-                } else {};
+                }
             }
             Err(_reason) => {}
         };
@@ -195,7 +195,7 @@ fn build_compact_path<'a>(segments: Vec<Term<'a>>) -> NifResult<skia_safe::Path>
             Ok(close) => {
                 if close.0 == 14 {
                     builder.close();
-                } else {};
+                }
             }
             Err(_reason) => {}
         };
@@ -302,7 +302,7 @@ fn build_compact_path<'a>(segments: Vec<Term<'a>>) -> NifResult<skia_safe::Path>
                             sweep as f32,
                             force_move_to,
                         );
-                } else {};
+                }
             }
             Err(_reason) => {}
         };
@@ -324,7 +324,7 @@ fn build_compact_path<'a>(segments: Vec<Term<'a>>) -> NifResult<skia_safe::Path>
                             decode_path_direction(sweep)?,
                             (dx as f32, dy as f32),
                         );
-                } else {};
+                }
             }
             Err(_reason) => {}
         };

@@ -37,7 +37,7 @@ defmodule Skia.Codegen.Rusty.Layers do
   @spec draw_save_layer_impl(
           R.ref(SkiaSafe.Canvas.t()),
           GeneratedOpts.SaveLayerOpts.t(R.lifetime(:a)),
-          R.slice({R.atom(), R.term()})
+          R.slice({atom(), term()})
         ) :: R.nif_result(R.unit())
   defrust draw_save_layer_impl(canvas, opts, raw_opts) do
     bounds =

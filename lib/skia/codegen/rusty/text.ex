@@ -21,9 +21,9 @@ defmodule Skia.Codegen.Rusty.Text do
 
   @spec draw_text_blob_impl(
           R.ref(SkiaSafe.Canvas.t()),
-          R.vec(R.term()),
+          R.vec(term()),
           GeneratedOpts.TextBlobOpts.t(R.lifetime(:a)),
-          R.slice({R.atom(), R.term()})
+          R.slice({atom(), term()})
         ) :: R.nif_result(R.unit())
   defrust draw_text_blob_impl(canvas, args, opts, raw_opts) do
     blob = unwrap!(text_blob_from_term(first_arg_term!()))
@@ -42,9 +42,9 @@ defmodule Skia.Codegen.Rusty.Text do
 
   @spec draw_text_impl(
           R.ref(SkiaSafe.Canvas.t()),
-          R.vec(R.term()),
+          R.vec(term()),
           GeneratedOpts.TextOpts.t(R.lifetime(:a)),
-          R.slice({R.atom(), R.term()})
+          R.slice({atom(), term()})
         ) :: R.nif_result(R.unit())
   defrust draw_text_impl(canvas, args, opts, _raw_opts) do
     text = decode_as!(unwrap!(args.first().ok_or(badarg())), R.path(:String))
@@ -137,7 +137,7 @@ defmodule Skia.Codegen.Rusty.Text do
 
     case opts.spans do
       {:some, spans_term} ->
-        spans = decode_as!(spans_term, R.vec({R.path(:String), R.vec({R.atom(), R.term()})}))
+        spans = decode_as!(spans_term, R.vec({R.path(:String), R.vec({atom(), term()})}))
 
         for {span_text, style_opts} <- spans do
           span_style = unwrap!(text_style_from_opts(ref(text_style), ref(style_opts)))
@@ -158,7 +158,7 @@ defmodule Skia.Codegen.Rusty.Text do
     :ok
   end
 
-  @spec text_style_from_opts(R.ref(R.path(:TextStyle)), R.slice({R.atom(), R.term()})) ::
+  @spec text_style_from_opts(R.ref(R.path(:TextStyle)), R.slice({atom(), term()})) ::
           R.nif_result(R.path(:TextStyle))
   defrust text_style_from_opts(base, opts) do
     style = base.clone()
@@ -195,7 +195,7 @@ defmodule Skia.Codegen.Rusty.Text do
     {:ok, style}
   end
 
-  @spec decode_text_align(R.atom()) :: R.nif_result(R.path(:TextAlign))
+  @spec decode_text_align(atom()) :: R.nif_result(R.path(:TextAlign))
   defrust decode_text_align(value) do
     case value do
       :center -> {:ok, TextAlign.Center}
@@ -206,7 +206,7 @@ defmodule Skia.Codegen.Rusty.Text do
     end
   end
 
-  @spec decode_text_direction(R.atom()) :: R.nif_result(R.path(:TextDirection))
+  @spec decode_text_direction(atom()) :: R.nif_result(R.path(:TextDirection))
   defrust decode_text_direction(value) do
     case value do
       :rtl -> {:ok, TextDirection.RTL}

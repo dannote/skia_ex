@@ -1,9 +1,13 @@
 defmodule Skia.Codegen.Enums do
   @moduledoc false
 
+  alias RustQ.NativeEnumDescriptor
   alias RustQ.Rust
   alias RustQ.Rust.AST.Builder, as: A
+  alias RustQ.Rust.AST.Render
   alias RustQ.Rust.AST.TypeBuilder, as: T
+  alias RustQ.Rustler
+  alias Skia.Codegen.NativeSchema
   alias Skia.Codegen.SkiaSafe
 
   @api_enums %{
@@ -75,8 +79,8 @@ defmodule Skia.Codegen.Enums do
     []
     |> Keyword.put(:skia, native_name)
     |> Keyword.put(:descriptor, descriptor)
-    |> Keyword.put(:rust, Skia.Codegen.NativeSchema.safe_enum_type!(descriptor.name))
-    |> Keyword.put(:variants, RustQ.NativeEnumDescriptor.variants(descriptor))
+    |> Keyword.put(:rust, NativeSchema.safe_enum_type!(descriptor.name))
+    |> Keyword.put(:variants, NativeEnumDescriptor.variants(descriptor))
   end
 
   defp enum_const_name(name) do
@@ -88,11 +92,11 @@ defmodule Skia.Codegen.Enums do
     values
     |> Enum.map(&to_string/1)
     |> A.slice()
-    |> RustQ.Rust.AST.Render.render_expr()
+    |> Render.render_expr()
   end
 
   defp enum_decoder(name, spec) do
-    RustQ.Rustler.atom_decoder("decode_#{name}",
+    Rustler.atom_decoder("decode_#{name}",
       returns: Keyword.fetch!(spec, :rust),
       descriptor: Keyword.fetch!(spec, :descriptor)
     )

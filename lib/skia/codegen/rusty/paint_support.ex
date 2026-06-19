@@ -14,7 +14,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
   defrustmod(SkiaSafe.ColorFilterClamp, as: [:color_filters, :Clamp])
   defrustmod(SkiaSafe.Shaders, as: [:skia_safe, :shaders])
 
-  @spec decode_path_1d_style(R.atom()) ::
+  @spec decode_path_1d_style(atom()) ::
           R.nif_result(R.path({:skia_safe, :path_1d_path_effect, :Style}))
   defrust decode_path_1d_style(style) do
     case style do
@@ -25,9 +25,9 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
     end
   end
 
-  @spec optional_matrix_from_term(R.term()) :: R.nif_result(R.option(R.path(:Matrix)))
+  @spec optional_matrix_from_term(term()) :: R.nif_result(R.option(R.path(:Matrix)))
   defrust optional_matrix_from_term(matrix_term) do
-    case decode_as(matrix_term, R.atom()) do
+    case decode_as(matrix_term, atom()) do
       {:ok, atom} ->
         if atom == Atoms.nil() do
           {:ok, none()}
@@ -40,9 +40,9 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
     end
   end
 
-  @spec optional_rect_from_term(R.term()) :: R.nif_result(R.option(Rect.t()))
+  @spec optional_rect_from_term(term()) :: R.nif_result(R.option(Rect.t()))
   defrust optional_rect_from_term(rect_term) do
-    case decode_as(rect_term, R.atom()) do
+    case decode_as(rect_term, atom()) do
       {:ok, atom} ->
         if atom == Atoms.nil() do
           {:ok, none()}
@@ -105,7 +105,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
     {:ok, Data.new_copy(ref(bytes))}
   end
 
-  @spec runtime_children(R.ref(R.path(:RuntimeEffect)), R.vec({R.path(:String), R.term()})) ::
+  @spec runtime_children(R.ref(R.path(:RuntimeEffect)), R.vec({R.path(:String), term()})) ::
           R.nif_result(R.vec(R.path(:ChildPtr)))
   defrust runtime_children(effect, children) do
     effect_children = effect.children()
@@ -134,7 +134,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
     {:ok, decoded}
   end
 
-  @spec decode_paint(R.term()) :: R.nif_result(Paint.t())
+  @spec decode_paint(term()) :: R.nif_result(Paint.t())
   defrust decode_paint(term) do
     case decode_color(term) do
       {:ok, color} -> return!({:ok, fill_paint(color)})
@@ -143,7 +143,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
 
     case decode_as(
            term,
-           {R.atom(), {R.f64(), R.f64()}, {R.f64(), R.f64()}, R.vec(R.term()), R.atom(), R.term()}
+           {atom(), {R.f64(), R.f64()}, {R.f64(), R.f64()}, R.vec(term()), atom(), term()}
          ) do
       {:ok, {tag, {from_x, from_y}, {to_x, to_y}, stops, tile_mode, matrix_term}} ->
         if tag == Atoms.linear_gradient() do
@@ -174,12 +174,12 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
 
     case decode_as(
            term,
-           {R.atom(), {R.f64(), R.f64()}, R.f64(), {R.f64(), R.f64()}, R.f64(), R.term()}
+           {atom(), {R.f64(), R.f64()}, R.f64(), {R.f64(), R.f64()}, R.f64(), term()}
          ) do
       {:ok, {tag, {start_x, start_y}, start_radius, {end_x, end_y}, end_radius, gradient_opts}} ->
         if tag == Atoms.two_point_conical_gradient() do
           {stops, tile_mode, matrix_term} =
-            decode_as!(gradient_opts, {R.vec(R.term()), R.atom(), R.term()})
+            decode_as!(gradient_opts, {R.vec(term()), atom(), term()})
 
           {colors, positions} = unwrap!(decode_gradient_stops(stops))
           tile_mode = unwrap!(GeneratedEnums.decode_tile_mode(tile_mode))
@@ -209,7 +209,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
         :ok
     end
 
-    case decode_as(term, {R.atom(), R.term()}) do
+    case decode_as(term, {atom(), term()}) do
       {:ok, {tag, color_term}} ->
         if tag == Atoms.color_shader() do
           paint = Paint.default()
@@ -224,7 +224,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
 
     case decode_as(
            term,
-           {R.atom(), {R.f64(), R.f64()}, R.f64(), R.vec(R.term()), R.atom(), R.term()}
+           {atom(), {R.f64(), R.f64()}, R.f64(), R.vec(term()), atom(), term()}
          ) do
       {:ok, {tag, {center_x, center_y}, radius, stops, tile_mode, matrix_term}} ->
         if tag == Atoms.radial_gradient() do
@@ -256,7 +256,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
 
     case decode_as(
            term,
-           {R.atom(), {R.f64(), R.f64()}, R.f64(), R.f64(), R.vec(R.term()), R.atom(), R.term()}
+           {atom(), {R.f64(), R.f64()}, R.f64(), R.f64(), R.vec(term()), atom(), term()}
          ) do
       {:ok,
        {tag, {center_x, center_y}, start_degrees, end_degrees, stops, tile_mode, matrix_term}} ->
@@ -289,9 +289,8 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
 
     case decode_as(
            term,
-           {R.atom(), R.term(), R.vec({R.path(:String), R.vec(R.f64())}),
-            R.vec({R.path(:String), R.vec(R.i64())}), R.vec({R.path(:String), R.term()}),
-            R.term()}
+           {atom(), term(), R.vec({R.path(:String), R.vec(R.f64())}),
+            R.vec({R.path(:String), R.vec(R.i64())}), R.vec({R.path(:String), term()}), term()}
          ) do
       {:ok, {tag, effect_term, float_uniforms, int_uniforms, children, matrix_term}} ->
         if tag == Atoms.runtime_effect_shader() do
@@ -315,7 +314,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
         :ok
     end
 
-    case decode_as(term, {R.atom(), R.term(), R.atom(), R.atom(), R.term(), R.term()}) do
+    case decode_as(term, {atom(), term(), atom(), atom(), term(), term()}) do
       {:ok, {tag, image_term, tile_x, tile_y, sampling_term, matrix_term}} ->
         if tag == Atoms.image_shader() do
           image = unwrap!(image_from_term(image_term))
@@ -338,7 +337,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
         :ok
     end
 
-    case decode_as(term, {R.atom(), R.term(), R.atom(), R.atom(), R.atom(), R.term(), R.term()}) do
+    case decode_as(term, {atom(), term(), atom(), atom(), atom(), term(), term()}) do
       {:ok, {tag, picture_term, tile_x, tile_y, filter_mode, matrix_term, tile_rect_term}} ->
         if tag == Atoms.picture_shader() do
           picture = unwrap!(picture_from_term(picture_term))
@@ -364,9 +363,9 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
     {:error, badarg()}
   end
 
-  @spec decode_sampling_options(R.term()) :: R.nif_result(R.path(:SamplingOptions))
+  @spec decode_sampling_options(term()) :: R.nif_result(R.path(:SamplingOptions))
   defrust decode_sampling_options(term) do
-    case decode_as(term, {R.atom(), R.atom(), R.atom()}) do
+    case decode_as(term, {atom(), atom(), atom()}) do
       {:ok, {tag, filter, mipmap}} ->
         if tag == Atoms.sampling_options() do
           return!(
@@ -382,11 +381,11 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
         :ok
     end
 
-    case decode_as(term, {R.atom(), R.term()}) do
+    case decode_as(term, {atom(), term()}) do
       {:ok, {tag, cubic_term}} ->
         if tag == Atoms.sampling_cubic() do
           cubic =
-            case decode_as(cubic_term, R.atom()) do
+            case decode_as(cubic_term, atom()) do
               {:ok, atom} ->
                 if atom == Atoms.mitchell() do
                   CubicResampler.mitchell()
@@ -421,9 +420,9 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
     {:error, badarg()}
   end
 
-  @spec decode_color_filter(R.term()) :: R.nif_result(R.path(:ColorFilter))
+  @spec decode_color_filter(term()) :: R.nif_result(R.path(:ColorFilter))
   defrust decode_color_filter(term) do
-    case decode_as(term, {R.atom(), R.term(), R.atom()}) do
+    case decode_as(term, {atom(), term(), atom()}) do
       {:ok, {tag, color_term, blend_mode}} ->
         if tag == Atoms.blend_color_filter() do
           return!(
@@ -441,7 +440,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
         :ok
     end
 
-    case decode_as(term, {R.atom(), R.vec(R.f64()), R.bool()}) do
+    case decode_as(term, {atom(), R.vec(R.f64()), R.bool()}) do
       {:ok, {tag, matrix, clamp}} ->
         if tag == Atoms.matrix_color_filter() and matrix.len() == 20 do
           values =
@@ -489,7 +488,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
         :ok
     end
 
-    case decode_as(term, {R.atom(), R.term(), R.term()}) do
+    case decode_as(term, {atom(), term(), term()}) do
       {:ok, {tag, outer, inner}} ->
         if tag == Atoms.compose_color_filter() do
           return!(
@@ -510,9 +509,9 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
     {:error, badarg()}
   end
 
-  @spec decode_image_filter(R.term()) :: R.nif_result(R.path({:skia_safe, :ImageFilter}))
+  @spec decode_image_filter(term()) :: R.nif_result(R.path({:skia_safe, :ImageFilter}))
   defrust decode_image_filter(term) do
-    case decode_as(term, {R.atom(), R.f64(), R.f64(), R.atom()}) do
+    case decode_as(term, {atom(), R.f64(), R.f64(), atom()}) do
       {:ok, {tag, sigma_x, sigma_y, tile_mode}} ->
         if tag == Atoms.blur_filter() do
           return!(
@@ -532,7 +531,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
         :ok
     end
 
-    case decode_as(term, {R.atom(), R.term(), R.term()}) do
+    case decode_as(term, {atom(), term(), term()}) do
       {:ok, {tag, outer, inner}} ->
         if tag == Atoms.compose_filter() do
           return!(
@@ -550,7 +549,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
         :ok
     end
 
-    case decode_as(term, {R.atom(), R.f64(), R.f64(), R.term()}) do
+    case decode_as(term, {atom(), R.f64(), R.f64(), term()}) do
       {:ok, {tag, x, y, input_term}} ->
         if tag == Atoms.offset_filter() do
           return!(
@@ -569,10 +568,10 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
         :ok
     end
 
-    case decode_as(term, {R.atom(), R.f64(), R.f64(), R.f64(), R.f64(), R.term(), R.term()}) do
+    case decode_as(term, {atom(), R.f64(), R.f64(), R.f64(), R.f64(), term(), term()}) do
       {:ok, {tag, dx, dy, sigma_x, sigma_y, color_term, shadow_opts}} ->
         if tag == Atoms.drop_shadow_filter() do
-          {input_term, shadow_only} = decode_as!(shadow_opts, {R.term(), R.bool()})
+          {input_term, shadow_only} = decode_as!(shadow_opts, {term(), R.bool()})
           color = unwrap!(decode_color(color_term))
           input = unwrap!(optional_image_filter_from_term(input_term))
 
@@ -604,7 +603,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
         :ok
     end
 
-    case decode_as(term, {R.atom(), R.term(), R.term()}) do
+    case decode_as(term, {atom(), term(), term()}) do
       {:ok, {tag, filter_term, input_term}} ->
         if tag == Atoms.color_filter_image_filter() do
           return!(
@@ -623,7 +622,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
         :ok
     end
 
-    case decode_as(term, {R.atom(), R.term()}) do
+    case decode_as(term, {atom(), term()}) do
       {:ok, {tag, shader_term}} ->
         if tag == Atoms.shader_image_filter() do
           return!(
@@ -640,7 +639,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
 
     case decode_as(
            term,
-           {R.atom(), {R.f64(), R.f64(), R.f64(), R.f64()}, R.f64(), R.f64(), R.term(), R.term()}
+           {atom(), {R.f64(), R.f64(), R.f64(), R.f64()}, R.f64(), R.f64(), term(), term()}
          ) do
       {:ok, {tag, {x, y, width, height}, zoom, inset, sampling_term, input_term}} ->
         if tag == Atoms.magnifier_filter() do
@@ -668,13 +667,13 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
         :ok
     end
 
-    case decode_as(term, {R.atom(), {R.i64(), R.i64()}, R.vec(R.f64()), R.term()}) do
+    case decode_as(term, {atom(), {R.i64(), R.i64()}, R.vec(R.f64()), term()}) do
       {:ok, {tag, {kernel_width, kernel_height}, kernel, conv_opts}} ->
         if tag == Atoms.matrix_convolution_filter() do
           {gain, bias, {offset_x, offset_y}, tile, convolve_alpha, input_term} =
             decode_as!(
               conv_opts,
-              {R.f64(), R.f64(), {R.i64(), R.i64()}, R.atom(), R.bool(), R.term()}
+              {R.f64(), R.f64(), {R.i64(), R.i64()}, atom(), R.bool(), term()}
             )
 
           mapped_kernel = Vec.with_capacity(kernel.len())
@@ -705,7 +704,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
         :ok
     end
 
-    case decode_as(term, {R.atom(), R.term(), R.term(), R.term()}) do
+    case decode_as(term, {atom(), term(), term(), term()}) do
       {:ok, {tag, matrix_term, sampling_term, input_term}} ->
         if tag == Atoms.matrix_transform_filter() do
           return!(
@@ -724,7 +723,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
         :ok
     end
 
-    case decode_as(term, {R.atom(), R.vec(R.term())}) do
+    case decode_as(term, {atom(), R.vec(term())}) do
       {:ok, {tag, filters}} ->
         if tag == Atoms.merge_filter() do
           mapped_filters = Vec.with_capacity(filters.len())
@@ -742,8 +741,8 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
 
     case decode_as(
            term,
-           {R.atom(), {R.f64(), R.f64(), R.f64(), R.f64()}, {R.f64(), R.f64(), R.f64(), R.f64()},
-            R.term()}
+           {atom(), {R.f64(), R.f64(), R.f64(), R.f64()}, {R.f64(), R.f64(), R.f64(), R.f64()},
+            term()}
          ) do
       {:ok, {tag, {src_x, src_y, src_w, src_h}, {dst_x, dst_y, dst_w, dst_h}, input_term}} ->
         if tag == Atoms.tile_filter() do
@@ -773,7 +772,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
         :ok
     end
 
-    case decode_as(term, {R.atom(), R.atom(), R.f64(), R.f64(), R.term()}) do
+    case decode_as(term, {atom(), atom(), R.f64(), R.f64(), term()}) do
       {:ok, {tag, op, radius_x, radius_y, input_term}} ->
         if tag == Atoms.morphology_filter() do
           input = unwrap!(optional_image_filter_from_term(input_term))
@@ -810,10 +809,10 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
     {:error, badarg()}
   end
 
-  @spec optional_image_filter_from_term(R.term()) ::
+  @spec optional_image_filter_from_term(term()) ::
           R.nif_result(R.option(R.path({:skia_safe, :ImageFilter})))
   defrust optional_image_filter_from_term(term) do
-    case decode_as(term, R.atom()) do
+    case decode_as(term, atom()) do
       {:ok, atom} ->
         if atom == Atoms.nil() do
           {:ok, none()}
@@ -826,15 +825,15 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
     end
   end
 
-  @spec decode_shader(R.term()) :: R.nif_result(R.path(:Shader))
+  @spec decode_shader(term()) :: R.nif_result(R.path(:Shader))
   defrust decode_shader(term) do
     paint = unwrap!(decode_paint(term))
     paint.shader().ok_or(badarg())
   end
 
-  @spec decode_mask_filter(R.term()) :: R.nif_result(R.path(:MaskFilter))
+  @spec decode_mask_filter(term()) :: R.nif_result(R.path(:MaskFilter))
   defrust decode_mask_filter(term) do
-    case decode_as(term, {R.atom(), R.atom(), R.f64(), R.bool()}) do
+    case decode_as(term, {atom(), atom(), R.f64(), R.bool()}) do
       {:ok, {tag, style, sigma, respect_ctm}} ->
         if tag == Atoms.blur_mask_filter() do
           return!(
@@ -856,9 +855,9 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
     {:error, badarg()}
   end
 
-  @spec decode_path_effect(R.term()) :: R.nif_result(R.path(:PathEffect))
+  @spec decode_path_effect(term()) :: R.nif_result(R.path(:PathEffect))
   defrust decode_path_effect(term) do
-    case decode_as(term, {R.atom(), R.vec(R.f64()), R.f64()}) do
+    case decode_as(term, {atom(), R.vec(R.f64()), R.f64()}) do
       {:ok, {tag, intervals, phase}} ->
         if tag == Atoms.dash_path_effect() do
           mapped_intervals = Vec.with_capacity(intervals.len())
@@ -881,7 +880,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
         :ok
     end
 
-    case decode_as(term, {R.atom(), R.f64()}) do
+    case decode_as(term, {atom(), R.f64()}) do
       {:ok, {tag, radius}} ->
         if tag == Atoms.corner_path_effect() do
           return!(
@@ -893,7 +892,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
         :ok
     end
 
-    case decode_as(term, {R.atom(), R.f64(), R.f64(), R.atom()}) do
+    case decode_as(term, {atom(), R.f64(), R.f64(), atom()}) do
       {:ok, {tag, start, stop, mode}} ->
         if tag == Atoms.trim_path_effect() do
           if mode == Atoms.inverted() do
@@ -929,11 +928,11 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
         :ok
     end
 
-    case decode_as(term, {R.atom(), R.f64(), R.f64(), R.term()}) do
+    case decode_as(term, {atom(), R.f64(), R.f64(), term()}) do
       {:ok, {tag, segment_length, deviation, seed_term}} ->
         if tag == Atoms.discrete_path_effect() do
           seed =
-            case decode_as(seed_term, R.atom()) do
+            case decode_as(seed_term, atom()) do
               {:ok, atom} ->
                 if atom == Atoms.nil() do
                   none()
@@ -961,7 +960,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
         :ok
     end
 
-    case decode_as(term, {R.atom(), R.term(), R.f64(), R.f64(), R.atom()}) do
+    case decode_as(term, {atom(), term(), R.f64(), R.f64(), atom()}) do
       {:ok, {tag, path_term, advance, phase, style}} ->
         if tag == Atoms.path_1d_effect() do
           return!(
@@ -981,7 +980,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
         :ok
     end
 
-    case decode_as(term, {R.atom(), R.f64(), R.term()}) do
+    case decode_as(term, {atom(), R.f64(), term()}) do
       {:ok, {tag, width, matrix_term}} ->
         if tag == Atoms.line_2d_effect() do
           return!(
@@ -999,7 +998,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
         :ok
     end
 
-    case decode_as(term, {R.atom(), R.term(), R.term()}) do
+    case decode_as(term, {atom(), term(), term()}) do
       {:ok, {tag, first, second}} ->
         if tag == Atoms.path_2d_effect() do
           return!(
@@ -1038,9 +1037,9 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
     {:error, badarg()}
   end
 
-  @spec decode_color(R.term()) :: R.nif_result(R.path(:Color))
+  @spec decode_color(term()) :: R.nif_result(R.path(:Color))
   defrust decode_color(term) do
-    case decode_as(term, {R.atom(), R.u32()}) do
+    case decode_as(term, {atom(), R.u32()}) do
       {:ok, {tag, rgba}} ->
         if tag == Atoms.c() do
           red = Bitwise.band(Bitwise.bsr(rgba, 24), 0xFF) |> cast(:u8)
@@ -1055,7 +1054,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
         :ok
     end
 
-    {tag, red, green, blue, alpha} = decode_as!(term, {R.atom(), R.u8(), R.u8(), R.u8(), R.u8()})
+    {tag, red, green, blue, alpha} = decode_as!(term, {atom(), R.u8(), R.u8(), R.u8(), R.u8()})
 
     if tag == Atoms.rgba() do
       {:ok, Color.from_argb(alpha, red, green, blue)}
@@ -1064,7 +1063,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
     end
   end
 
-  @spec decode_gradient_stops(R.vec(R.term())) ::
+  @spec decode_gradient_stops(R.vec(term())) ::
           R.nif_result({R.vec(R.path(:Color)), R.option(R.vec(R.f32()))})
   defrust decode_gradient_stops(stops) do
     colors = Vec.with_capacity(stops.len())
@@ -1072,7 +1071,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
     explicit_positions = true
 
     for stop <- stops do
-      case decode_as(stop, {R.atom(), R.term(), R.f64()}) do
+      case decode_as(stop, {atom(), term(), R.f64()}) do
         {:ok, {tag, color_term, position}} ->
           if tag == Atoms.gradient_stop() do
             colors.push(unwrap!(decode_color(color_term)))

@@ -16,7 +16,7 @@ defmodule Skia.Codegen.Rusty.Clips do
   @spec clip_rect_impl(
           R.ref(SkiaSafe.Canvas.t()),
           GeneratedOpts.ClipRectOpts.t(R.lifetime(:a)),
-          R.slice({R.atom(), R.term()})
+          R.slice({atom(), term()})
         ) :: R.nif_result(R.unit())
   defrust clip_rect_impl(canvas, opts, _raw_opts) do
     rect = Rect.from_xywh(opts.x, opts.y, opts.width, opts.height)
@@ -36,7 +36,7 @@ defmodule Skia.Codegen.Rusty.Clips do
   @spec clip_circle_impl(
           R.ref(SkiaSafe.Canvas.t()),
           GeneratedOpts.ClipCircleOpts.t(R.lifetime(:a)),
-          R.slice({R.atom(), R.term()})
+          R.slice({atom(), term()})
         ) :: R.nif_result(R.unit())
   defrust clip_circle_impl(canvas, opts, _raw_opts) do
     builder = PathBuilder.new()
@@ -50,9 +50,9 @@ defmodule Skia.Codegen.Rusty.Clips do
 
   @spec clip_path_impl(
           R.ref(SkiaSafe.Canvas.t()),
-          R.vec(R.term()),
+          R.vec(term()),
           GeneratedOpts.ClipPathOpts.t(R.lifetime(:a)),
-          R.slice({R.atom(), R.term()})
+          R.slice({atom(), term()})
         ) :: R.nif_result(R.unit())
   defrust clip_path_impl(canvas, args, opts, raw_opts) do
     path = unwrap!(build_path(first_arg_term!()))

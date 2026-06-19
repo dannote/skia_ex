@@ -33,7 +33,7 @@ defmodule Skia.Codegen.Rusty.Domain do
 
       defp impl_ast!(handler) do
         handler
-        |> then(&String.to_atom("#{&1}_impl"))
+        |> then(&Skia.Codegen.Atom.identifier!("#{&1}_impl"))
         |> rust_ast!()
       end
 
@@ -63,11 +63,11 @@ defmodule Skia.Codegen.Rusty.Domain do
       handler = Keyword.fetch!(spec, :handler)
       args? = Keyword.get(spec, :args, []) != []
       opts? = Keyword.get(spec, :opts, []) != []
-      impl = String.to_atom("#{handler}_impl")
-      decoder = String.to_atom("decode_#{command_name}_opts")
+      impl = Skia.Codegen.Atom.identifier!("#{handler}_impl")
+      decoder = Skia.Codegen.Atom.identifier!("decode_#{command_name}_opts")
 
       quote do
-        @spec unquote(handler)(RustQ.Type.ref(SkiaSafe.Canvas.t()), RustQ.Type.term()) ::
+        @spec unquote(handler)(RustQ.Type.ref(SkiaSafe.Canvas.t()), term()) ::
                 RustQ.Type.nif_result(RustQ.Type.unit())
         unquote(command_body(handler, impl, decoder, args?, opts?))
       end
