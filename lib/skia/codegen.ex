@@ -509,7 +509,11 @@ defmodule Skia.Codegen do
 
   @spec generated_text() :: String.t()
   def generated_text do
-    items = Enum.map(Rusty.Text.generated_asts(), &render_rustq_item/1) ++ text_helper_impls()
+    rusty_items =
+      (Rusty.Text.generated_asts() ++ Rusty.TextHelpers.generated_asts())
+      |> Enum.map(&render_rustq_item/1)
+
+    items = rusty_items ++ text_helper_impls()
     render_items(items, "generated_text.rs")
   end
 
@@ -599,32 +603,6 @@ defmodule Skia.Codegen do
               style.set_height_override(true);
           }
           Ok(style)
-      }
-      """),
-      Rust.item("""
-      fn decode_text_align(value: Atom) -> NifResult<TextAlign> {
-          if value == atoms::center() {
-              Ok(TextAlign::Center)
-          } else if value == atoms::right() {
-              Ok(TextAlign::Right)
-          } else if value == atoms::justify() {
-              Ok(TextAlign::Justify)
-          } else if value == atoms::left() {
-              Ok(TextAlign::Left)
-          } else {
-              Err(rustler::Error::BadArg)
-          }
-      }
-      """),
-      Rust.item("""
-      fn decode_text_direction(value: Atom) -> NifResult<TextDirection> {
-          if value == atoms::rtl() {
-              Ok(TextDirection::RTL)
-          } else if value == atoms::ltr() {
-              Ok(TextDirection::LTR)
-          } else {
-              Err(rustler::Error::BadArg)
-          }
       }
       """)
     ]

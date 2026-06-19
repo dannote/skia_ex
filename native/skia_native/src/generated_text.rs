@@ -63,6 +63,22 @@ fn draw_text_impl<'a>(
     };
     Ok(())
 }
+fn decode_text_align(value: Atom) -> NifResult<TextAlign> {
+    match value {
+        value if value == atoms::center() => Ok(TextAlign::Center),
+        value if value == atoms::right() => Ok(TextAlign::Right),
+        value if value == atoms::justify() => Ok(TextAlign::Justify),
+        value if value == atoms::left() => Ok(TextAlign::Left),
+        _ => Err(rustler::Error::BadArg),
+    }
+}
+fn decode_text_direction(value: Atom) -> NifResult<TextDirection> {
+    match value {
+        value if value == atoms::rtl() => Ok(TextDirection::RTL),
+        value if value == atoms::ltr() => Ok(TextDirection::LTR),
+        _ => Err(rustler::Error::BadArg),
+    }
+}
 fn draw_paragraph_text<'a>(
     canvas: &skia_safe::Canvas,
     text: &str,
@@ -136,26 +152,4 @@ fn text_style_from_opts<'a>(
         style.set_height_override(true);
     }
     Ok(style)
-}
-fn decode_text_align(value: Atom) -> NifResult<TextAlign> {
-    if value == atoms::center() {
-        Ok(TextAlign::Center)
-    } else if value == atoms::right() {
-        Ok(TextAlign::Right)
-    } else if value == atoms::justify() {
-        Ok(TextAlign::Justify)
-    } else if value == atoms::left() {
-        Ok(TextAlign::Left)
-    } else {
-        Err(rustler::Error::BadArg)
-    }
-}
-fn decode_text_direction(value: Atom) -> NifResult<TextDirection> {
-    if value == atoms::rtl() {
-        Ok(TextDirection::RTL)
-    } else if value == atoms::ltr() {
-        Ok(TextDirection::LTR)
-    } else {
-        Err(rustler::Error::BadArg)
-    }
 }
