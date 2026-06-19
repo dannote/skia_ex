@@ -479,7 +479,7 @@ defmodule Skia.Codegen do
       preamble: generated_rust_preamble(),
       splice: [
         items:
-          [:decode_path_1d_style, :optional_matrix_from_term]
+          [:decode_path_1d_style, :optional_matrix_from_term, :optional_rect_from_term]
           |> Enum.map(&rusty_ast(Rusty.PaintSupport, &1))
           |> Enum.map(&render_rustq_item/1)
       ]

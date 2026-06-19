@@ -28,6 +28,18 @@ fn optional_matrix_from_term<'a>(matrix_term: Term<'a>) -> NifResult<Option<Matr
         Err(_reason) => Ok(Some(matrix_from_term(matrix_term)?)),
     }
 }
+fn optional_rect_from_term<'a>(rect_term: Term<'a>) -> NifResult<Option<Rect>> {
+    match rect_term.decode::<Atom>() {
+        Ok(atom) => {
+            if atom == atoms::nil() {
+                Ok(None)
+            } else {
+                Ok(Some(rect_from_term(rect_term)?))
+            }
+        }
+        Err(_reason) => Ok(Some(rect_from_term(rect_term)?)),
+    }
+}
 fn runtime_uniform_data(
     effect: &RuntimeEffect,
     float_uniforms: Vec<(String, Vec<f64>)>,
@@ -632,13 +644,6 @@ fn decode_sampling_options(term: Term) -> NifResult<SamplingOptions> {
         }
     }
     Err(rustler::Error::BadArg)
-}
-fn optional_rect_from_term(rect_term: Term) -> NifResult<Option<Rect>> {
-    if rect_term.decode::<Atom>().is_ok_and(|atom| atom == atoms::nil()) {
-        Ok(None)
-    } else {
-        Ok(Some(rect_from_term(rect_term)?))
-    }
 }
 fn decode_gradient_stops(stops: Vec<Term>) -> NifResult<(Vec<Color>, Option<Vec<f32>>)> {
     let mut colors = Vec::with_capacity(stops.len());

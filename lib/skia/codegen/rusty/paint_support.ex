@@ -32,4 +32,19 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
         {:ok, some(unwrap!(matrix_from_term(matrix_term)))}
     end
   end
+
+  @spec optional_rect_from_term(R.term()) :: R.nif_result(R.option(Rect.t()))
+  defrust optional_rect_from_term(rect_term) do
+    case decode_as(rect_term, R.atom()) do
+      {:ok, atom} ->
+        if atom == Atoms.nil() do
+          {:ok, none()}
+        else
+          {:ok, some(unwrap!(rect_from_term(rect_term)))}
+        end
+
+      {:error, _reason} ->
+        {:ok, some(unwrap!(rect_from_term(rect_term)))}
+    end
+  end
 end
