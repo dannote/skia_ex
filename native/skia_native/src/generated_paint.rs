@@ -54,6 +54,47 @@ fn optional_image_filter_from_term<'a>(
         Err(_reason) => Ok(Some(decode_image_filter(term)?)),
     }
 }
+fn runtime_uniform_data(
+    effect: &RuntimeEffect,
+    float_uniforms: Vec<(String, Vec<f64>)>,
+    int_uniforms: Vec<(String, Vec<i64>)>,
+) -> NifResult<Data> {
+    let mut bytes = Vec::new();
+    bytes.resize(effect.uniform_size(), 0);
+    for (name, values) in float_uniforms {
+        let uniform = effect.find_uniform(&name).ok_or(rustler::Error::BadArg)?;
+        let offset = uniform.offset();
+        let byte_len = values.len() * 4;
+        if offset + byte_len > bytes.len() || byte_len > uniform.size_in_bytes() {
+            return Err(rustler::Error::BadArg);
+        } else {};
+        for (index, value) in values.into_iter().enumerate() {
+            let start = offset + index * 4;
+            let encoded = (value as f32).to_ne_bytes();
+            bytes[start] = encoded[0];
+            bytes[start + 1] = encoded[1];
+            bytes[start + 2] = encoded[2];
+            bytes[start + 3] = encoded[3];
+        }
+    }
+    for (name, values) in int_uniforms {
+        let uniform = effect.find_uniform(&name).ok_or(rustler::Error::BadArg)?;
+        let offset = uniform.offset();
+        let byte_len = values.len() * 4;
+        if offset + byte_len > bytes.len() || byte_len > uniform.size_in_bytes() {
+            return Err(rustler::Error::BadArg);
+        } else {};
+        for (index, value) in values.into_iter().enumerate() {
+            let start = offset + index * 4;
+            let encoded = (value as i32).to_ne_bytes();
+            bytes[start] = encoded[0];
+            bytes[start + 1] = encoded[1];
+            bytes[start + 2] = encoded[2];
+            bytes[start + 3] = encoded[3];
+        }
+    }
+    Ok(Data::new_copy(&bytes))
+}
 fn runtime_children<'a>(
     effect: &RuntimeEffect,
     children: Vec<(String, Term<'a>)>,
@@ -884,36 +925,4 @@ fn decode_gradient_stops<'a>(
         };
     }
     if explicit_positions { Ok((colors, Some(positions))) } else { Ok((colors, None)) }
-}
-fn runtime_uniform_data(
-    effect: &RuntimeEffect,
-    float_uniforms: Vec<(String, Vec<f64>)>,
-    int_uniforms: Vec<(String, Vec<i64>)>,
-) -> NifResult<Data> {
-    let mut bytes = vec![0_u8; effect.uniform_size()];
-    for (name, values) in float_uniforms {
-        let uniform = effect.find_uniform(&name).ok_or(rustler::Error::BadArg)?;
-        let offset = uniform.offset();
-        let byte_len = values.len() * std::mem::size_of::<f32>();
-        if offset + byte_len > bytes.len() || byte_len > uniform.size_in_bytes() {
-            return Err(rustler::Error::BadArg);
-        }
-        for (index, value) in values.into_iter().enumerate() {
-            let start = offset + index * std::mem::size_of::<f32>();
-            bytes[start..start + 4].copy_from_slice(&(value as f32).to_ne_bytes());
-        }
-    }
-    for (name, values) in int_uniforms {
-        let uniform = effect.find_uniform(&name).ok_or(rustler::Error::BadArg)?;
-        let offset = uniform.offset();
-        let byte_len = values.len() * std::mem::size_of::<i32>();
-        if offset + byte_len > bytes.len() || byte_len > uniform.size_in_bytes() {
-            return Err(rustler::Error::BadArg);
-        }
-        for (index, value) in values.into_iter().enumerate() {
-            let start = offset + index * std::mem::size_of::<i32>();
-            bytes[start..start + 4].copy_from_slice(&(value as i32).to_ne_bytes());
-        }
-    }
-    Ok(Data::new_copy(&bytes))
 }

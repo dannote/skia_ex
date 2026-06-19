@@ -45,14 +45,9 @@ native/skia_native/src/generated_*.rs
 Do not edit those files by hand. Change the Elixir generator, Rusty-Elixir source,
 RustQ primitives, or the Rust support inputs instead, then run `mix rustq.gen`.
 
-Most generated files are rendered directly from RustQ/Rusty-Elixir items. The
-remaining files under `priv/codegen/templates` are not generated outputs; they
-are hand-written Rust support inputs that are copied through the generator with
-the normal generated-file preamble:
-
-```text
-priv/codegen/templates/paint_support.rs
-```
+Generated files are rendered directly from RustQ/Rusty-Elixir items. There are
+currently no hand-written Rust support inputs under `priv/codegen/templates`;
+previous support helpers have been migrated to Rusty Elixir.
 
 Keep small generated module shells and semantic helper bodies out of
 `priv/codegen/templates`. Prefer `defrust` for semantic helpers and RustQ item

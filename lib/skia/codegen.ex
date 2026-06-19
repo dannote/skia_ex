@@ -190,12 +190,6 @@ defmodule Skia.Codegen do
     ]
   ]
 
-  defp template_path(name) do
-    __DIR__
-    |> Path.join("../../priv/codegen/templates/#{name}")
-    |> Path.expand()
-  end
-
   @spec generated_native() :: String.t()
   def generated_native do
     functions =
@@ -470,35 +464,26 @@ defmodule Skia.Codegen do
 
   @spec generated_paint() :: String.t()
   def generated_paint do
-    paint_support = File.read!(template_path("paint_support.rs"))
-
-    ["__rq_items!();\n", paint_support]
-    |> IO.iodata_to_binary()
-    |> RustQ.render!(
-      "generated_paint.rs",
-      preamble: generated_rust_preamble(),
-      splice: [
-        items:
-          [
-            :decode_path_1d_style,
-            :optional_matrix_from_term,
-            :optional_rect_from_term,
-            :optional_image_filter_from_term,
-            :runtime_children,
-            :decode_paint,
-            :decode_color_filter,
-            :decode_image_filter,
-            :decode_shader,
-            :decode_mask_filter,
-            :decode_path_effect,
-            :decode_sampling_options,
-            :decode_color,
-            :decode_gradient_stops
-          ]
-          |> Enum.map(&rusty_ast(Rusty.PaintSupport, &1))
-          |> Enum.map(&render_rustq_item/1)
-      ]
-    )
+    [
+      :decode_path_1d_style,
+      :optional_matrix_from_term,
+      :optional_rect_from_term,
+      :optional_image_filter_from_term,
+      :runtime_uniform_data,
+      :runtime_children,
+      :decode_paint,
+      :decode_color_filter,
+      :decode_image_filter,
+      :decode_shader,
+      :decode_mask_filter,
+      :decode_path_effect,
+      :decode_sampling_options,
+      :decode_color,
+      :decode_gradient_stops
+    ]
+    |> Enum.map(&rusty_ast(Rusty.PaintSupport, &1))
+    |> Enum.map(&render_rustq_item/1)
+    |> render_items("generated_paint.rs")
   end
 
   @spec generated_path() :: String.t()

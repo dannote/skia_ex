@@ -55,6 +55,56 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
     end
   end
 
+  @spec runtime_uniform_data(
+          R.ref(R.path(:RuntimeEffect)),
+          R.vec({R.path(:String), R.vec(R.f64())}),
+          R.vec({R.path(:String), R.vec(R.i64())})
+        ) :: R.nif_result(R.path(:Data))
+  defrust runtime_uniform_data(effect, float_uniforms, int_uniforms) do
+    bytes = Vec.new()
+    bytes.resize(effect.uniform_size(), 0)
+
+    for {name, values} <- float_uniforms do
+      uniform = unwrap!(effect.find_uniform(ref(name)).ok_or(badarg()))
+      offset = uniform.offset()
+      byte_len = values.len() * 4
+
+      if offset + byte_len > bytes.len() or byte_len > uniform.size_in_bytes() do
+        return!({:error, badarg()})
+      end
+
+      for {index, value} <- values.into_iter().enumerate() do
+        start = offset + index * 4
+        encoded = cast(value, :f32).to_ne_bytes()
+        assign!(index(bytes, start), index(encoded, 0))
+        assign!(index(bytes, start + 1), index(encoded, 1))
+        assign!(index(bytes, start + 2), index(encoded, 2))
+        assign!(index(bytes, start + 3), index(encoded, 3))
+      end
+    end
+
+    for {name, values} <- int_uniforms do
+      uniform = unwrap!(effect.find_uniform(ref(name)).ok_or(badarg()))
+      offset = uniform.offset()
+      byte_len = values.len() * 4
+
+      if offset + byte_len > bytes.len() or byte_len > uniform.size_in_bytes() do
+        return!({:error, badarg()})
+      end
+
+      for {index, value} <- values.into_iter().enumerate() do
+        start = offset + index * 4
+        encoded = cast(value, :i32).to_ne_bytes()
+        assign!(index(bytes, start), index(encoded, 0))
+        assign!(index(bytes, start + 1), index(encoded, 1))
+        assign!(index(bytes, start + 2), index(encoded, 2))
+        assign!(index(bytes, start + 3), index(encoded, 3))
+      end
+    end
+
+    {:ok, Data.new_copy(ref(bytes))}
+  end
+
   @spec runtime_children(R.ref(R.path(:RuntimeEffect)), R.vec({R.path(:String), R.term()})) ::
           R.nif_result(R.vec(R.path(:ChildPtr)))
   defrust runtime_children(effect, children) do
