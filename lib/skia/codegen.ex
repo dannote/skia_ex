@@ -475,9 +475,15 @@ defmodule Skia.Codegen do
 
   @spec generated_path() :: String.t()
   def generated_path do
-    "path_support.rs"
-    |> template_path()
-    |> RustQ.render_file!(preamble: generated_rust_preamble())
+    path_support = File.read!(template_path("path_support.rs"))
+
+    ["__rq_items!();\n", path_support]
+    |> IO.iodata_to_binary()
+    |> RustQ.render!(
+      "generated_path.rs",
+      preamble: generated_rust_preamble(),
+      splice: [items: Enum.map(rusty_asts(Rusty.PathSupport), &render_rustq_item/1)]
+    )
   end
 
   @spec generated_opts() :: String.t()

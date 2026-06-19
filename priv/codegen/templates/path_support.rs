@@ -181,12 +181,3 @@ fn build_compact_path(segments: Vec<Term>) -> NifResult<skia_safe::Path> {
     Ok(builder.detach())
 }
 
-fn decode_path_direction(value: Atom) -> NifResult<PathDirection> {
-    if value == atoms::cw() {
-        Ok(PathDirection::CW)
-    } else if value == atoms::ccw() {
-        Ok(PathDirection::CCW)
-    } else {
-        Err(rustler::Error::BadArg)
-    }
-}
