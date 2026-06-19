@@ -12,9 +12,10 @@ defmodule Skia.Compact do
       {:ok, raw} = Skia.Compact.to_raw(document)
   """
 
-  alias Skia.{Command, CommandSpec, Document}
+  alias Skia.{Command, Document}
+  alias Skia.Codegen.Commands
 
-  @op_ids CommandSpec.all()
+  @op_ids Commands.all()
           |> Enum.flat_map(fn {name, spec} -> [name, Keyword.get(spec, :op, name)] end)
           |> Enum.uniq()
           |> Enum.with_index(1)

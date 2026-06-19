@@ -44,7 +44,8 @@ defmodule Skia.MixProject do
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:rustler_precompiled, "~> 0.8"},
       {:rustler, "~> 0.38.0", optional: true, runtime: false},
-      {:rustq, "~> 0.5", only: [:dev, :test], runtime: false},
+      {:rustq,
+       github: "dannote/rustq", branch: "defrust-meta-mvp", only: [:dev, :test], runtime: false},
       {:vibe_kit, "~> 0.1"},
       {:igniter, "~> 0.6", only: [:dev, :test]}
     ]
@@ -73,8 +74,17 @@ defmodule Skia.MixProject do
       main: "readme",
       extras: ["README.md"],
       source_ref: "v#{@version}",
-      source_url: @source_url
+      source_url: @source_url,
+      filter_modules: &public_doc_module?/2
     ]
+  end
+
+  defp public_doc_module?(module, _metadata) do
+    module
+    |> inspect()
+    |> then(fn name ->
+      String.starts_with?(name, "Skia") and not String.starts_with?(name, "Skia.Codegen")
+    end)
   end
 
   defp aliases() do
@@ -84,6 +94,7 @@ defmodule Skia.MixProject do
         "rustq.gen --check",
         "format --check-formatted",
         "test",
+        "docs --warnings-as-errors",
         "credo --strict",
         "dialyzer",
         "ex_dna --max-clones 0",

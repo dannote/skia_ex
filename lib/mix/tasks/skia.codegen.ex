@@ -4,7 +4,7 @@ defmodule Mix.Tasks.Skia.Codegen do
   @shortdoc "Generates Skia command docs and native schema helpers"
 
   @moduledoc """
-  Generates native/schema files derived from `Skia.CommandSpec`.
+  Generates native/schema files derived from `Skia.Codegen.Commands`.
 
       mix skia.codegen
       mix skia.codegen --check

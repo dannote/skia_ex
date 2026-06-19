@@ -1,15 +1,31 @@
 use RustQ.Config
 
-require_file("lib/skia/command_spec/types.ex")
-require_file("lib/skia/command_spec/shapes.ex")
-require_file("lib/skia/command_spec/text.ex")
-require_file("lib/skia/command_spec/images.ex")
-require_file("lib/skia/command_spec/layers.ex")
-require_file("lib/skia/command_spec/transforms.ex")
-require_file("lib/skia/command_spec/paths.ex")
-require_file("lib/skia/command_spec/clips.ex")
-require_file("lib/skia/command_spec.ex")
 require_file("lib/skia/codegen/skia_safe.ex")
+require_file("lib/skia/codegen/native_schema.ex")
+require_file("lib/skia/codegen/enums.ex")
+require_file("lib/skia/codegen/command_specs.ex")
+require_file("lib/skia/codegen/command_overlay/dsl.ex")
+require_file("lib/skia/codegen/command_overlay.ex")
+require_file("lib/skia/codegen/commands/shapes.ex")
+require_file("lib/skia/codegen/commands/text.ex")
+require_file("lib/skia/codegen/commands/images.ex")
+require_file("lib/skia/codegen/commands/layers.ex")
+require_file("lib/skia/codegen/commands/transforms.ex")
+require_file("lib/skia/codegen/commands/paths.ex")
+require_file("lib/skia/codegen/commands/clips.ex")
+require_file("lib/skia/codegen/commands.ex")
+require_file("lib/skia/codegen/rusty/args.ex")
+require_file("lib/skia/codegen/rusty/domain.ex")
+require_file("lib/skia/codegen/rusty/paint.ex")
+require_file("lib/skia/codegen/rusty/paint_support.ex")
+require_file("lib/skia/codegen/rusty/style_helpers.ex")
+require_file("lib/skia/codegen/rusty/clips.ex")
+require_file("lib/skia/codegen/rusty/images.ex")
+require_file("lib/skia/codegen/rusty/layers.ex")
+require_file("lib/skia/codegen/rusty/paths.ex")
+require_file("lib/skia/codegen/rusty/text.ex")
+require_file("lib/skia/codegen/rusty/transforms.ex")
+require_file("lib/skia/codegen/rusty/shapes.ex")
 require_file("lib/skia/codegen.ex")
 
 generate :native, "lib/skia/native.ex" do
@@ -42,10 +58,6 @@ end
 
 generate :generated_dispatch, "native/skia_native/src/generated_dispatch.rs" do
   build(&Skia.Codegen.generated_dispatch/0)
-end
-
-generate :generated_handlers, "native/skia_native/src/generated_handlers.rs" do
-  build(&Skia.Codegen.generated_handlers/0)
 end
 
 generate :generated_style_helpers, "native/skia_native/src/generated_style_helpers.rs" do
@@ -86,8 +98,4 @@ end
 
 generate :generated_path, "native/skia_native/src/generated_path.rs" do
   build(&Skia.Codegen.generated_path/0)
-end
-
-generate :command_docs, "docs/commands.md" do
-  build(&Skia.Codegen.generated_docs/0)
 end

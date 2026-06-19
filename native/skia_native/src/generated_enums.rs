@@ -3,8 +3,8 @@
 #![allow(dead_code)]
 use rustler::{Atom, NifResult};
 use skia_safe::{
-    paint, BlendMode, BlurStyle, ClipOp, EncodedImageFormat, FilterMode, MipmapMode,
-    PathFillType, PathOp, TileMode,
+    BlendMode, BlurStyle, ClipOp, EncodedImageFormat, FilterMode, MipmapMode, PaintCap,
+    PaintJoin, PathFillType, PathOp, TileMode,
 };
 use super::atoms;
 pub const BLEND_MODES: &[&str] = &[
@@ -177,19 +177,19 @@ pub fn decode_sampling(value: Atom) -> NifResult<FilterMode> {
         _ => Err(rustler::Error::BadArg),
     }
 }
-pub fn decode_stroke_cap(value: Atom) -> NifResult<paint::Cap> {
+pub fn decode_stroke_cap(value: Atom) -> NifResult<PaintCap> {
     match value {
-        value if value == atoms::butt() => Ok(paint::Cap::Butt),
-        value if value == atoms::round() => Ok(paint::Cap::Round),
-        value if value == atoms::square() => Ok(paint::Cap::Square),
+        value if value == atoms::butt() => Ok(PaintCap::Butt),
+        value if value == atoms::round() => Ok(PaintCap::Round),
+        value if value == atoms::square() => Ok(PaintCap::Square),
         _ => Err(rustler::Error::BadArg),
     }
 }
-pub fn decode_stroke_join(value: Atom) -> NifResult<paint::Join> {
+pub fn decode_stroke_join(value: Atom) -> NifResult<PaintJoin> {
     match value {
-        value if value == atoms::miter() => Ok(paint::Join::Miter),
-        value if value == atoms::round() => Ok(paint::Join::Round),
-        value if value == atoms::bevel() => Ok(paint::Join::Bevel),
+        value if value == atoms::miter() => Ok(PaintJoin::Miter),
+        value if value == atoms::round() => Ok(PaintJoin::Round),
+        value if value == atoms::bevel() => Ok(PaintJoin::Bevel),
         _ => Err(rustler::Error::BadArg),
     }
 }

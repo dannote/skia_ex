@@ -3,14 +3,22 @@
 fn decode_opts<'a>(term: Term<'a>) -> NifResult<Vec<(Atom, Term<'a>)>> {
     term.map_get(atoms::opts())?.decode::<Vec<(Atom, Term<'a>)>>()
 }
+fn decode_args<'a>(term: Term<'a>) -> NifResult<Vec<Term<'a>>> {
+    term.map_get(atoms::args())?.decode::<Vec<Term<'a>>>()
+}
 fn opt_term<'a>(opts: &[(Atom, Term<'a>)], key: Atom) -> Option<Term<'a>> {
-    opts.iter().find_map(|(atom, term)| if *atom == key { Some(*term) } else { None })
+    for (atom, term) in opts.iter() {
+        if *atom == key {
+            return Some(*term);
+        } else {};
+    }
+    None
 }
 fn opt_f32<'a>(opts: &[(Atom, Term<'a>)], key: Atom) -> NifResult<f32> {
-    opt_f32_default(opts, key, f32::NAN)
-        .and_then(|value| {
-            if value.is_nan() { Err(rustler::Error::BadArg) } else { Ok(value) }
-        })
+    match opt_f32_default(opts, key, 0.0 / 0.0) {
+        Ok(value) => if value.is_nan() { Err(rustler::Error::BadArg) } else { Ok(value) }
+        Err(reason) => Err(reason),
+    }
 }
 fn opt_f32_option<'a>(opts: &[(Atom, Term<'a>)], key: Atom) -> NifResult<Option<f32>> {
     match opt_term(opts, key) {
