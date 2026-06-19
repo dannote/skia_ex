@@ -512,36 +512,6 @@ fn decode_path_effect(term: Term) -> NifResult<PathEffect> {
 }
 
 
-fn decode_sampling_options(term: Term) -> NifResult<SamplingOptions> {
-    if let Ok((tag, filter, mipmap)) = term.decode::<(Atom, Atom, Atom)>() {
-        if tag == atoms::sampling_options() {
-            return Ok(SamplingOptions::new(
-                generated_enums::decode_sampling(filter)?,
-                generated_enums::decode_mipmap_mode(mipmap)?,
-            ));
-        }
-    }
-
-    if let Ok((tag, cubic_term)) = term.decode::<(Atom, Term)>() {
-        if tag == atoms::sampling_cubic() {
-            let cubic = if cubic_term.decode::<Atom>().is_ok_and(|atom| atom == atoms::mitchell()) {
-                CubicResampler::mitchell()
-            } else if cubic_term.decode::<Atom>().is_ok_and(|atom| atom == atoms::catmull_rom()) {
-                CubicResampler::catmull_rom()
-            } else {
-                let (b, c) = cubic_term.decode::<(f64, f64)>()?;
-                CubicResampler { b: b as f32, c: c as f32 }
-            };
-            return Ok(SamplingOptions::from(cubic));
-        }
-
-        if tag == atoms::sampling_aniso() {
-            return Ok(SamplingOptions::from_aniso(cubic_term.decode::<i64>()? as i32));
-        }
-    }
-
-    Err(rustler::Error::BadArg)
-}
 
 
 

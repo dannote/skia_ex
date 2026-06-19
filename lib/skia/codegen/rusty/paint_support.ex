@@ -6,6 +6,8 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
   alias RustQ.Type, as: R
 
   defrustmod(SkiaSafe.Path1DStyle, as: [:skia_safe, :path_1d_path_effect, :Style])
+  defrustmod(SkiaSafe.SamplingOptions, as: :SamplingOptions)
+  defrustmod(SkiaSafe.CubicResampler, as: :CubicResampler)
 
   @spec decode_path_1d_style(R.atom()) ::
           R.nif_result(R.path({:skia_safe, :path_1d_path_effect, :Style}))
@@ -46,6 +48,63 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
       {:error, _reason} ->
         {:ok, some(unwrap!(rect_from_term(rect_term)))}
     end
+  end
+
+  @spec decode_sampling_options(R.term()) :: R.nif_result(R.path(:SamplingOptions))
+  defrust decode_sampling_options(term) do
+    case decode_as(term, {R.atom(), R.atom(), R.atom()}) do
+      {:ok, {tag, filter, mipmap}} ->
+        if tag == Atoms.sampling_options() do
+          return!(
+            {:ok,
+             SkiaSafe.SamplingOptions.new(
+               unwrap!(GeneratedEnums.decode_sampling(filter)),
+               unwrap!(GeneratedEnums.decode_mipmap_mode(mipmap))
+             )}
+          )
+        end
+
+      {:error, _reason} ->
+        :ok
+    end
+
+    case decode_as(term, {R.atom(), R.term()}) do
+      {:ok, {tag, cubic_term}} ->
+        if tag == Atoms.sampling_cubic() do
+          cubic =
+            case decode_as(cubic_term, R.atom()) do
+              {:ok, atom} ->
+                if atom == Atoms.mitchell() do
+                  CubicResampler.mitchell()
+                else
+                  if atom == Atoms.catmull_rom() do
+                    CubicResampler.catmull_rom()
+                  else
+                    {b, c} = decode_as!(cubic_term, {R.f64(), R.f64()})
+                    struct_literal(CubicResampler, b: cast(b, :f32), c: cast(c, :f32))
+                  end
+                end
+
+              {:error, _reason} ->
+                {b, c} = decode_as!(cubic_term, {R.f64(), R.f64()})
+                struct_literal(CubicResampler, b: cast(b, :f32), c: cast(c, :f32))
+            end
+
+          return!({:ok, SkiaSafe.SamplingOptions.from(cubic)})
+        end
+
+        if tag == Atoms.sampling_aniso() do
+          return!(
+            {:ok,
+             SkiaSafe.SamplingOptions.from_aniso(decode_as!(cubic_term, R.i64()) |> cast(:i32))}
+          )
+        end
+
+      {:error, _reason} ->
+        :ok
+    end
+
+    {:error, badarg()}
   end
 
   @spec decode_color(R.term()) :: R.nif_result(R.path(:Color))

@@ -40,6 +40,59 @@ fn optional_rect_from_term<'a>(rect_term: Term<'a>) -> NifResult<Option<Rect>> {
         Err(_reason) => Ok(Some(rect_from_term(rect_term)?)),
     }
 }
+fn decode_sampling_options<'a>(term: Term<'a>) -> NifResult<SamplingOptions> {
+    match term.decode::<(Atom, Atom, Atom)>() {
+        Ok((tag, filter, mipmap)) => {
+            if tag == atoms::sampling_options() {
+                return Ok(
+                    SamplingOptions::new(
+                        generated_enums::decode_sampling(filter)?,
+                        generated_enums::decode_mipmap_mode(mipmap)?,
+                    ),
+                );
+            } else {};
+        }
+        Err(_reason) => {}
+    };
+    match term.decode::<(Atom, Term<'a>)>() {
+        Ok((tag, cubic_term)) => {
+            if tag == atoms::sampling_cubic() {
+                let cubic = match cubic_term.decode::<Atom>() {
+                    Ok(atom) => {
+                        if atom == atoms::mitchell() {
+                            CubicResampler::mitchell()
+                        } else {
+                            if atom == atoms::catmull_rom() {
+                                CubicResampler::catmull_rom()
+                            } else {
+                                let (b, c) = cubic_term.decode::<(f64, f64)>()?;
+                                CubicResampler {
+                                    b: b as f32,
+                                    c: c as f32,
+                                }
+                            }
+                        }
+                    }
+                    Err(_reason) => {
+                        let (b, c) = cubic_term.decode::<(f64, f64)>()?;
+                        CubicResampler {
+                            b: b as f32,
+                            c: c as f32,
+                        }
+                    }
+                };
+                return Ok(SamplingOptions::from(cubic));
+            } else {};
+            if tag == atoms::sampling_aniso() {
+                return Ok(
+                    SamplingOptions::from_aniso(cubic_term.decode::<i64>()? as i32),
+                );
+            } else {};
+        }
+        Err(_reason) => {}
+    };
+    Err(rustler::Error::BadArg)
+}
 fn decode_color<'a>(term: Term<'a>) -> NifResult<Color> {
     match term.decode::<(Atom, u32)>() {
         Ok((tag, rgba)) => {
@@ -648,44 +701,6 @@ fn decode_path_effect(term: Term) -> NifResult<PathEffect> {
             return Ok(
                 PathEffect::sum(decode_path_effect(first)?, decode_path_effect(second)?),
             );
-        }
-    }
-    Err(rustler::Error::BadArg)
-}
-fn decode_sampling_options(term: Term) -> NifResult<SamplingOptions> {
-    if let Ok((tag, filter, mipmap)) = term.decode::<(Atom, Atom, Atom)>() {
-        if tag == atoms::sampling_options() {
-            return Ok(
-                SamplingOptions::new(
-                    generated_enums::decode_sampling(filter)?,
-                    generated_enums::decode_mipmap_mode(mipmap)?,
-                ),
-            );
-        }
-    }
-    if let Ok((tag, cubic_term)) = term.decode::<(Atom, Term)>() {
-        if tag == atoms::sampling_cubic() {
-            let cubic = if cubic_term
-                .decode::<Atom>()
-                .is_ok_and(|atom| atom == atoms::mitchell())
-            {
-                CubicResampler::mitchell()
-            } else if cubic_term
-                .decode::<Atom>()
-                .is_ok_and(|atom| atom == atoms::catmull_rom())
-            {
-                CubicResampler::catmull_rom()
-            } else {
-                let (b, c) = cubic_term.decode::<(f64, f64)>()?;
-                CubicResampler {
-                    b: b as f32,
-                    c: c as f32,
-                }
-            };
-            return Ok(SamplingOptions::from(cubic));
-        }
-        if tag == atoms::sampling_aniso() {
-            return Ok(SamplingOptions::from_aniso(cubic_term.decode::<i64>()? as i32));
         }
     }
     Err(rustler::Error::BadArg)
