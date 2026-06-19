@@ -279,9 +279,9 @@ defmodule Skia.Codegen do
       |> Enum.uniq()
       |> Enum.sort()
 
-    "atoms_module.rs"
-    |> template_path()
-    |> RustQ.render_file!(
+    "__rq_atoms!();"
+    |> RustQ.render!(
+      "generated_atoms.rs",
       preamble: generated_rust_preamble(),
       splice: [atoms: RustQ.Rustler.atoms(atoms, module: false)]
     )
@@ -493,9 +493,24 @@ defmodule Skia.Codegen do
         )
       end)
 
-    "opts_module.rs"
-    |> template_path()
-    |> RustQ.render_file!(preamble: generated_rust_preamble(), splice: [commands: commands])
+    opts_module_template()
+    |> RustQ.render!(
+      "generated_opts.rs",
+      preamble: generated_rust_preamble(),
+      splice: [commands: commands]
+    )
+  end
+
+  defp opts_module_template do
+    """
+    #![allow(dead_code)]
+
+    use rustler::{Atom, NifResult, Term};
+
+    use super::{atoms, opt_atom_option, opt_bool_option, opt_f32, opt_f32_option, opt_term};
+
+    __rq_commands!();
+    """
   end
 
   defp opts_decoder_field(opt) do

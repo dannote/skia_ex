@@ -45,9 +45,9 @@ defmodule Skia.Codegen.Enums do
       |> Enum.sort_by(&elem(&1, 0))
       |> Enum.map(fn {name, spec} -> enum_decoder(name, spec) end)
 
-    "enums_module.rs"
-    |> template_path()
-    |> RustQ.render_file!(
+    enums_module_template()
+    |> RustQ.render!(
+      "generated_enums.rs",
       preamble: generated_rust_preamble(),
       splice: [entries: entries, decoders: decoders]
     )
@@ -98,10 +98,21 @@ defmodule Skia.Codegen.Enums do
     )
   end
 
-  defp template_path(name) do
-    __DIR__
-    |> Path.join("../../../priv/codegen/templates/#{name}")
-    |> Path.expand()
+  defp enums_module_template do
+    """
+    #![allow(dead_code)]
+
+    use rustler::{Atom, NifResult};
+    use skia_safe::{
+        BlendMode, BlurStyle, ClipOp, EncodedImageFormat, FilterMode, MipmapMode, PaintCap,
+        PaintJoin, PathFillType, PathOp, TileMode,
+    };
+
+    use super::atoms;
+
+    __rq_entries!();
+    __rq_decoders!();
+    """
   end
 
   defp generated_rust_preamble do
