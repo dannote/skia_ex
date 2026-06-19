@@ -12,18 +12,30 @@ fn apply_paint_effects<'a>(
     paint: &mut Paint,
     opts: &[(Atom, Term<'a>)],
 ) -> NifResult<()> {
-    if let Some(term) = opt_term(opts, atoms::image_filter()) {
-        paint.set_image_filter(decode_image_filter(term)?);
-    }
-    if let Some(term) = opt_term(opts, atoms::path_effect()) {
-        paint.set_path_effect(decode_path_effect(term)?);
-    }
-    if let Some(term) = opt_term(opts, atoms::color_filter()) {
-        paint.set_color_filter(decode_color_filter(term)?);
-    }
-    if let Some(term) = opt_term(opts, atoms::mask_filter()) {
-        paint.set_mask_filter(decode_mask_filter(term)?);
-    }
+    match opt_term(opts, atoms::image_filter()) {
+        Some(term) => {
+            paint.set_image_filter(decode_image_filter(term)?);
+        }
+        None => {}
+    };
+    match opt_term(opts, atoms::path_effect()) {
+        Some(term) => {
+            paint.set_path_effect(decode_path_effect(term)?);
+        }
+        None => {}
+    };
+    match opt_term(opts, atoms::color_filter()) {
+        Some(term) => {
+            paint.set_color_filter(decode_color_filter(term)?);
+        }
+        None => {}
+    };
+    match opt_term(opts, atoms::mask_filter()) {
+        Some(term) => {
+            paint.set_mask_filter(decode_mask_filter(term)?);
+        }
+        None => {}
+    };
     Ok(())
 }
 fn decode_clip_op(value: Atom) -> NifResult<Option<ClipOp>> {

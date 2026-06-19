@@ -385,8 +385,8 @@ defmodule Skia.Codegen do
   def generated_style_helpers do
     helpers = [
       enum_option_applicator(:apply_blend_mode, :paint, "&mut Paint", @paint_enum_options),
-      paint_effects_applicator(),
-      clip_op_decoder(),
+      style_helper_item(:apply_paint_effects),
+      style_helper_item(:decode_clip_op),
       stroke_options_applicator(),
       enum_option_applicator(:apply_fill_rule, :path, "&mut skia_safe::Path", @path_enum_options)
     ]
@@ -424,32 +424,10 @@ defmodule Skia.Codegen do
     |> Rust.item()
   end
 
-  defp paint_effects_applicator do
-    Rust.item("""
-    fn apply_paint_effects<'a>(paint: &mut Paint, opts: &[(Atom, Term<'a>)]) -> NifResult<()> {
-        if let Some(term) = opt_term(opts, atoms::image_filter()) {
-            paint.set_image_filter(decode_image_filter(term)?);
-        }
-        if let Some(term) = opt_term(opts, atoms::path_effect()) {
-            paint.set_path_effect(decode_path_effect(term)?);
-        }
-        if let Some(term) = opt_term(opts, atoms::color_filter()) {
-            paint.set_color_filter(decode_color_filter(term)?);
-        }
-        if let Some(term) = opt_term(opts, atoms::mask_filter()) {
-            paint.set_mask_filter(decode_mask_filter(term)?);
-        }
-        Ok(())
-    }
-    """)
-  end
-
-  defp clip_op_decoder do
-    Rust.item("""
-    fn decode_clip_op(value: Atom) -> NifResult<Option<ClipOp>> {
-        Ok(Some(generated_enums::decode_clip_op(value)?))
-    }
-    """)
+  defp style_helper_item(name) do
+    Skia.Codegen.Rusty.StyleHelpers.generated_asts()
+    |> Enum.find(&(&1.name == name))
+    |> render_rustq_item()
   end
 
   defp stroke_options_applicator do
