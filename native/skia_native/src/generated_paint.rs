@@ -54,6 +54,34 @@ fn optional_image_filter_from_term<'a>(
         Err(_reason) => Ok(Some(decode_image_filter(term)?)),
     }
 }
+fn runtime_children<'a>(
+    effect: &RuntimeEffect,
+    children: Vec<(String, Term<'a>)>,
+) -> NifResult<Vec<ChildPtr>> {
+    let effect_children = effect.children();
+    let mut ordered = Vec::with_capacity(effect_children.len());
+    for _child in effect_children {
+        ordered.push(None);
+    }
+    for (name, child_term) in children {
+        let child = effect.find_child(&name).ok_or(rustler::Error::BadArg)?;
+        let paint = decode_paint(child_term)?;
+        let shader = paint.shader().ok_or(rustler::Error::BadArg)?;
+        ordered[child.index()] = Some(ChildPtr::from(shader));
+    }
+    let mut decoded = Vec::with_capacity(ordered.len());
+    for child in ordered {
+        match child {
+            Some(child) => {
+                decoded.push(child);
+            }
+            None => {
+                return Err(rustler::Error::BadArg);
+            }
+        };
+    }
+    Ok(decoded)
+}
 fn decode_paint<'a>(term: Term<'a>) -> NifResult<Paint> {
     match decode_color(term) {
         Ok(color) => {
@@ -888,18 +916,4 @@ fn runtime_uniform_data(
         }
     }
     Ok(Data::new_copy(&bytes))
-}
-fn runtime_children(
-    effect: &RuntimeEffect,
-    children: Vec<(String, Term)>,
-) -> NifResult<Vec<ChildPtr>> {
-    let effect_children = effect.children();
-    let mut ordered: Vec<Option<ChildPtr>> = vec![None; effect_children.len()];
-    for (name, child_term) in children {
-        let child = effect.find_child(&name).ok_or(rustler::Error::BadArg)?;
-        let paint = decode_paint(child_term)?;
-        let shader = paint.shader().ok_or(rustler::Error::BadArg)?;
-        ordered[child.index()] = Some(ChildPtr::from(shader));
-    }
-    ordered.into_iter().collect::<Option<Vec<_>>>().ok_or(rustler::Error::BadArg)
 }

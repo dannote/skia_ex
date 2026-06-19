@@ -34,18 +34,5 @@ fn runtime_uniform_data(
     Ok(Data::new_copy(&bytes))
 }
 
-fn runtime_children(effect: &RuntimeEffect, children: Vec<(String, Term)>) -> NifResult<Vec<ChildPtr>> {
-    let effect_children = effect.children();
-    let mut ordered: Vec<Option<ChildPtr>> = vec![None; effect_children.len()];
-
-    for (name, child_term) in children {
-        let child = effect.find_child(&name).ok_or(rustler::Error::BadArg)?;
-        let paint = decode_paint(child_term)?;
-        let shader = paint.shader().ok_or(rustler::Error::BadArg)?;
-        ordered[child.index()] = Some(ChildPtr::from(shader));
-    }
-
-    ordered.into_iter().collect::<Option<Vec<_>>>().ok_or(rustler::Error::BadArg)
-}
 
 

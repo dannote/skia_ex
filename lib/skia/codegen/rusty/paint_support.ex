@@ -55,6 +55,35 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
     end
   end
 
+  @spec runtime_children(R.ref(R.path(:RuntimeEffect)), R.vec({R.path(:String), R.term()})) ::
+          R.nif_result(R.vec(R.path(:ChildPtr)))
+  defrust runtime_children(effect, children) do
+    effect_children = effect.children()
+    ordered = Vec.with_capacity(effect_children.len())
+
+    for _child <- effect_children do
+      ordered.push(none())
+    end
+
+    for {name, child_term} <- children do
+      child = unwrap!(effect.find_child(ref(name)).ok_or(badarg()))
+      paint = unwrap!(decode_paint(child_term))
+      shader = unwrap!(paint.shader().ok_or(badarg()))
+      assign!(index(ordered, child.index()), some(ChildPtr.from(shader)))
+    end
+
+    decoded = Vec.with_capacity(ordered.len())
+
+    for child <- ordered do
+      case child do
+        {:some, child} -> decoded.push(child)
+        :none -> return!({:error, badarg()})
+      end
+    end
+
+    {:ok, decoded}
+  end
+
   @spec decode_paint(R.term()) :: R.nif_result(Paint.t())
   defrust decode_paint(term) do
     case decode_color(term) do
