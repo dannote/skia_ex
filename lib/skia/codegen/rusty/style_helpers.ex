@@ -5,9 +5,6 @@ defmodule Skia.Codegen.Rusty.StyleHelpers do
 
   alias RustQ.Type, as: R
 
-  @spec generated_asts() :: [RustQ.Rust.AST.Function.t()]
-  def generated_asts, do: __rustq_asts__()
-
   @spec apply_blend_mode(R.mut_ref(Paint.t()), R.slice({R.atom(), R.term()})) ::
           R.nif_result(R.unit())
   defrust apply_blend_mode(paint, opts) do

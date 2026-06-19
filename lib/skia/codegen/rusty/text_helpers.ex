@@ -5,9 +5,6 @@ defmodule Skia.Codegen.Rusty.TextHelpers do
 
   alias RustQ.Type, as: R
 
-  @spec generated_asts() :: [RustQ.Rust.AST.Function.t()]
-  def generated_asts, do: __rustq_asts__()
-
   @spec draw_paragraph_text(
           R.ref(R.path({:skia_safe, :Canvas})),
           R.str(),

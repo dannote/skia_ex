@@ -313,6 +313,8 @@ defmodule Skia.Codegen do
   defp render_rustq_item(ast),
     do: ast |> RustQ.Rust.AST.Render.render_item() |> Rust.item()
 
+  defp rusty_asts(module), do: module.__rustq_asts__()
+
   @spec generated_dispatch() :: String.t()
   def generated_dispatch do
     cases =
@@ -366,7 +368,8 @@ defmodule Skia.Codegen do
 
   @spec generated_style_helpers() :: String.t()
   def generated_style_helpers do
-    Skia.Codegen.Rusty.StyleHelpers.generated_asts()
+    Rusty.StyleHelpers
+    |> rusty_asts()
     |> Enum.map(&render_rustq_item/1)
     |> render_items("generated_style_helpers.rs")
   end
@@ -437,7 +440,7 @@ defmodule Skia.Codegen do
 
   @spec generated_text() :: String.t()
   def generated_text do
-    (Rusty.Text.generated_asts() ++ Rusty.TextHelpers.generated_asts())
+    (Rusty.Text.generated_asts() ++ rusty_asts(Rusty.TextHelpers))
     |> Enum.map(&render_rustq_item/1)
     |> render_items("generated_text.rs")
   end
