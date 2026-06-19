@@ -484,7 +484,12 @@ defmodule Skia.Codegen do
     |> RustQ.render!(
       "generated_path.rs",
       preamble: generated_rust_preamble(),
-      splice: [items: [Rusty.Paths |> rusty_ast(:decode_path_direction) |> render_rustq_item()]]
+      splice: [
+        items:
+          [:decode_path_direction, :build_compact_path]
+          |> Enum.map(&rusty_ast(Rusty.Paths, &1))
+          |> Enum.map(&render_rustq_item/1)
+      ]
     )
   end
 
