@@ -34,6 +34,32 @@ defrust draw_rect_impl(canvas, opts, raw_opts) do
 end
 ```
 
+## Generated output and Rust inputs
+
+Generated Rust outputs live only under:
+
+```text
+native/skia_native/src/generated_*.rs
+```
+
+Do not edit those files by hand. Change the Elixir generator, Rusty-Elixir source,
+RustQ primitives, or the Rust support inputs instead, then run `mix rustq.gen`.
+
+Most generated files are rendered directly from RustQ/Rusty-Elixir items. The
+remaining files under `priv/codegen/templates` are not generated outputs; they
+are hand-written Rust support inputs that are copied through the generator with
+the normal generated-file preamble:
+
+```text
+priv/codegen/templates/paint_support.rs
+priv/codegen/templates/path_support.rs
+```
+
+Keep small generated module shells and semantic helper bodies out of
+`priv/codegen/templates`. Prefer `defrust` for semantic helpers and RustQ item
+rendering for generated item lists. Use support inputs only for substantial
+hand-written Rust interop/decoder code that is not yet clearer as Rusty Elixir.
+
 ## Module structure
 
 The codegen root is orchestration only:
