@@ -17,4 +17,19 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
       _ -> {:error, badarg()}
     end
   end
+
+  @spec optional_matrix_from_term(R.term()) :: R.nif_result(R.option(R.path(:Matrix)))
+  defrust optional_matrix_from_term(matrix_term) do
+    case decode_as(matrix_term, R.atom()) do
+      {:ok, atom} ->
+        if atom == Atoms.nil() do
+          {:ok, none()}
+        else
+          {:ok, some(unwrap!(matrix_from_term(matrix_term)))}
+        end
+
+      {:error, _reason} ->
+        {:ok, some(unwrap!(matrix_from_term(matrix_term)))}
+    end
+  end
 end

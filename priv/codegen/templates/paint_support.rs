@@ -543,13 +543,6 @@ fn decode_sampling_options(term: Term) -> NifResult<SamplingOptions> {
     Err(rustler::Error::BadArg)
 }
 
-fn optional_matrix_from_term(matrix_term: Term) -> NifResult<Option<Matrix>> {
-    if matrix_term.decode::<Atom>().is_ok_and(|atom| atom == atoms::nil()) {
-        Ok(None)
-    } else {
-        Ok(Some(matrix_from_term(matrix_term)?))
-    }
-}
 
 fn optional_rect_from_term(rect_term: Term) -> NifResult<Option<Rect>> {
     if rect_term.decode::<Atom>().is_ok_and(|atom| atom == atoms::nil()) {

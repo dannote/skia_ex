@@ -16,6 +16,18 @@ fn decode_path_1d_style(
         _ => Err(rustler::Error::BadArg),
     }
 }
+fn optional_matrix_from_term<'a>(matrix_term: Term<'a>) -> NifResult<Option<Matrix>> {
+    match matrix_term.decode::<Atom>() {
+        Ok(atom) => {
+            if atom == atoms::nil() {
+                Ok(None)
+            } else {
+                Ok(Some(matrix_from_term(matrix_term)?))
+            }
+        }
+        Err(_reason) => Ok(Some(matrix_from_term(matrix_term)?)),
+    }
+}
 fn runtime_uniform_data(
     effect: &RuntimeEffect,
     float_uniforms: Vec<(String, Vec<f64>)>,
@@ -620,13 +632,6 @@ fn decode_sampling_options(term: Term) -> NifResult<SamplingOptions> {
         }
     }
     Err(rustler::Error::BadArg)
-}
-fn optional_matrix_from_term(matrix_term: Term) -> NifResult<Option<Matrix>> {
-    if matrix_term.decode::<Atom>().is_ok_and(|atom| atom == atoms::nil()) {
-        Ok(None)
-    } else {
-        Ok(Some(matrix_from_term(matrix_term)?))
-    }
 }
 fn optional_rect_from_term(rect_term: Term) -> NifResult<Option<Rect>> {
     if rect_term.decode::<Atom>().is_ok_and(|atom| atom == atoms::nil()) {
