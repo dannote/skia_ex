@@ -273,9 +273,7 @@ defmodule Skia.Codegen do
       |> Enum.map(fn {name, spec} -> {name, Keyword.put(spec, :schedule, :dirty_cpu)} end)
       |> RustQ.Rustler.nif_exports()
 
-    "generated_nifs.rs"
-    |> template_path()
-    |> RustQ.render_file!(preamble: generated_rust_preamble(), splice: [items: wrappers])
+    render_items(wrappers, "generated_nifs.rs")
   end
 
   @spec generated_atoms() :: String.t()
@@ -294,7 +292,7 @@ defmodule Skia.Codegen do
       |> Enum.uniq()
       |> Enum.sort()
 
-    "generated_atoms.rs"
+    "atoms_module.rs"
     |> template_path()
     |> RustQ.render_file!(
       preamble: generated_rust_preamble(),
@@ -351,9 +349,7 @@ defmodule Skia.Codegen do
 
     items = [dispatch, render_rustq_item(compact_op_atom_ast())]
 
-    "generated_dispatch.rs"
-    |> template_path()
-    |> RustQ.render_file!(preamble: generated_rust_preamble(), splice: [items: items])
+    render_items(items, "generated_dispatch.rs")
   end
 
   defp compact_op_atom_ast do
@@ -391,9 +387,7 @@ defmodule Skia.Codegen do
       enum_option_applicator(:apply_fill_rule, :path, "&mut skia_safe::Path", @path_enum_options)
     ]
 
-    "generated_style_helpers.rs"
-    |> template_path()
-    |> RustQ.render_file!(preamble: generated_rust_preamble(), splice: [items: helpers])
+    render_items(helpers, "generated_style_helpers.rs")
   end
 
   defp enum_option_applicator(:apply_blend_mode = name, target_name, target_type, options) do
@@ -479,9 +473,7 @@ defmodule Skia.Codegen do
       resource_specs()
       |> Enum.flat_map(fn {name, opts} -> RustQ.Rustler.resource_handle(name, opts) end)
 
-    "generated_resources.rs"
-    |> template_path()
-    |> RustQ.render_file!(preamble: generated_rust_preamble(), splice: [items: resources])
+    render_items(resources, "generated_resources.rs")
   end
 
   @spec generated_layers() :: String.t()
@@ -647,14 +639,14 @@ defmodule Skia.Codegen do
 
   @spec generated_paint() :: String.t()
   def generated_paint do
-    "generated_paint.rs"
+    "paint_support.rs"
     |> template_path()
     |> RustQ.render_file!(preamble: generated_rust_preamble())
   end
 
   @spec generated_path() :: String.t()
   def generated_path do
-    "generated_path.rs"
+    "path_support.rs"
     |> template_path()
     |> RustQ.render_file!(preamble: generated_rust_preamble())
   end
@@ -675,7 +667,7 @@ defmodule Skia.Codegen do
         )
       end)
 
-    "generated_opts.rs"
+    "opts_module.rs"
     |> template_path()
     |> RustQ.render_file!(preamble: generated_rust_preamble(), splice: [commands: commands])
   end

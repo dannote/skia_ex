@@ -45,7 +45,7 @@ defmodule Skia.Codegen.Enums do
       |> Enum.sort_by(&elem(&1, 0))
       |> Enum.map(fn {name, spec} -> enum_decoder(name, spec) end)
 
-    "generated_enums.rs"
+    "enums_module.rs"
     |> template_path()
     |> RustQ.render_file!(
       preamble: generated_rust_preamble(),
