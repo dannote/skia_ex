@@ -54,6 +54,77 @@ fn optional_image_filter_from_term<'a>(
         Err(_reason) => Ok(Some(decode_image_filter(term)?)),
     }
 }
+fn decode_color_filter<'a>(term: Term<'a>) -> NifResult<ColorFilter> {
+    match term.decode::<(Atom, Term<'a>, Atom)>() {
+        Ok((tag, color_term, blend_mode)) => {
+            if tag == atoms::blend_color_filter() {
+                return Ok(
+                    color_filters::blend(
+                            decode_color(color_term)?,
+                            generated_enums::decode_blend_mode(blend_mode)?,
+                        )
+                        .ok_or(rustler::Error::BadArg)?,
+                );
+            } else {};
+        }
+        Err(_reason) => {}
+    };
+    match term.decode::<(Atom, Vec<f64>, bool)>() {
+        Ok((tag, matrix, clamp)) => {
+            if tag == atoms::matrix_color_filter() && matrix.len() == 20 {
+                let mut values = [
+                    0.0 as f32,
+                    0.0 as f32,
+                    0.0 as f32,
+                    0.0 as f32,
+                    0.0 as f32,
+                    0.0 as f32,
+                    0.0 as f32,
+                    0.0 as f32,
+                    0.0 as f32,
+                    0.0 as f32,
+                    0.0 as f32,
+                    0.0 as f32,
+                    0.0 as f32,
+                    0.0 as f32,
+                    0.0 as f32,
+                    0.0 as f32,
+                    0.0 as f32,
+                    0.0 as f32,
+                    0.0 as f32,
+                    0.0 as f32,
+                ];
+                let mut index = 0 as usize;
+                for value in matrix {
+                    values[index] = value as f32;
+                    index = index + 1 as usize;
+                }
+                let clamp = if clamp {
+                    color_filters::Clamp::Yes
+                } else {
+                    color_filters::Clamp::No
+                };
+                return Ok(color_filters::matrix_row_major(&values, clamp));
+            } else {};
+        }
+        Err(_reason) => {}
+    };
+    match term.decode::<(Atom, Term<'a>, Term<'a>)>() {
+        Ok((tag, outer, inner)) => {
+            if tag == atoms::compose_color_filter() {
+                return Ok(
+                    color_filters::compose(
+                            decode_color_filter(outer)?,
+                            decode_color_filter(inner)?,
+                        )
+                        .ok_or(rustler::Error::BadArg)?,
+                );
+            } else {};
+        }
+        Err(_reason) => {}
+    };
+    Err(rustler::Error::BadArg)
+}
 fn decode_image_filter<'a>(term: Term<'a>) -> NifResult<skia_safe::ImageFilter> {
     match term.decode::<(Atom, f64, f64, Atom)>() {
         Ok((tag, sigma_x, sigma_y, tile_mode)) => {
@@ -776,41 +847,6 @@ fn decode_paint(term: Term) -> NifResult<Paint> {
                         ),
                 );
             return Ok(paint);
-        }
-    }
-    Err(rustler::Error::BadArg)
-}
-fn decode_color_filter(term: Term) -> NifResult<ColorFilter> {
-    if let Ok((tag, color_term, blend_mode)) = term.decode::<(Atom, Term, Atom)>() {
-        if tag == atoms::blend_color_filter() {
-            return color_filters::blend(
-                    decode_color(color_term)?,
-                    generated_enums::decode_blend_mode(blend_mode)?,
-                )
-                .ok_or(rustler::Error::BadArg);
-        }
-    }
-    if let Ok((tag, matrix, clamp)) = term.decode::<(Atom, Vec<f64>, bool)>() {
-        if tag == atoms::matrix_color_filter() && matrix.len() == 20 {
-            let mut values = [0.0_f32; 20];
-            for (index, value) in matrix.into_iter().enumerate() {
-                values[index] = value as f32;
-            }
-            let clamp = if clamp {
-                color_filters::Clamp::Yes
-            } else {
-                color_filters::Clamp::No
-            };
-            return Ok(color_filters::matrix_row_major(&values, clamp));
-        }
-    }
-    if let Ok((tag, outer, inner)) = term.decode::<(Atom, Term, Term)>() {
-        if tag == atoms::compose_color_filter() {
-            return color_filters::compose(
-                    decode_color_filter(outer)?,
-                    decode_color_filter(inner)?,
-                )
-                .ok_or(rustler::Error::BadArg);
         }
     }
     Err(rustler::Error::BadArg)

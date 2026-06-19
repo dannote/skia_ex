@@ -11,6 +11,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
   defrustmod(SkiaSafe.CubicResampler, as: :CubicResampler)
   defrustmod(SkiaSafe.PathEffect, as: :PathEffect)
   defrustmod(SkiaSafe.MaskFilter, as: :MaskFilter)
+  defrustmod(SkiaSafe.ColorFilterClamp, as: [:color_filters, :Clamp])
 
   @spec decode_path_1d_style(R.atom()) ::
           R.nif_result(R.path({:skia_safe, :path_1d_path_effect, :Style}))
@@ -100,6 +101,95 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
           return!(
             {:ok,
              SkiaSafe.SamplingOptions.from_aniso(decode_as!(cubic_term, R.i64()) |> cast(:i32))}
+          )
+        end
+
+      {:error, _reason} ->
+        :ok
+    end
+
+    {:error, badarg()}
+  end
+
+  @spec decode_color_filter(R.term()) :: R.nif_result(R.path(:ColorFilter))
+  defrust decode_color_filter(term) do
+    case decode_as(term, {R.atom(), R.term(), R.atom()}) do
+      {:ok, {tag, color_term, blend_mode}} ->
+        if tag == Atoms.blend_color_filter() do
+          return!(
+            {:ok,
+             unwrap!(
+               ColorFilters.blend(
+                 unwrap!(decode_color(color_term)),
+                 unwrap!(GeneratedEnums.decode_blend_mode(blend_mode))
+               ).ok_or(badarg())
+             )}
+          )
+        end
+
+      {:error, _reason} ->
+        :ok
+    end
+
+    case decode_as(term, {R.atom(), R.vec(R.f64()), R.bool()}) do
+      {:ok, {tag, matrix, clamp}} ->
+        if tag == Atoms.matrix_color_filter() and matrix.len() == 20 do
+          values =
+            array([
+              cast(0.0, :f32),
+              cast(0.0, :f32),
+              cast(0.0, :f32),
+              cast(0.0, :f32),
+              cast(0.0, :f32),
+              cast(0.0, :f32),
+              cast(0.0, :f32),
+              cast(0.0, :f32),
+              cast(0.0, :f32),
+              cast(0.0, :f32),
+              cast(0.0, :f32),
+              cast(0.0, :f32),
+              cast(0.0, :f32),
+              cast(0.0, :f32),
+              cast(0.0, :f32),
+              cast(0.0, :f32),
+              cast(0.0, :f32),
+              cast(0.0, :f32),
+              cast(0.0, :f32),
+              cast(0.0, :f32)
+            ])
+
+          index = cast(0, :usize)
+
+          for value <- matrix do
+            assign!(index(values, index), cast(value, :f32))
+            assign!(index, index + cast(1, :usize))
+          end
+
+          clamp =
+            if clamp do
+              SkiaSafe.ColorFilterClamp.Yes
+            else
+              SkiaSafe.ColorFilterClamp.No
+            end
+
+          return!({:ok, ColorFilters.matrix_row_major(ref(values), clamp)})
+        end
+
+      {:error, _reason} ->
+        :ok
+    end
+
+    case decode_as(term, {R.atom(), R.term(), R.term()}) do
+      {:ok, {tag, outer, inner}} ->
+        if tag == Atoms.compose_color_filter() do
+          return!(
+            {:ok,
+             unwrap!(
+               ColorFilters.compose(
+                 unwrap!(decode_color_filter(outer)),
+                 unwrap!(decode_color_filter(inner))
+               ).ok_or(badarg())
+             )}
           )
         end
 
