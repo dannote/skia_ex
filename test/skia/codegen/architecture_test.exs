@@ -95,6 +95,13 @@ defmodule Skia.Codegen.ArchitectureTest do
     assert source =~ "expands_to: [Canvas.clip_path"
   end
 
+  test "enum specs do not carry Rust path escape hatches" do
+    source = File.read!("lib/skia/codegen/enums.ex")
+
+    refute source =~ "rust:"
+    assert source =~ "safe_enum_type!"
+  end
+
   test "removed type and decoder boilerplate patterns do not return" do
     source =
       (Path.wildcard("lib/**/*.ex") ++ Path.wildcard("test/**/*.exs"))
