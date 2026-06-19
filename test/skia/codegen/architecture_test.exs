@@ -95,6 +95,24 @@ defmodule Skia.Codegen.ArchitectureTest do
     assert source =~ "expands_to: [Canvas.clip_path"
   end
 
+  test "removed type and decoder boilerplate patterns do not return" do
+    source =
+      (Path.wildcard("lib/**/*.ex") ++ Path.wildcard("test/**/*.exs"))
+      |> Enum.map_join("\n", &File.read!/1)
+
+    forbidden = [
+      "native" <> "_enum(",
+      "from" <> "_spec_ast",
+      "field" <> "_spec(",
+      "required" <> "_decoder_for_kind",
+      "optional" <> "_decoder_for_kind",
+      "option" <> "_type_category",
+      "{:" <> "enum,"
+    ]
+
+    Enum.each(forbidden, &refute(source =~ &1))
+  end
+
   test "codegen tests live under test/skia/codegen" do
     root_codegen_tests =
       "test/skia/*codegen*_test.exs"
