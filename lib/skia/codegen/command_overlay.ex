@@ -78,5 +78,5 @@ defmodule Skia.Codegen.CommandOverlay do
   end
 
   defp validate_ref(nil), do: :ok
-  defp validate_ref(%RustQ.NativeRef{} = ref), do: Skia.Codegen.NativeSchema.descriptor!(ref)
+  defp validate_ref(%RustQ.Native.Ref{} = ref), do: Skia.Codegen.NativeSchema.descriptor!(ref)
 end

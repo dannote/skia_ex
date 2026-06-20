@@ -4,11 +4,11 @@ defmodule Skia.Codegen.CommandsTest do
   test "native-backed commands carry native refs and Syn descriptors" do
     rect = Skia.Codegen.Commands.fetch!(:rect)
 
-    assert %RustQ.NativeRef{package: "skia-safe", target: "Canvas", member: "draw_rect"} =
+    assert %RustQ.Native.Ref{package: "skia-safe", target: "Canvas", member: "draw_rect"} =
              get_in(rect, [:overlay, :native])
 
-    assert %RustQ.NativeDescriptor{
-             ref: %RustQ.NativeRef{package: "skia-safe", target: "Canvas", member: "draw_rect"},
+    assert %RustQ.Native.Descriptor{
+             ref: %RustQ.Native.Ref{package: "skia-safe", target: "Canvas", member: "draw_rect"},
              method: method,
              source_url: source_url
            } = Keyword.fetch!(rect, :native)
@@ -28,7 +28,11 @@ defmodule Skia.Codegen.CommandsTest do
 
     refute Keyword.has_key?(clip_circle, :native)
 
-    assert [%RustQ.NativeDescriptor{ref: %RustQ.NativeRef{target: "Canvas", member: "clip_path"}}] =
+    assert [
+             %RustQ.Native.Descriptor{
+               ref: %RustQ.Native.Ref{target: "Canvas", member: "clip_path"}
+             }
+           ] =
              Keyword.fetch!(clip_circle, :expands_to)
   end
 

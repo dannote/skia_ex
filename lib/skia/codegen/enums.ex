@@ -76,7 +76,7 @@ defmodule Skia.Codegen.Enums do
     |> Keyword.put(:skia, native_name)
     |> Keyword.put(:descriptor, descriptor)
     |> Keyword.put(:rust, Skia.Codegen.NativeSchema.safe_enum_type!(descriptor.name))
-    |> Keyword.put(:variants, RustQ.NativeEnumDescriptor.variants(descriptor))
+    |> Keyword.put(:variants, RustQ.Native.EnumDescriptor.variants(descriptor))
   end
 
   defp enum_const_name(name) do

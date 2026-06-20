@@ -49,7 +49,10 @@ defmodule Skia.Codegen.CommandSpecsTest do
   defp enum_type?(
          %RustQ.Meta.Type{
            kind: :enum,
-           meta: %{elixir_name: name, native_enum: %RustQ.NativeEnumDescriptor{name: native_name}}
+           meta: %{
+             elixir_name: name,
+             native_enum: %RustQ.Native.EnumDescriptor{name: native_name}
+           }
          },
          name,
          native_name

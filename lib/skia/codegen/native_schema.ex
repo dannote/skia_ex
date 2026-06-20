@@ -34,21 +34,21 @@ defmodule Skia.Codegen.NativeSchema do
     RuntimeError -> raise "cannot find skia_safe::#{target}::#{name}"
   end
 
-  @spec descriptor!(RustQ.NativeRef.t()) :: RustQ.NativeDescriptor.t()
-  def descriptor!(%RustQ.NativeRef{} = ref) do
-    RustQ.NativeDescriptor.resolve!(index(), ref)
+  @spec descriptor!(RustQ.Native.Ref.t()) :: RustQ.Native.Descriptor.t()
+  def descriptor!(%RustQ.Native.Ref{} = ref) do
+    RustQ.Native.Descriptor.resolve!(index(), ref)
   end
 
-  @spec descriptor!(String.t(), String.t()) :: RustQ.NativeDescriptor.t()
+  @spec descriptor!(String.t(), String.t()) :: RustQ.Native.Descriptor.t()
   def descriptor!(target, name) when is_binary(target) and is_binary(name) do
-    descriptor!(RustQ.NativeRef.new(target, name, package: "skia-safe"))
+    descriptor!(RustQ.Native.Ref.new(target, name, package: "skia-safe"))
   end
 
-  @spec assert_method_shape!(String.t(), String.t(), keyword()) :: RustQ.NativeDescriptor.t()
+  @spec assert_method_shape!(String.t(), String.t(), keyword()) :: RustQ.Native.Descriptor.t()
   def assert_method_shape!(target, name, opts) do
     target
     |> descriptor!(name)
-    |> RustQ.NativeDescriptor.assert_shape!(opts)
+    |> RustQ.Native.Descriptor.assert_shape!(opts)
   end
 
   @spec package!() :: RustQ.Cargo.Package.t()

@@ -9,7 +9,7 @@ defmodule Skia.Codegen.NativeCoverageTest do
     assert direct != []
 
     for {name, spec} <- direct do
-      assert %RustQ.NativeDescriptor{method: method, source_url: source_url} = spec[:native],
+      assert %RustQ.Native.Descriptor{method: method, source_url: source_url} = spec[:native],
              "#{name} should carry a native descriptor"
 
       assert %RustQ.Syn.Signature{} = method.signature_ast,
@@ -28,7 +28,7 @@ defmodule Skia.Codegen.NativeCoverageTest do
 
     for {name, spec} <- composites do
       refute Keyword.has_key?(spec, :native), "#{name} should not pretend to be direct native"
-      assert [%RustQ.NativeDescriptor{} | _] = spec[:expands_to]
+      assert [%RustQ.Native.Descriptor{} | _] = spec[:expands_to]
     end
   end
 

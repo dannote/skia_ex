@@ -3,9 +3,9 @@ defmodule Skia.Codegen.SkiaSafe do
 
   @native_manifest "native/skia_native/Cargo.toml"
 
-  @spec enum_descriptor!(String.t()) :: RustQ.NativeEnumDescriptor.t()
+  @spec enum_descriptor!(String.t()) :: RustQ.Native.EnumDescriptor.t()
   def enum_descriptor!(enum_name) when is_binary(enum_name) do
-    RustQ.NativeEnumDescriptor.resolve!(bindings_index(), enum_name, package: "skia-bindings")
+    RustQ.Native.EnumDescriptor.resolve!(bindings_index(), enum_name, package: "skia-bindings")
   rescue
     RuntimeError ->
       raise "cannot find Skia enum #{enum_name} in skia-bindings"

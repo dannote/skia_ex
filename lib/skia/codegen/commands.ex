@@ -87,7 +87,7 @@ defmodule Skia.Codegen.Commands do
 
   defp native_signature(spec) do
     with %{ref: ref, method: %{signature_ast: signature}} <- Keyword.get(spec, :native) do
-      "Native: `#{RustQ.NativeRef.format(ref)}`\n\nNative signature: `#{RustQ.Syn.Signature.render(signature)}`"
+      "Native: `#{RustQ.Native.Ref.format(ref)}`\n\nNative signature: `#{RustQ.Syn.Signature.render(signature)}`"
     else
       _ -> nil
     end
@@ -101,7 +101,7 @@ defmodule Skia.Codegen.Commands do
       descriptors ->
         refs =
           descriptors
-          |> Enum.map(fn %{ref: ref} -> "`#{RustQ.NativeRef.format(ref)}`" end)
+          |> Enum.map(fn %{ref: ref} -> "`#{RustQ.Native.Ref.format(ref)}`" end)
           |> Enum.join(", ")
 
         "Implemented via native calls: #{refs}"
@@ -127,7 +127,7 @@ defmodule Skia.Codegen.Commands do
 
   defp native_doc(spec) do
     with %{ref: ref, method: %{docs: [_ | _] = docs}} <- Keyword.get(spec, :native) do
-      ["Native `#{RustQ.NativeRef.format(ref)}` docs:" | docs]
+      ["Native `#{RustQ.Native.Ref.format(ref)}` docs:" | docs]
       |> RustQ.Syn.Doc.markdown()
     else
       _ -> nil

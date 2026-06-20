@@ -6,7 +6,7 @@ defmodule Skia.Codegen.EnumsTest do
   end
 
   test "SkiaSafe resolves native enum descriptors through RustQ" do
-    assert %RustQ.NativeEnumDescriptor{
+    assert %RustQ.Native.EnumDescriptor{
              package: "skia-bindings",
              name: "SkClipOp",
              enum: %RustQ.Syn.Enum{variants: ["Difference", "Intersect"]},
@@ -38,7 +38,7 @@ defmodule Skia.Codegen.EnumsTest do
       spec = Skia.Codegen.Enums.spec!(api_name)
 
       assert Keyword.fetch!(spec, :skia) == native_name
-      assert %RustQ.NativeEnumDescriptor{name: ^native_name} = Keyword.fetch!(spec, :descriptor)
+      assert %RustQ.Native.EnumDescriptor{name: ^native_name} = Keyword.fetch!(spec, :descriptor)
     end
   end
 

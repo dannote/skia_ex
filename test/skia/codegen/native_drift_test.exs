@@ -8,7 +8,8 @@ defmodule Skia.Codegen.NativeDriftTest do
       Skia.Codegen.Commands.all()
       |> Enum.flat_map(fn {name, spec} ->
         case Keyword.fetch(spec, :native) do
-          {:ok, %RustQ.NativeDescriptor{ref: %RustQ.NativeRef{target: "Canvas", member: member}}} ->
+          {:ok,
+           %RustQ.Native.Descriptor{ref: %RustQ.Native.Ref{target: "Canvas", member: member}}} ->
             if canvas_call?(generated_calls, member), do: [], else: [{name, member}]
 
           :error ->
@@ -27,12 +28,12 @@ defmodule Skia.Codegen.NativeDriftTest do
       |> Enum.flat_map(fn {name, spec} ->
         spec
         |> Keyword.get(:expands_to, [])
-        |> Enum.reject(fn %RustQ.NativeDescriptor{
-                            ref: %RustQ.NativeRef{target: "Canvas", member: member}
+        |> Enum.reject(fn %RustQ.Native.Descriptor{
+                            ref: %RustQ.Native.Ref{target: "Canvas", member: member}
                           } ->
           canvas_call?(generated_calls, member)
         end)
-        |> Enum.map(fn %RustQ.NativeDescriptor{ref: %RustQ.NativeRef{member: member}} ->
+        |> Enum.map(fn %RustQ.Native.Descriptor{ref: %RustQ.Native.Ref{member: member}} ->
           {name, member}
         end)
       end)

@@ -24,7 +24,7 @@ defmodule Skia.Codegen.ArchitectureTest do
   test "SkiaSafe enum lookup uses RustQ package indexes instead of registry globs" do
     source = File.read!("lib/skia/codegen/skia_safe.ex")
 
-    assert source =~ "RustQ.NativeEnumDescriptor"
+    assert source =~ "RustQ.Native.EnumDescriptor"
     assert source =~ "RustQ.Syn.Index.cached_package"
     refute source =~ "RustQ.Cargo"
     refute source =~ ".cargo/registry"
