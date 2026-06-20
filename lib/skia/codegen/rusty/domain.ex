@@ -5,10 +5,27 @@ defmodule Skia.Codegen.Rusty.Domain do
     commands_module = opts |> Keyword.fetch!(:from) |> Macro.expand(__CALLER__)
     commands = opts |> Keyword.fetch!(:commands) |> expand_value!(__CALLER__)
     helpers = opts |> Keyword.get(:helpers, []) |> expand_value!(__CALLER__)
+
+    rust_sources =
+      opts
+      |> Keyword.get(:rust_sources, ["native/skia_native/src/lib.rs"])
+      |> expand_value!(__CALLER__)
+
+    callable_modules =
+      opts
+      |> Keyword.get(:callable_modules, [
+        Skia.Codegen.Rusty.PaintSupport,
+        Skia.Codegen.Rusty.StyleHelpers
+      ])
+      |> expand_value!(__CALLER__)
+
     handlers = handler_defs(commands_module, only: commands)
 
     quote do
-      use RustQ.Meta
+      use RustQ.Meta,
+        rust_sources: unquote(Macro.escape(rust_sources)),
+        callable_modules: unquote(Macro.escape(callable_modules))
+
       import Skia.Codegen.Rusty.Domain
 
       @commands unquote(commands)
