@@ -67,7 +67,7 @@ fn runtime_uniform_data(
         let byte_len = values.len() * 4;
         if offset + byte_len > bytes.len() || byte_len > uniform.size_in_bytes() {
             return Err(rustler::Error::BadArg);
-        } else {};
+        }
         for (index, value) in values.into_iter().enumerate() {
             let start = offset + index * 4;
             let encoded = (value as f32).to_ne_bytes();
@@ -83,7 +83,7 @@ fn runtime_uniform_data(
         let byte_len = values.len() * 4;
         if offset + byte_len > bytes.len() || byte_len > uniform.size_in_bytes() {
             return Err(rustler::Error::BadArg);
-        } else {};
+        }
         for (index, value) in values.into_iter().enumerate() {
             let start = offset + index * 4;
             let encoded = (value as i32).to_ne_bytes();
@@ -153,7 +153,7 @@ fn decode_paint<'a>(term: Term<'a>) -> NifResult<Paint> {
                     None => {}
                 };
                 return Ok(paint);
-            } else {};
+            }
         }
         Err(_reason) => {}
     };
@@ -193,7 +193,7 @@ fn decode_paint<'a>(term: Term<'a>) -> NifResult<Paint> {
                     None => {}
                 };
                 return Ok(paint);
-            } else {};
+            }
         }
         Err(_reason) => {}
     };
@@ -204,7 +204,7 @@ fn decode_paint<'a>(term: Term<'a>) -> NifResult<Paint> {
                 paint.set_anti_alias(true).set_style(PaintStyle::Fill);
                 paint.set_shader(skia_safe::shaders::color(decode_color(color_term)?));
                 return Ok(paint);
-            } else {};
+            }
         }
         Err(_reason) => {}
     };
@@ -231,7 +231,7 @@ fn decode_paint<'a>(term: Term<'a>) -> NifResult<Paint> {
                     None => {}
                 };
                 return Ok(paint);
-            } else {};
+            }
         }
         Err(_reason) => {}
     };
@@ -268,7 +268,7 @@ fn decode_paint<'a>(term: Term<'a>) -> NifResult<Paint> {
                     None => {}
                 };
                 return Ok(paint);
-            } else {};
+            }
         }
         Err(_reason) => {}
     };
@@ -303,7 +303,7 @@ fn decode_paint<'a>(term: Term<'a>) -> NifResult<Paint> {
                             .ok_or(rustler::Error::BadArg)?,
                     );
                 return Ok(paint);
-            } else {};
+            }
         }
         Err(_reason) => {}
     };
@@ -324,7 +324,7 @@ fn decode_paint<'a>(term: Term<'a>) -> NifResult<Paint> {
                     None => {}
                 };
                 return Ok(paint);
-            } else {};
+            }
         }
         Err(_reason) => {}
     };
@@ -352,7 +352,7 @@ fn decode_paint<'a>(term: Term<'a>) -> NifResult<Paint> {
                             ),
                     );
                 return Ok(paint);
-            } else {};
+            }
         }
         Err(_reason) => {}
     };
@@ -369,7 +369,7 @@ fn decode_color_filter<'a>(term: Term<'a>) -> NifResult<ColorFilter> {
                         )
                         .ok_or(rustler::Error::BadArg)?,
                 );
-            } else {};
+            }
         }
         Err(_reason) => {}
     };
@@ -409,7 +409,7 @@ fn decode_color_filter<'a>(term: Term<'a>) -> NifResult<ColorFilter> {
                     color_filters::Clamp::No
                 };
                 return Ok(color_filters::matrix_row_major(&values, clamp));
-            } else {};
+            }
         }
         Err(_reason) => {}
     };
@@ -423,7 +423,7 @@ fn decode_color_filter<'a>(term: Term<'a>) -> NifResult<ColorFilter> {
                         )
                         .ok_or(rustler::Error::BadArg)?,
                 );
-            } else {};
+            }
         }
         Err(_reason) => {}
     };
@@ -442,7 +442,7 @@ fn decode_image_filter<'a>(term: Term<'a>) -> NifResult<skia_safe::ImageFilter> 
                         )
                         .ok_or(rustler::Error::BadArg)?,
                 );
-            } else {};
+            }
         }
         Err(_reason) => {}
     };
@@ -456,7 +456,7 @@ fn decode_image_filter<'a>(term: Term<'a>) -> NifResult<skia_safe::ImageFilter> 
                         )
                         .ok_or(rustler::Error::BadArg)?,
                 );
-            } else {};
+            }
         }
         Err(_reason) => {}
     };
@@ -471,7 +471,7 @@ fn decode_image_filter<'a>(term: Term<'a>) -> NifResult<skia_safe::ImageFilter> 
                         )
                         .ok_or(rustler::Error::BadArg)?,
                 );
-            } else {};
+            }
         }
         Err(_reason) => {}
     };
@@ -502,7 +502,7 @@ fn decode_image_filter<'a>(term: Term<'a>) -> NifResult<skia_safe::ImageFilter> 
                     )
                 };
                 return Ok(filter.ok_or(rustler::Error::BadArg)?);
-            } else {};
+            }
         }
         Err(_reason) => {}
     };
@@ -517,7 +517,7 @@ fn decode_image_filter<'a>(term: Term<'a>) -> NifResult<skia_safe::ImageFilter> 
                         )
                         .ok_or(rustler::Error::BadArg)?,
                 );
-            } else {};
+            }
         }
         Err(_reason) => {}
     };
@@ -528,7 +528,7 @@ fn decode_image_filter<'a>(term: Term<'a>) -> NifResult<skia_safe::ImageFilter> 
                     image_filters::shader(decode_shader(shader_term)?, None)
                         .ok_or(rustler::Error::BadArg)?,
                 );
-            } else {};
+            }
         }
         Err(_reason) => {}
     };
@@ -551,7 +551,7 @@ fn decode_image_filter<'a>(term: Term<'a>) -> NifResult<skia_safe::ImageFilter> 
                         )
                         .ok_or(rustler::Error::BadArg)?,
                 );
-            } else {};
+            }
         }
         Err(_reason) => {}
     };
@@ -584,7 +584,7 @@ fn decode_image_filter<'a>(term: Term<'a>) -> NifResult<skia_safe::ImageFilter> 
                         )
                         .ok_or(rustler::Error::BadArg)?,
                 );
-            } else {};
+            }
         }
         Err(_reason) => {}
     };
@@ -599,7 +599,7 @@ fn decode_image_filter<'a>(term: Term<'a>) -> NifResult<skia_safe::ImageFilter> 
                         )
                         .ok_or(rustler::Error::BadArg)?,
                 );
-            } else {};
+            }
         }
         Err(_reason) => {}
     };
@@ -614,7 +614,7 @@ fn decode_image_filter<'a>(term: Term<'a>) -> NifResult<skia_safe::ImageFilter> 
                     image_filters::merge(mapped_filters, None)
                         .ok_or(rustler::Error::BadArg)?,
                 );
-            } else {};
+            }
         }
         Err(_reason) => {}
     };
@@ -641,7 +641,7 @@ fn decode_image_filter<'a>(term: Term<'a>) -> NifResult<skia_safe::ImageFilter> 
                         )
                         .ok_or(rustler::Error::BadArg)?,
                 );
-            } else {};
+            }
         }
         Err(_reason) => {}
     };
@@ -658,7 +658,7 @@ fn decode_image_filter<'a>(term: Term<'a>) -> NifResult<skia_safe::ImageFilter> 
                             )
                             .ok_or(rustler::Error::BadArg)?,
                     );
-                } else {};
+                }
                 if op == atoms::erode() {
                     return Ok(
                         image_filters::erode(
@@ -668,9 +668,9 @@ fn decode_image_filter<'a>(term: Term<'a>) -> NifResult<skia_safe::ImageFilter> 
                             )
                             .ok_or(rustler::Error::BadArg)?,
                     );
-                } else {};
+                }
                 return Err(rustler::Error::BadArg);
-            } else {};
+            }
         }
         Err(_reason) => {}
     };
@@ -692,7 +692,7 @@ fn decode_mask_filter<'a>(term: Term<'a>) -> NifResult<MaskFilter> {
                         )
                         .ok_or(rustler::Error::BadArg)?,
                 );
-            } else {};
+            }
         }
         Err(_reason) => {}
     };
@@ -710,7 +710,7 @@ fn decode_path_effect<'a>(term: Term<'a>) -> NifResult<PathEffect> {
                     PathEffect::dash(mapped_intervals.as_slice(), phase as f32)
                         .ok_or(rustler::Error::BadArg)?,
                 );
-            } else {};
+            }
         }
         Err(_reason) => {}
     };
@@ -720,7 +720,7 @@ fn decode_path_effect<'a>(term: Term<'a>) -> NifResult<PathEffect> {
                 return Ok(
                     PathEffect::corner_path(radius as f32).ok_or(rustler::Error::BadArg)?,
                 );
-            } else {};
+            }
         }
         Err(_reason) => {}
     };
@@ -736,7 +736,7 @@ fn decode_path_effect<'a>(term: Term<'a>) -> NifResult<PathEffect> {
                             )
                             .ok_or(rustler::Error::BadArg)?,
                     );
-                } else {};
+                }
                 if mode == atoms::normal() {
                     return Ok(
                         PathEffect::trim(
@@ -746,9 +746,9 @@ fn decode_path_effect<'a>(term: Term<'a>) -> NifResult<PathEffect> {
                             )
                             .ok_or(rustler::Error::BadArg)?,
                     );
-                } else {};
+                }
                 return Err(rustler::Error::BadArg);
-            } else {};
+            }
         }
         Err(_reason) => {}
     };
@@ -769,7 +769,7 @@ fn decode_path_effect<'a>(term: Term<'a>) -> NifResult<PathEffect> {
                     PathEffect::discrete(segment_length as f32, deviation as f32, seed)
                         .ok_or(rustler::Error::BadArg)?,
                 );
-            } else {};
+            }
         }
         Err(_reason) => {}
     };
@@ -785,7 +785,7 @@ fn decode_path_effect<'a>(term: Term<'a>) -> NifResult<PathEffect> {
                         )
                         .ok_or(rustler::Error::BadArg)?,
                 );
-            } else {};
+            }
         }
         Err(_reason) => {}
     };
@@ -796,7 +796,7 @@ fn decode_path_effect<'a>(term: Term<'a>) -> NifResult<PathEffect> {
                     PathEffect::line_2d(width as f32, &matrix_from_term(matrix_term)?)
                         .ok_or(rustler::Error::BadArg)?,
                 );
-            } else {};
+            }
         }
         Err(_reason) => {}
     };
@@ -806,7 +806,7 @@ fn decode_path_effect<'a>(term: Term<'a>) -> NifResult<PathEffect> {
                 return Ok(
                     PathEffect::path_2d(&matrix_from_term(first)?, &build_path(second)?),
                 );
-            } else {};
+            }
             if tag == atoms::compose_path_effect() {
                 return Ok(
                     PathEffect::compose(
@@ -814,7 +814,7 @@ fn decode_path_effect<'a>(term: Term<'a>) -> NifResult<PathEffect> {
                         decode_path_effect(second)?,
                     ),
                 );
-            } else {};
+            }
             if tag == atoms::sum_path_effect() {
                 return Ok(
                     PathEffect::sum(
@@ -822,7 +822,7 @@ fn decode_path_effect<'a>(term: Term<'a>) -> NifResult<PathEffect> {
                         decode_path_effect(second)?,
                     ),
                 );
-            } else {};
+            }
         }
         Err(_reason) => {}
     };
@@ -838,7 +838,7 @@ fn decode_sampling_options<'a>(term: Term<'a>) -> NifResult<SamplingOptions> {
                         generated_enums::decode_mipmap_mode(mipmap)?,
                     ),
                 );
-            } else {};
+            }
         }
         Err(_reason) => {}
     };
@@ -870,12 +870,12 @@ fn decode_sampling_options<'a>(term: Term<'a>) -> NifResult<SamplingOptions> {
                     }
                 };
                 return Ok(SamplingOptions::from(cubic));
-            } else {};
+            }
             if tag == atoms::sampling_aniso() {
                 return Ok(
                     SamplingOptions::from_aniso(cubic_term.decode::<i64>()? as i32),
                 );
-            } else {};
+            }
         }
         Err(_reason) => {}
     };
@@ -890,7 +890,7 @@ fn decode_color<'a>(term: Term<'a>) -> NifResult<Color> {
                 let blue = (rgba >> 8 & 255) as u8;
                 let alpha = (rgba & 255) as u8;
                 return Ok(Color::from_argb(alpha, red, green, blue));
-            } else {};
+            }
         }
         Err(_reason) => {}
     };

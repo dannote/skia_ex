@@ -100,7 +100,7 @@ fn draw_path_outline_impl<'a>(
         == false
     {
         return Ok(());
-    } else {};
+    }
     let mut outline = builder.detach();
     apply_fill_rule(&mut outline, raw_opts)?;
     match opts.fill {
