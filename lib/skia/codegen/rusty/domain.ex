@@ -19,11 +19,19 @@ defmodule Skia.Codegen.Rusty.Domain do
       ])
       |> expand_value!(__CALLER__)
 
+    rust_packages =
+      opts
+      |> Keyword.get(:rust_packages, [
+        {"skia-safe", manifest_path: "native/skia_native/Cargo.toml"}
+      ])
+      |> expand_value!(__CALLER__)
+
     handlers = handler_defs(commands_module, only: commands)
 
     quote do
       use RustQ.Meta,
         rust_sources: unquote(Macro.escape(rust_sources)),
+        rust_packages: unquote(Macro.escape(rust_packages)),
         callable_modules: unquote(Macro.escape(callable_modules))
 
       import Skia.Codegen.Rusty.Domain

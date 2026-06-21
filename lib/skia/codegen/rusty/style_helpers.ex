@@ -1,7 +1,9 @@
 defmodule Skia.Codegen.Rusty.StyleHelpers do
   @moduledoc false
 
-  use RustQ.Meta
+  use RustQ.Meta,
+    rust_sources: ["native/skia_native/src/generated_enums.rs"],
+    rust_packages: [{"skia-safe", manifest_path: "native/skia_native/Cargo.toml"}]
 
   alias RustQ.Type, as: R
 
@@ -11,7 +13,7 @@ defmodule Skia.Codegen.Rusty.StyleHelpers do
     case opt_term(opts, Atoms.blend_mode()) do
       {:some, term} ->
         atom = decode_as!(term, R.atom())
-        paint.set_blend_mode(unwrap!(GeneratedEnums.decode_blend_mode(atom)))
+        paint.set_blend_mode(GeneratedEnums.decode_blend_mode(atom))
 
       :none ->
         :ok
