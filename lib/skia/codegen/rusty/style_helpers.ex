@@ -29,7 +29,7 @@ defmodule Skia.Codegen.Rusty.StyleHelpers do
     case opt_term(opts, Atoms.stroke_cap()) do
       {:some, term} ->
         atom = decode_as!(term, R.atom())
-        paint.set_stroke_cap(unwrap!(GeneratedEnums.decode_stroke_cap(atom)))
+        paint.set_stroke_cap(GeneratedEnums.decode_stroke_cap(atom))
 
       :none ->
         :ok
@@ -38,7 +38,7 @@ defmodule Skia.Codegen.Rusty.StyleHelpers do
     case opt_term(opts, Atoms.stroke_join()) do
       {:some, term} ->
         atom = decode_as!(term, R.atom())
-        paint.set_stroke_join(unwrap!(GeneratedEnums.decode_stroke_join(atom)))
+        paint.set_stroke_join(GeneratedEnums.decode_stroke_join(atom))
 
       :none ->
         :ok
@@ -58,7 +58,7 @@ defmodule Skia.Codegen.Rusty.StyleHelpers do
     case opt_term(opts, Atoms.fill_rule()) do
       {:some, term} ->
         atom = decode_as!(term, R.atom())
-        path.set_fill_type(unwrap!(GeneratedEnums.decode_fill_rule(atom)))
+        path.set_fill_type(GeneratedEnums.decode_fill_rule(atom))
 
       :none ->
         :ok
