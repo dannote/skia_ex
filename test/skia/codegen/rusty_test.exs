@@ -107,6 +107,12 @@ defmodule Skia.Codegen.RustyTest do
     assert source =~ "canvas.draw_picture(&picture, None, Some(&paint));"
   end
 
+  test "paint support infers wrapper propagation for optional image filters" do
+    source = Skia.Codegen.generated_paint()
+
+    assert source =~ "Ok(Some(decode_image_filter(term)?))"
+  end
+
   test "style helpers infer propagation from narrow skia-safe source metadata" do
     source = Skia.Codegen.generated_style_helpers()
 

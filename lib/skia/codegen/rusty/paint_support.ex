@@ -818,11 +818,11 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
         if atom == Atoms.nil() do
           {:ok, none()}
         else
-          {:ok, some(unwrap!(decode_image_filter(term)))}
+          {:ok, some(decode_image_filter(term))}
         end
 
       {:error, _reason} ->
-        {:ok, some(unwrap!(decode_image_filter(term)))}
+        {:ok, some(decode_image_filter(term))}
     end
   end
 
