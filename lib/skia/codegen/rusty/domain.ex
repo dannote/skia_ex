@@ -21,9 +21,7 @@ defmodule Skia.Codegen.Rusty.Domain do
 
     rust_packages =
       opts
-      |> Keyword.get(:rust_packages, [
-        {"skia-safe", manifest_path: "native/skia_native/Cargo.toml"}
-      ])
+      |> Keyword.get(:rust_packages, [])
       |> expand_value!(__CALLER__)
 
     handlers = handler_defs(commands_module, only: commands)
