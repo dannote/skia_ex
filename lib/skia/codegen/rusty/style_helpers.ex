@@ -69,7 +69,7 @@ defmodule Skia.Codegen.Rusty.StyleHelpers do
 
   @spec decode_clip_op(R.atom()) :: R.nif_result(R.option(ClipOp.t()))
   defrust decode_clip_op(value) do
-    {:ok, some(unwrap!(GeneratedEnums.decode_clip_op(value)))}
+    {:ok, some(GeneratedEnums.decode_clip_op(value))}
   end
 
   @spec apply_paint_effects(R.mut_ref(Paint.t()), R.slice({R.atom(), R.term()})) ::
