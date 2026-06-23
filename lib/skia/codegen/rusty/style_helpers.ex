@@ -1,9 +1,9 @@
 defmodule Skia.Codegen.Rusty.StyleHelpers do
   @moduledoc false
 
-  use RustQ.Meta,
-    rust_sources: ["native/skia_native/src/generated_enums.rs"],
-    rust_packages: [{"skia-safe", manifest_path: "native/skia_native/Cargo.toml"}]
+  use Skia.Codegen.Rusty.SkiaSafeSources,
+    files: [:paint, :path],
+    rust_sources: ["native/skia_native/src/generated_enums.rs"]
 
   alias RustQ.Type, as: R
 
