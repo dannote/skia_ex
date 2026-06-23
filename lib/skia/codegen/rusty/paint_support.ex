@@ -321,9 +321,9 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
       {:ok, {tag, image_term, tile_x, tile_y, sampling_term, matrix_term}} ->
         if tag == Atoms.image_shader() do
           image = unwrap!(image_from_term(image_term))
-          tile_x = unwrap!(GeneratedEnums.decode_tile_mode(tile_x))
-          tile_y = unwrap!(GeneratedEnums.decode_tile_mode(tile_y))
-          sampling = unwrap!(decode_sampling_options(sampling_term))
+          tile_x = GeneratedEnums.decode_tile_mode(tile_x)
+          tile_y = GeneratedEnums.decode_tile_mode(tile_y)
+          sampling = decode_sampling_options(sampling_term)
           matrix = optional_matrix_from_term(matrix_term)
           paint = Paint.default()
           paint.set_anti_alias(true).set_style(PaintStyle.Fill)
@@ -344,11 +344,11 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
       {:ok, {tag, picture_term, tile_x, tile_y, filter_mode, matrix_term, tile_rect_term}} ->
         if tag == Atoms.picture_shader() do
           picture = unwrap!(picture_from_term(picture_term))
-          tile_x = unwrap!(GeneratedEnums.decode_tile_mode(tile_x))
-          tile_y = unwrap!(GeneratedEnums.decode_tile_mode(tile_y))
-          filter_mode = unwrap!(GeneratedEnums.decode_sampling(filter_mode))
+          tile_x = GeneratedEnums.decode_tile_mode(tile_x)
+          tile_y = GeneratedEnums.decode_tile_mode(tile_y)
+          filter_mode = GeneratedEnums.decode_sampling(filter_mode)
           matrix = optional_matrix_from_term(matrix_term)
-          tile_rect = unwrap!(optional_rect_from_term(tile_rect_term))
+          tile_rect = optional_rect_from_term(tile_rect_term)
           paint = Paint.default()
           paint.set_anti_alias(true).set_style(PaintStyle.Fill)
 
