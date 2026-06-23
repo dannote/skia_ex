@@ -1,7 +1,7 @@
 defmodule Skia.Codegen.Rusty.PaintSupport do
   @moduledoc false
 
-  use RustQ.Meta
+  use RustQ.Meta, rust_sources: ["native/skia_native/src/lib.rs"]
 
   alias RustQ.Type, as: R
 
@@ -32,11 +32,11 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
         if atom == Atoms.nil() do
           {:ok, none()}
         else
-          {:ok, some(unwrap!(matrix_from_term(matrix_term)))}
+          {:ok, some(matrix_from_term(matrix_term))}
         end
 
       {:error, _reason} ->
-        {:ok, some(unwrap!(matrix_from_term(matrix_term)))}
+        {:ok, some(matrix_from_term(matrix_term))}
     end
   end
 
@@ -47,11 +47,11 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
         if atom == Atoms.nil() do
           {:ok, none()}
         else
-          {:ok, some(unwrap!(rect_from_term(rect_term)))}
+          {:ok, some(rect_from_term(rect_term))}
         end
 
       {:error, _reason} ->
-        {:ok, some(unwrap!(rect_from_term(rect_term)))}
+        {:ok, some(rect_from_term(rect_term))}
     end
   end
 
