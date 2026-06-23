@@ -19,7 +19,7 @@ defmodule Skia.Codegen.Rusty.StyleHelpers do
         :ok
     end
 
-    unwrap!(apply_paint_effects(paint, opts))
+    apply_paint_effects(paint, opts)
     :ok
   end
 

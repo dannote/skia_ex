@@ -114,6 +114,7 @@ defmodule Skia.Codegen.RustyTest do
     assert source =~ "paint.set_stroke_cap(generated_enums::decode_stroke_cap(atom)?);"
     assert source =~ "paint.set_stroke_join(generated_enums::decode_stroke_join(atom)?);"
     assert source =~ "path.set_fill_type(generated_enums::decode_fill_rule(atom)?);"
+    assert source =~ "apply_paint_effects(paint, opts)?;"
   end
 
   test "path impls are generated from Rusty Elixir" do
