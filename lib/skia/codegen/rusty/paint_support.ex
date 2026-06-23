@@ -1,7 +1,9 @@
 defmodule Skia.Codegen.Rusty.PaintSupport do
   @moduledoc false
 
-  use RustQ.Meta, rust_sources: ["native/skia_native/src/lib.rs"]
+  use Skia.Codegen.Rusty.SkiaSafeSources,
+    files: [:gradient_shader],
+    rust_sources: ["native/skia_native/src/lib.rs", "native/skia_native/src/generated_enums.rs"]
 
   alias RustQ.Type, as: R
 
@@ -148,8 +150,8 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
       {:ok, {tag, {from_x, from_y}, {to_x, to_y}, stops, tile_mode, matrix_term}} ->
         if tag == Atoms.linear_gradient() do
           {colors, positions} = decode_gradient_stops(stops)
-          tile_mode = unwrap!(GeneratedEnums.decode_tile_mode(tile_mode))
-          matrix = unwrap!(optional_matrix_from_term(matrix_term))
+          tile_mode = GeneratedEnums.decode_tile_mode(tile_mode)
+          matrix = optional_matrix_from_term(matrix_term)
           paint = Paint.default()
           paint.set_anti_alias(true).set_style(PaintStyle.Fill)
 
@@ -182,8 +184,8 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
             decode_as!(gradient_opts, {R.vec(R.term()), R.atom(), R.term()})
 
           {colors, positions} = decode_gradient_stops(stops)
-          tile_mode = unwrap!(GeneratedEnums.decode_tile_mode(tile_mode))
-          matrix = unwrap!(optional_matrix_from_term(matrix_term))
+          tile_mode = GeneratedEnums.decode_tile_mode(tile_mode)
+          matrix = optional_matrix_from_term(matrix_term)
           paint = Paint.default()
           paint.set_anti_alias(true).set_style(PaintStyle.Fill)
 
@@ -229,8 +231,8 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
       {:ok, {tag, {center_x, center_y}, radius, stops, tile_mode, matrix_term}} ->
         if tag == Atoms.radial_gradient() do
           {colors, positions} = decode_gradient_stops(stops)
-          tile_mode = unwrap!(GeneratedEnums.decode_tile_mode(tile_mode))
-          matrix = unwrap!(optional_matrix_from_term(matrix_term))
+          tile_mode = GeneratedEnums.decode_tile_mode(tile_mode)
+          matrix = optional_matrix_from_term(matrix_term)
           paint = Paint.default()
           paint.set_anti_alias(true).set_style(PaintStyle.Fill)
 
@@ -262,8 +264,8 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
        {tag, {center_x, center_y}, start_degrees, end_degrees, stops, tile_mode, matrix_term}} ->
         if tag == Atoms.sweep_gradient() do
           {colors, positions} = decode_gradient_stops(stops)
-          tile_mode = unwrap!(GeneratedEnums.decode_tile_mode(tile_mode))
-          matrix = unwrap!(optional_matrix_from_term(matrix_term))
+          tile_mode = GeneratedEnums.decode_tile_mode(tile_mode)
+          matrix = optional_matrix_from_term(matrix_term)
           paint = Paint.default()
           paint.set_anti_alias(true).set_style(PaintStyle.Fill)
 
