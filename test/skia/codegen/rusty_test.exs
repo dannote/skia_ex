@@ -107,6 +107,15 @@ defmodule Skia.Codegen.RustyTest do
     assert source =~ "canvas.draw_picture(&picture, None, Some(&paint));"
   end
 
+  test "style helpers infer propagation from narrow skia-safe source metadata" do
+    source = Skia.Codegen.generated_style_helpers()
+
+    assert source =~ "paint.set_blend_mode(generated_enums::decode_blend_mode(atom)?);"
+    assert source =~ "paint.set_stroke_cap(generated_enums::decode_stroke_cap(atom)?);"
+    assert source =~ "paint.set_stroke_join(generated_enums::decode_stroke_join(atom)?);"
+    assert source =~ "path.set_fill_type(generated_enums::decode_fill_rule(atom)?);"
+  end
+
   test "path impls are generated from Rusty Elixir" do
     source = Skia.Codegen.generated_draw_paths()
 
