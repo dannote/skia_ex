@@ -147,7 +147,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
          ) do
       {:ok, {tag, {from_x, from_y}, {to_x, to_y}, stops, tile_mode, matrix_term}} ->
         if tag == Atoms.linear_gradient() do
-          {colors, positions} = unwrap!(decode_gradient_stops(stops))
+          {colors, positions} = decode_gradient_stops(stops)
           tile_mode = unwrap!(GeneratedEnums.decode_tile_mode(tile_mode))
           matrix = unwrap!(optional_matrix_from_term(matrix_term))
           paint = Paint.default()

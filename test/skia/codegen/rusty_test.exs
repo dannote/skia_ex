@@ -110,6 +110,7 @@ defmodule Skia.Codegen.RustyTest do
   test "paint support infers wrapper propagation for optional helpers" do
     source = Skia.Codegen.generated_paint()
 
+    assert source =~ "let (colors, positions) = decode_gradient_stops(stops)?;"
     assert source =~ "Ok(Some(matrix_from_term(matrix_term)?))"
     assert source =~ "Ok(Some(rect_from_term(rect_term)?))"
     assert source =~ "Ok(Some(decode_image_filter(term)?))"
