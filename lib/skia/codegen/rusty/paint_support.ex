@@ -2,7 +2,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
   @moduledoc false
 
   use Skia.Codegen.Rusty.SkiaSafeSources,
-    files: [:gradient_shader],
+    files: [:gradient_shader, :image, :picture, :runtime_effect],
     rust_sources: ["native/skia_native/src/lib.rs", "native/skia_native/src/generated_enums.rs"]
 
   alias RustQ.Type, as: R
@@ -300,7 +300,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
           effect = unwrap!(runtime_effect_from_term(effect_term))
           uniforms = unwrap!(runtime_uniform_data(ref(effect), float_uniforms, int_uniforms))
           children = unwrap!(runtime_children(ref(effect), children))
-          matrix = unwrap!(optional_matrix_from_term(matrix_term))
+          matrix = optional_matrix_from_term(matrix_term)
           paint = Paint.default()
           paint.set_anti_alias(true).set_style(PaintStyle.Fill)
 
@@ -324,7 +324,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
           tile_x = unwrap!(GeneratedEnums.decode_tile_mode(tile_x))
           tile_y = unwrap!(GeneratedEnums.decode_tile_mode(tile_y))
           sampling = unwrap!(decode_sampling_options(sampling_term))
-          matrix = unwrap!(optional_matrix_from_term(matrix_term))
+          matrix = optional_matrix_from_term(matrix_term)
           paint = Paint.default()
           paint.set_anti_alias(true).set_style(PaintStyle.Fill)
 
@@ -347,7 +347,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
           tile_x = unwrap!(GeneratedEnums.decode_tile_mode(tile_x))
           tile_y = unwrap!(GeneratedEnums.decode_tile_mode(tile_y))
           filter_mode = unwrap!(GeneratedEnums.decode_sampling(filter_mode))
-          matrix = unwrap!(optional_matrix_from_term(matrix_term))
+          matrix = optional_matrix_from_term(matrix_term)
           tile_rect = unwrap!(optional_rect_from_term(tile_rect_term))
           paint = Paint.default()
           paint.set_anti_alias(true).set_style(PaintStyle.Fill)

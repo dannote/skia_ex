@@ -9,8 +9,11 @@ defmodule Skia.Codegen.Rusty.SkiaSafeSources do
 
   @source_files %{
     gradient_shader: ["effects/gradient_shader.rs"],
+    image: ["core/image.rs"],
+    picture: ["core/picture.rs"],
     paint: ["core.rs", "core/paint.rs"],
-    path: ["core/path.rs"]
+    path: ["core/path.rs"],
+    runtime_effect: ["effects/runtime_effect.rs"]
   }
 
   defmacro __using__(opts) do
