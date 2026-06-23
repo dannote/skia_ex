@@ -2,7 +2,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
   @moduledoc false
 
   use Skia.Codegen.Rusty.SkiaSafeSources,
-    files: [:gradient_shader, :image, :picture, :runtime_effect],
+    files: [:gradient_shader, :image, :image_filters, :picture, :runtime_effect],
     rust_sources: ["native/skia_native/src/lib.rs", "native/skia_native/src/generated_enums.rs"]
 
   alias RustQ.Type, as: R
@@ -560,7 +560,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
              unwrap!(
                ImageFilters.offset(
                  {cast(x, :f32), cast(y, :f32)},
-                 unwrap!(optional_image_filter_from_term(input_term)),
+                 optional_image_filter_from_term(input_term),
                  none()
                ).ok_or(badarg())
              )}
@@ -576,7 +576,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
         if tag == Atoms.drop_shadow_filter() do
           {input_term, shadow_only} = decode_as!(shadow_opts, {R.term(), R.bool()})
           color = unwrap!(decode_color(color_term))
-          input = unwrap!(optional_image_filter_from_term(input_term))
+          input = optional_image_filter_from_term(input_term)
 
           filter =
             if shadow_only do
@@ -614,7 +614,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
              unwrap!(
                ImageFilters.color_filter(
                  unwrap!(decode_color_filter(filter_term)),
-                 unwrap!(optional_image_filter_from_term(input_term)),
+                 optional_image_filter_from_term(input_term),
                  none()
                ).ok_or(badarg())
              )}
@@ -659,7 +659,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
                  cast(zoom, :f32),
                  cast(inset, :f32),
                  unwrap!(decode_sampling_options(sampling_term)),
-                 unwrap!(optional_image_filter_from_term(input_term)),
+                 optional_image_filter_from_term(input_term),
                  none()
                ).ok_or(badarg())
              )}
@@ -696,7 +696,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
                  {cast(offset_x, :i32), cast(offset_y, :i32)},
                  unwrap!(GeneratedEnums.decode_tile_mode(tile)),
                  convolve_alpha,
-                 unwrap!(optional_image_filter_from_term(input_term)),
+                 optional_image_filter_from_term(input_term),
                  none()
                ).ok_or(badarg())
              )}
@@ -716,7 +716,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
                ImageFilters.matrix_transform(
                  ref(unwrap!(matrix_from_term(matrix_term))),
                  unwrap!(decode_sampling_options(sampling_term)),
-                 unwrap!(optional_image_filter_from_term(input_term))
+                 optional_image_filter_from_term(input_term)
                ).ok_or(badarg())
              )}
           )
@@ -765,7 +765,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
                    cast(dst_w, :f32),
                    cast(dst_h, :f32)
                  ),
-                 unwrap!(optional_image_filter_from_term(input_term))
+                 optional_image_filter_from_term(input_term)
                ).ok_or(badarg())
              )}
           )
@@ -778,7 +778,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
     case decode_as(term, {R.atom(), R.atom(), R.f64(), R.f64(), R.term()}) do
       {:ok, {tag, op, radius_x, radius_y, input_term}} ->
         if tag == Atoms.morphology_filter() do
-          input = unwrap!(optional_image_filter_from_term(input_term))
+          input = optional_image_filter_from_term(input_term)
 
           if op == Atoms.dilate() do
             return!(

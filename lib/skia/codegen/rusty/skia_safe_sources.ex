@@ -10,6 +10,7 @@ defmodule Skia.Codegen.Rusty.SkiaSafeSources do
   @source_files %{
     gradient_shader: ["effects/gradient_shader.rs"],
     image: ["core/image.rs"],
+    image_filters: ["effects/image_filters.rs"],
     picture: ["core/picture.rs"],
     paint: ["core.rs", "core/paint.rs"],
     path: ["core/path.rs"],
