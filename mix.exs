@@ -46,7 +46,7 @@ defmodule Skia.MixProject do
       {:rustler, "~> 0.38.0", optional: true, runtime: false},
       {:rustq,
        github: "dannote/rustq",
-       branch: "semantic-escapes-ast",
+       branch: "master",
        only: [:dev, :test],
        runtime: false},
       {:vibe_kit, "~> 0.1"},
