@@ -375,7 +375,7 @@ defmodule Skia.Codegen.Rusty.Paths do
         stroke_paint_value =
           unwrap!(
             stroke_paint(
-              unwrap!(decode_color(stroke)),
+              decode_color(stroke),
               opts.stroke_width.unwrap_or(1.0),
               raw_opts
             )
@@ -418,7 +418,7 @@ defmodule Skia.Codegen.Rusty.Paths do
         stroke_paint_value =
           unwrap!(
             stroke_paint(
-              unwrap!(decode_color(stroke)),
+              decode_color(stroke),
               opts.stroke_width.unwrap_or(1.0),
               raw_opts
             )

@@ -203,16 +203,16 @@ fn build_compact_path<'a>(segments: Vec<Term<'a>>) -> NifResult<skia_safe::Path>
             Ok((op, x, y)) => {
                 let point = (x as f32, y as f32);
                 match op {
-                    1 => {
+                    1i64 => {
                         builder.move_to(point);
                     }
-                    2 => {
+                    2i64 => {
                         builder.line_to(point);
                     }
-                    6 => {
+                    6i64 => {
                         builder.r_move_to(point);
                     }
-                    7 => {
+                    7i64 => {
                         builder.r_line_to(point);
                     }
                     _ => {}
@@ -225,10 +225,10 @@ fn build_compact_path<'a>(segments: Vec<Term<'a>>) -> NifResult<skia_safe::Path>
                 let control = (cx as f32, cy as f32);
                 let point = (x as f32, y as f32);
                 match op {
-                    3 => {
+                    3i64 => {
                         builder.quad_to(control, point);
                     }
-                    8 => {
+                    8i64 => {
                         builder.r_quad_to(control, point);
                     }
                     _ => {}
@@ -241,10 +241,10 @@ fn build_compact_path<'a>(segments: Vec<Term<'a>>) -> NifResult<skia_safe::Path>
                 let control = (cx as f32, cy as f32);
                 let point = (x as f32, y as f32);
                 match op {
-                    4 => {
+                    4i64 => {
                         builder.conic_to(control, point, weight as f32);
                     }
-                    9 => {
+                    9i64 => {
                         builder.r_conic_to(control, point, weight as f32);
                     }
                     _ => {}
@@ -258,13 +258,13 @@ fn build_compact_path<'a>(segments: Vec<Term<'a>>) -> NifResult<skia_safe::Path>
                 let control_2 = (c2x as f32, c2y as f32);
                 let point = (x as f32, y as f32);
                 match op {
-                    5 => {
+                    5i64 => {
                         builder.cubic_to(control_1, control_2, point);
                     }
-                    10 => {
+                    10i64 => {
                         builder.r_cubic_to(control_1, control_2, point);
                     }
-                    13 => {
+                    13i64 => {
                         builder
                             .add_rrect(
                                 RRect::new_rect_xy(

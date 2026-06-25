@@ -2,7 +2,7 @@ defmodule Skia.Codegen.EnumsTest do
   use ExUnit.Case, async: true
 
   alias RustQ.Meta.Type
-  alias RustQ.NativeEnumDescriptor
+  alias RustQ.Native.EnumDescriptor, as: NativeEnumDescriptor
   alias RustQ.Syn
   alias Skia.Codegen
   alias Skia.Codegen.Commands

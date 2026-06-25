@@ -30,7 +30,7 @@ defmodule Skia.Codegen.CommandSpecs do
     |> Enum.map(fn command ->
       {command.name,
        [
-         handler: Skia.Codegen.Atom.identifier!("#{handler_prefix}_#{command.name}"),
+         handler: RustQ.Atom.identifier!("#{handler_prefix}_#{command.name}"),
          args: command.args,
          opts: command.opts
        ]}

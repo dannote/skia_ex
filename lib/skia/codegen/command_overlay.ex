@@ -1,7 +1,7 @@
 defmodule Skia.Codegen.CommandOverlay do
   @moduledoc false
 
-  alias RustQ.NativeRef
+  alias RustQ.Native.Ref, as: NativeRef
   alias Skia.Codegen.CommandOverlay.DSL
   alias Skia.Codegen.NativeSchema
 

@@ -1,8 +1,8 @@
 defmodule Skia.Codegen.NativeDriftTest do
   use ExUnit.Case, async: true
 
-  alias RustQ.NativeDescriptor
-  alias RustQ.NativeRef
+  alias RustQ.Native.Descriptor, as: NativeDescriptor
+  alias RustQ.Native.Ref, as: NativeRef
   alias RustQ.Syn
   alias Skia.Codegen.Commands
 

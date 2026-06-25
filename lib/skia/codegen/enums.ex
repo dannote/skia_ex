@@ -1,7 +1,7 @@
 defmodule Skia.Codegen.Enums do
   @moduledoc false
 
-  alias RustQ.NativeEnumDescriptor
+  alias RustQ.Native.EnumDescriptor, as: NativeEnumDescriptor
   alias RustQ.Rust
   alias RustQ.Rust.AST.Builder, as: A
   alias RustQ.Rust.AST.Render

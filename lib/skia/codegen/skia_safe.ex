@@ -1,7 +1,7 @@
 defmodule Skia.Codegen.SkiaSafe do
   @moduledoc false
 
-  alias RustQ.NativeEnumDescriptor
+  alias RustQ.Native.EnumDescriptor, as: NativeEnumDescriptor
   alias RustQ.Syn.Index
 
   @native_manifest "native/skia_native/Cargo.toml"

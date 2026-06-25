@@ -139,7 +139,7 @@ defmodule Skia.Codegen.Commands.Shapes do
     end)
   end
 
-  defp handler(name), do: Skia.Codegen.Atom.identifier!("draw_#{name}")
+  defp handler(name), do: RustQ.Atom.identifier!("draw_#{name}")
 
   @spec clear(Skia.Document.t(), color(), clear_opts()) :: Skia.Document.t()
   def clear(document, color, opts), do: keep_command_shape(document, color, opts)

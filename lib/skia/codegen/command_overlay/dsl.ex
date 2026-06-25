@@ -9,7 +9,7 @@ defmodule Skia.Codegen.CommandOverlay.DSL do
     end
   end
 
-  alias RustQ.NativeRef
+  alias RustQ.Native.Ref, as: NativeRef
 
   @allowed_keys [:native, :expands_to, :expand, :defaults]
   @forbidden_schema_keys [:args, :opts, :native_refs, :native_shape]

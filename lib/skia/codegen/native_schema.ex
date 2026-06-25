@@ -12,8 +12,8 @@ defmodule Skia.Codegen.NativeSchema do
   source with regex.
   """
 
-  alias RustQ.NativeDescriptor
-  alias RustQ.NativeRef
+  alias RustQ.Native.Descriptor, as: NativeDescriptor
+  alias RustQ.Native.Ref, as: NativeRef
   alias RustQ.Syn.Index
   alias RustQ.Syn.Method
 

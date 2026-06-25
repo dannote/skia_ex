@@ -5,10 +5,33 @@ defmodule Skia.Codegen.Rusty.Domain do
     commands_module = opts |> Keyword.fetch!(:from) |> Macro.expand(__CALLER__)
     commands = opts |> Keyword.fetch!(:commands) |> expand_value!(__CALLER__)
     helpers = opts |> Keyword.get(:helpers, []) |> expand_value!(__CALLER__)
+
+    rust_sources =
+      opts
+      |> Keyword.get(:rust_sources, ["native/skia_native/src/lib.rs"])
+      |> expand_value!(__CALLER__)
+
+    callable_modules =
+      opts
+      |> Keyword.get(:callable_modules, [
+        Skia.Codegen.Rusty.PaintSupport,
+        Skia.Codegen.Rusty.StyleHelpers
+      ])
+      |> expand_value!(__CALLER__)
+
+    rust_packages =
+      opts
+      |> Keyword.get(:rust_packages, [])
+      |> expand_value!(__CALLER__)
+
     handlers = handler_defs(commands_module, only: commands)
 
     quote do
-      use RustQ.Meta
+      use RustQ.Meta,
+        rust_sources: unquote(Macro.escape(rust_sources)),
+        rust_packages: unquote(Macro.escape(rust_packages)),
+        callable_modules: unquote(Macro.escape(callable_modules))
+
       import Skia.Codegen.Rusty.Domain
 
       @commands unquote(commands)
@@ -33,7 +56,7 @@ defmodule Skia.Codegen.Rusty.Domain do
 
       defp impl_ast!(handler) do
         handler
-        |> then(&Skia.Codegen.Atom.identifier!("#{&1}_impl"))
+        |> then(&RustQ.Atom.identifier!("#{&1}_impl"))
         |> rust_ast!()
       end
 
@@ -63,8 +86,8 @@ defmodule Skia.Codegen.Rusty.Domain do
       handler = Keyword.fetch!(spec, :handler)
       args? = Keyword.get(spec, :args, []) != []
       opts? = Keyword.get(spec, :opts, []) != []
-      impl = Skia.Codegen.Atom.identifier!("#{handler}_impl")
-      decoder = Skia.Codegen.Atom.identifier!("decode_#{command_name}_opts")
+      impl = RustQ.Atom.identifier!("#{handler}_impl")
+      decoder = RustQ.Atom.identifier!("decode_#{command_name}_opts")
 
       quote do
         @spec unquote(handler)(RustQ.Type.ref(SkiaSafe.Canvas.t()), term()) ::

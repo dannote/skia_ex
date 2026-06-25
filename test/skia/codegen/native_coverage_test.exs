@@ -1,7 +1,7 @@
 defmodule Skia.Codegen.NativeCoverageTest do
   use ExUnit.Case, async: true
 
-  alias RustQ.NativeDescriptor
+  alias RustQ.Native.Descriptor, as: NativeDescriptor
   alias RustQ.Syn.Signature
   alias Skia.Codegen.Commands
 
