@@ -1088,16 +1088,16 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
       case decode_as(stop, {R.atom(), R.term(), R.f64()}) do
         {:ok, {tag, color_term, position}} ->
           if tag == Atoms.gradient_stop() do
-            colors.push(unwrap!(decode_color(color_term)))
+            colors.push(decode_color(color_term))
             positions.push(cast(position, :f32))
           else
             assign!(explicit_positions, false)
-            colors.push(unwrap!(decode_color(stop)))
+            colors.push(decode_color(stop))
           end
 
         {:error, _reason} ->
           assign!(explicit_positions, false)
-          colors.push(unwrap!(decode_color(stop)))
+          colors.push(decode_color(stop))
       end
     end
 
