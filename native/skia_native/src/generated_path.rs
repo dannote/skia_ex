@@ -11,32 +11,42 @@ fn build_path<'a>(path_term: Term<'a>) -> NifResult<skia_safe::Path> {
     match path_term.decode::<(Atom, String)>() {
         Ok((tag, svg)) => {
             if tag == atoms::svg() {
-                return Ok(skia_safe::Path::from_svg(svg).ok_or(rustler::Error::BadArg)?);
+                Ok(skia_safe::Path::from_svg(svg).ok_or(rustler::Error::BadArg)?)
+            } else {
+                build_path_from_compact_tuple(path_term)
             }
         }
-        Err(_reason) => {}
-    };
+        Err(_reason) => build_path_from_compact_tuple(path_term),
+    }
+}
+fn build_path_from_compact_tuple<'a>(path_term: Term<'a>) -> NifResult<skia_safe::Path> {
     match path_term.decode::<(Atom, Vec<Term<'a>>)>() {
         Ok((tag, segments)) => {
             if tag == atoms::p() {
-                return Ok(build_compact_path(segments)?);
+                build_compact_path(segments)
+            } else {
+                build_path_from_svg_field(path_term)
             }
         }
-        Err(_reason) => {}
-    };
+        Err(_reason) => build_path_from_svg_field(path_term),
+    }
+}
+fn build_path_from_svg_field<'a>(path_term: Term<'a>) -> NifResult<skia_safe::Path> {
     match path_term.map_get(atoms::svg()) {
         Ok(svg_term) => {
             match svg_term.decode::<String>() {
                 Ok(svg) => {
-                    return Ok(
-                        skia_safe::Path::from_svg(svg).ok_or(rustler::Error::BadArg)?,
-                    );
+                    Ok(skia_safe::Path::from_svg(svg).ok_or(rustler::Error::BadArg)?)
                 }
-                Err(_reason) => {}
-            };
+                Err(_reason) => build_path_from_segments_field(path_term),
+            }
         }
-        Err(_reason) => {}
-    };
+        Err(_reason) => build_path_from_segments_field(path_term),
+    }
+}
+fn build_path_from_segments_field<'a>(
+    path_term: Term<'a>,
+) -> NifResult<skia_safe::Path> {
     let segments = path_term.map_get(atoms::segments())?.decode::<Vec<Term<'a>>>()?;
     let mut builder = PathBuilder::new();
     for segment in segments.into_iter().rev() {

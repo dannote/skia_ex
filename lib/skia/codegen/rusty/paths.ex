@@ -30,34 +30,47 @@ defmodule Skia.Codegen.Rusty.Paths do
     case decode_as(path_term, {atom(), R.path(:String)}) do
       {:ok, {tag, svg}} ->
         if tag == Atoms.svg() do
-          return!({:ok, unwrap!(SkiaSafe.Path.from_svg(svg).ok_or(badarg()))})
+          {:ok, ok_or!(SkiaSafe.Path.from_svg(svg), badarg())}
+        else
+          build_path_from_compact_tuple(path_term)
         end
 
       {:error, _reason} ->
-        :ok
+        build_path_from_compact_tuple(path_term)
     end
+  end
 
+  @spec build_path_from_compact_tuple(term()) :: R.nif_result(R.path({:skia_safe, :Path}))
+  defrust build_path_from_compact_tuple(path_term) do
     case decode_as(path_term, {atom(), R.vec(term())}) do
       {:ok, {tag, segments}} ->
         if tag == Atoms.p() do
-          return!({:ok, unwrap!(build_compact_path(segments))})
+          build_compact_path(segments)
+        else
+          build_path_from_svg_field(path_term)
         end
 
       {:error, _reason} ->
-        :ok
+        build_path_from_svg_field(path_term)
     end
+  end
 
+  @spec build_path_from_svg_field(term()) :: R.nif_result(R.path({:skia_safe, :Path}))
+  defrust build_path_from_svg_field(path_term) do
     case path_term.map_get(Atoms.svg()) do
       {:ok, svg_term} ->
         case decode_as(svg_term, R.path(:String)) do
-          {:ok, svg} -> return!({:ok, unwrap!(SkiaSafe.Path.from_svg(svg).ok_or(badarg()))})
-          {:error, _reason} -> :ok
+          {:ok, svg} -> {:ok, ok_or!(SkiaSafe.Path.from_svg(svg), badarg())}
+          {:error, _reason} -> build_path_from_segments_field(path_term)
         end
 
       {:error, _reason} ->
-        :ok
+        build_path_from_segments_field(path_term)
     end
+  end
 
+  @spec build_path_from_segments_field(term()) :: R.nif_result(R.path({:skia_safe, :Path}))
+  defrust build_path_from_segments_field(path_term) do
     segments = decode_as!(unwrap!(path_term.map_get(Atoms.segments())), R.vec(term()))
     builder = PathBuilder.new()
 
@@ -448,30 +461,30 @@ defmodule Skia.Codegen.Rusty.Paths do
 
     if PathUtils.fill_path_with_paint(ref(path), ref(stroke), mut_ref(builder), none(), none()) ==
          false do
-      return!(:ok)
+      :ok
+    else
+      outline = builder.detach()
+      unwrap!(apply_fill_rule(mut_ref(outline), raw_opts))
+
+      case opts.fill do
+        {:some, fill} ->
+          paint = unwrap!(decode_paint(fill))
+          unwrap!(apply_blend_mode(mut_ref(paint), raw_opts))
+          canvas.draw_path(ref(outline), ref(paint))
+
+        :none ->
+          case opts.stroke do
+            {:some, stroke_color} ->
+              paint = fill_paint(unwrap!(decode_color(stroke_color)))
+              unwrap!(apply_blend_mode(mut_ref(paint), raw_opts))
+              canvas.draw_path(ref(outline), ref(paint))
+
+            :none ->
+              :ok
+          end
+      end
+
+      :ok
     end
-
-    outline = builder.detach()
-    unwrap!(apply_fill_rule(mut_ref(outline), raw_opts))
-
-    case opts.fill do
-      {:some, fill} ->
-        paint = unwrap!(decode_paint(fill))
-        unwrap!(apply_blend_mode(mut_ref(paint), raw_opts))
-        canvas.draw_path(ref(outline), ref(paint))
-
-      :none ->
-        case opts.stroke do
-          {:some, stroke_color} ->
-            paint = fill_paint(unwrap!(decode_color(stroke_color)))
-            unwrap!(apply_blend_mode(mut_ref(paint), raw_opts))
-            canvas.draw_path(ref(outline), ref(paint))
-
-          :none ->
-            :ok
-        end
-    end
-
-    :ok
   end
 end

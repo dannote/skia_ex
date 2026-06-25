@@ -3,8 +3,6 @@ defmodule Skia.Codegen do
 
   alias RustQ.Rust
   alias RustQ.Rust.AST
-  alias RustQ.Rust.AST.Builder, as: A
-  alias RustQ.Rust.AST.PatternBuilder, as: P
   alias Skia.Codegen.Commands
   alias Skia.Codegen.Enums
   alias Skia.Codegen.Rusty
@@ -331,34 +329,9 @@ defmodule Skia.Codegen do
         unknown: "Err(rustler::Error::BadArg)"
       )
 
-    items = [dispatch, render_rustq_item(compact_op_atom_ast())]
+    items = [dispatch, RustQ.Meta.AST.item(Rusty.Dispatch, :compact_op_atom)]
 
     render_items(items, "generated_dispatch.rs")
-  end
-
-  defp compact_op_atom_ast do
-    %AST.Function{
-      name: :compact_op_atom,
-      args: [A.arg(:id, :i64)],
-      returns: "NifResult<Atom>",
-      body: [
-        A.return_stmt(
-          A.match_expr(
-            A.var(:id),
-            Enum.map(compact_ops(), fn {atom, id} ->
-              %AST.Arm{pattern: P.lit(id), body: [A.return_stmt(A.ok(A.atom(atom)))]}
-            end) ++ [%AST.Arm{pattern: P.wildcard(), body: [A.return_stmt(A.err(A.badarg()))]}]
-          )
-        )
-      ]
-    }
-  end
-
-  defp compact_ops do
-    Commands.all()
-    |> Enum.flat_map(fn {name, spec} -> [name, Keyword.get(spec, :op, name)] end)
-    |> Enum.uniq()
-    |> Enum.with_index(1)
   end
 
   @spec generated_style_helpers() :: String.t()
@@ -471,13 +444,42 @@ defmodule Skia.Codegen do
       :runtime_uniform_data,
       :runtime_children,
       :decode_paint,
+      :decode_linear_gradient_paint,
+      :decode_two_point_conical_gradient_paint,
+      :decode_color_shader_paint,
+      :decode_radial_gradient_paint,
+      :decode_sweep_gradient_paint,
+      :decode_runtime_effect_shader_paint,
+      :decode_image_shader_paint,
+      :decode_picture_shader_paint,
       :decode_color_filter,
+      :decode_matrix_color_filter,
+      :decode_compose_color_filter,
       :decode_image_filter,
+      :decode_compose_image_filter,
+      :decode_offset_image_filter,
+      :decode_drop_shadow_image_filter,
+      :decode_color_filter_image_filter,
+      :decode_shader_image_filter,
+      :decode_magnifier_image_filter,
+      :decode_matrix_convolution_image_filter,
+      :decode_matrix_transform_image_filter,
+      :decode_merge_image_filter,
+      :decode_tile_image_filter,
+      :decode_morphology_image_filter,
       :decode_shader,
       :decode_mask_filter,
       :decode_path_effect,
+      :decode_corner_path_effect,
+      :decode_trim_path_effect,
+      :decode_discrete_path_effect,
+      :decode_path_1d_effect,
+      :decode_line_2d_path_effect,
+      :decode_binary_path_effect,
       :decode_sampling_options,
+      :decode_sampling_cubic_or_aniso,
       :decode_color,
+      :decode_rgba_color,
       :decode_gradient_stops
     ]
     |> Enum.map(&rusty_ast(Rusty.PaintSupport, &1))
@@ -487,7 +489,14 @@ defmodule Skia.Codegen do
 
   @spec generated_path() :: String.t()
   def generated_path do
-    [:decode_path_direction, :build_path, :build_compact_path]
+    [
+      :decode_path_direction,
+      :build_path,
+      :build_path_from_compact_tuple,
+      :build_path_from_svg_field,
+      :build_path_from_segments_field,
+      :build_compact_path
+    ]
     |> Enum.map(&rusty_ast(Rusty.Paths, &1))
     |> Enum.map(&render_rustq_item/1)
     |> render_items("generated_path.rs")

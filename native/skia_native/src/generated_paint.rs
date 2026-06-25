@@ -61,38 +61,68 @@ fn runtime_uniform_data(
 ) -> NifResult<Data> {
     let mut bytes = Vec::new();
     bytes.resize(effect.uniform_size(), 0);
-    for (name, values) in float_uniforms {
-        let uniform = effect.find_uniform(&name).ok_or(rustler::Error::BadArg)?;
-        let offset = uniform.offset();
-        let byte_len = values.len() * 4;
-        if offset + byte_len > bytes.len() || byte_len > uniform.size_in_bytes() {
-            return Err(rustler::Error::BadArg);
+    {
+        let mut __rustq_reduce = Ok(());
+        for (name, values) in float_uniforms {
+            __rustq_reduce = match __rustq_reduce {
+                Ok(()) => {
+                    let uniform = effect
+                        .find_uniform(&name)
+                        .ok_or(rustler::Error::BadArg)?;
+                    let offset = uniform.offset();
+                    let byte_len = values.len() * 4;
+                    if offset + byte_len > bytes.len()
+                        || byte_len > uniform.size_in_bytes()
+                    {
+                        Err(rustler::Error::BadArg)
+                    } else {
+                        for (index, value) in values.into_iter().enumerate() {
+                            let start = offset + index * 4;
+                            let encoded = (value as f32).to_ne_bytes();
+                            bytes[start] = encoded[0];
+                            bytes[start + 1] = encoded[1];
+                            bytes[start + 2] = encoded[2];
+                            bytes[start + 3] = encoded[3];
+                        }
+                        Ok(())
+                    }
+                }
+                __rustq_reduce_value => __rustq_reduce_value,
+            };
         }
-        for (index, value) in values.into_iter().enumerate() {
-            let start = offset + index * 4;
-            let encoded = (value as f32).to_ne_bytes();
-            bytes[start] = encoded[0];
-            bytes[start + 1] = encoded[1];
-            bytes[start + 2] = encoded[2];
-            bytes[start + 3] = encoded[3];
+        __rustq_reduce
+    }?;
+    {
+        let mut __rustq_reduce = Ok(());
+        for (name, values) in int_uniforms {
+            __rustq_reduce = match __rustq_reduce {
+                Ok(()) => {
+                    let uniform = effect
+                        .find_uniform(&name)
+                        .ok_or(rustler::Error::BadArg)?;
+                    let offset = uniform.offset();
+                    let byte_len = values.len() * 4;
+                    if offset + byte_len > bytes.len()
+                        || byte_len > uniform.size_in_bytes()
+                    {
+                        Err(rustler::Error::BadArg)
+                    } else {
+                        for (index, value) in values.into_iter().enumerate() {
+                            let start = offset + index * 4;
+                            let encoded = (value as i32).to_ne_bytes();
+                            bytes[start] = encoded[0];
+                            bytes[start + 1] = encoded[1];
+                            bytes[start + 2] = encoded[2];
+                            bytes[start + 3] = encoded[3];
+                        }
+                        Ok(())
+                    }
+                }
+                __rustq_reduce_value => __rustq_reduce_value,
+            };
         }
-    }
-    for (name, values) in int_uniforms {
-        let uniform = effect.find_uniform(&name).ok_or(rustler::Error::BadArg)?;
-        let offset = uniform.offset();
-        let byte_len = values.len() * 4;
-        if offset + byte_len > bytes.len() || byte_len > uniform.size_in_bytes() {
-            return Err(rustler::Error::BadArg);
-        }
-        for (index, value) in values.into_iter().enumerate() {
-            let start = offset + index * 4;
-            let encoded = (value as i32).to_ne_bytes();
-            bytes[start] = encoded[0];
-            bytes[start + 1] = encoded[1];
-            bytes[start + 2] = encoded[2];
-            bytes[start + 3] = encoded[3];
-        }
-    }
+        __rustq_reduce
+    }?;
     Ok(Data::new_copy(&bytes))
 }
 fn runtime_children<'a>(
@@ -111,52 +141,62 @@ fn runtime_children<'a>(
         ordered[child.index()] = Some(ChildPtr::from(shader));
     }
     let mut decoded = Vec::with_capacity(ordered.len());
-    for child in ordered {
-        match child {
-            Some(child) => {
-                decoded.push(child);
-            }
-            None => {
-                return Err(rustler::Error::BadArg);
-            }
-        };
-    }
+    {
+        let mut __rustq_reduce = Ok(());
+        for child in ordered {
+            __rustq_reduce = match __rustq_reduce {
+                Ok(()) => {
+                    match child {
+                        Some(child) => {
+                            decoded.push(child);
+                            Ok(())
+                        }
+                        None => Err(rustler::Error::BadArg),
+                    }
+                }
+                __rustq_reduce_value => __rustq_reduce_value,
+            };
+        }
+        __rustq_reduce
+    }?;
     Ok(decoded)
 }
 fn decode_paint<'a>(term: Term<'a>) -> NifResult<Paint> {
     match decode_color(term) {
-        Ok(color) => {
-            return Ok(fill_paint(color));
-        }
-        Err(_reason) => {}
-    };
+        Ok(color) => Ok(fill_paint(color)),
+        Err(_reason) => decode_linear_gradient_paint(term),
+    }
+}
+fn decode_linear_gradient_paint<'a>(term: Term<'a>) -> NifResult<Paint> {
     match term.decode::<(Atom, (f64, f64), (f64, f64), Vec<Term<'a>>, Atom, Term<'a>)>()
     {
-        Ok((tag, (from_x, from_y), (to_x, to_y), stops, tile_mode, matrix_term)) => {
-            if tag == atoms::linear_gradient() {
-                let (colors, positions) = decode_gradient_stops(stops)?;
-                let tile_mode = generated_enums::decode_tile_mode(tile_mode)?;
-                let matrix = optional_matrix_from_term(matrix_term)?;
-                let mut paint = Paint::default();
-                paint.set_anti_alias(true).set_style(PaintStyle::Fill);
-                match Shader::linear_gradient(
-                    ((from_x as f32, from_y as f32), (to_x as f32, to_y as f32)),
-                    colors.as_slice(),
-                    positions.as_deref(),
-                    tile_mode,
-                    None,
-                    matrix.as_ref(),
-                ) {
-                    Some(shader) => {
-                        paint.set_shader(shader);
-                    }
-                    None => {}
-                };
-                return Ok(paint);
-            }
+        Ok(
+            (tag, (from_x, from_y), (to_x, to_y), stops, tile_mode, matrix_term),
+        ) if tag == atoms::linear_gradient() => {
+            let (colors, positions) = decode_gradient_stops(stops)?;
+            let tile_mode = generated_enums::decode_tile_mode(tile_mode)?;
+            let matrix = optional_matrix_from_term(matrix_term)?;
+            let mut paint = Paint::default();
+            paint.set_anti_alias(true).set_style(PaintStyle::Fill);
+            match Shader::linear_gradient(
+                ((from_x as f32, from_y as f32), (to_x as f32, to_y as f32)),
+                colors.as_slice(),
+                positions.as_deref(),
+                tile_mode,
+                None,
+                matrix.as_ref(),
+            ) {
+                Some(shader) => {
+                    paint.set_shader(shader);
+                }
+                None => {}
+            };
+            Ok(paint)
         }
-        Err(_reason) => {}
-    };
+        _ => decode_two_point_conical_gradient_paint(term),
+    }
+}
+fn decode_two_point_conical_gradient_paint<'a>(term: Term<'a>) -> NifResult<Paint> {
     match term.decode::<(Atom, (f64, f64), f64, (f64, f64), f64, Term<'a>)>() {
         Ok(
             (
@@ -167,74 +207,76 @@ fn decode_paint<'a>(term: Term<'a>) -> NifResult<Paint> {
                 end_radius,
                 gradient_opts,
             ),
-        ) => {
-            if tag == atoms::two_point_conical_gradient() {
-                let (stops, tile_mode, matrix_term) = gradient_opts
-                    .decode::<(Vec<Term<'a>>, Atom, Term<'a>)>()?;
-                let (colors, positions) = decode_gradient_stops(stops)?;
-                let tile_mode = generated_enums::decode_tile_mode(tile_mode)?;
-                let matrix = optional_matrix_from_term(matrix_term)?;
-                let mut paint = Paint::default();
-                paint.set_anti_alias(true).set_style(PaintStyle::Fill);
-                match Shader::two_point_conical_gradient(
-                    (start_x as f32, start_y as f32),
-                    start_radius as f32,
-                    (end_x as f32, end_y as f32),
-                    end_radius as f32,
-                    colors.as_slice(),
-                    positions.as_deref(),
-                    tile_mode,
-                    None,
-                    matrix.as_ref(),
-                ) {
-                    Some(shader) => {
-                        paint.set_shader(shader);
-                    }
-                    None => {}
-                };
-                return Ok(paint);
-            }
+        ) if tag == atoms::two_point_conical_gradient() => {
+            let (stops, tile_mode, matrix_term) = gradient_opts
+                .decode::<(Vec<Term<'a>>, Atom, Term<'a>)>()?;
+            let (colors, positions) = decode_gradient_stops(stops)?;
+            let tile_mode = generated_enums::decode_tile_mode(tile_mode)?;
+            let matrix = optional_matrix_from_term(matrix_term)?;
+            let mut paint = Paint::default();
+            paint.set_anti_alias(true).set_style(PaintStyle::Fill);
+            match Shader::two_point_conical_gradient(
+                (start_x as f32, start_y as f32),
+                start_radius as f32,
+                (end_x as f32, end_y as f32),
+                end_radius as f32,
+                colors.as_slice(),
+                positions.as_deref(),
+                tile_mode,
+                None,
+                matrix.as_ref(),
+            ) {
+                Some(shader) => {
+                    paint.set_shader(shader);
+                }
+                None => {}
+            };
+            Ok(paint)
         }
-        Err(_reason) => {}
-    };
+        _ => decode_color_shader_paint(term),
+    }
+}
+fn decode_color_shader_paint<'a>(term: Term<'a>) -> NifResult<Paint> {
     match term.decode::<(Atom, Term<'a>)>() {
-        Ok((tag, color_term)) => {
-            if tag == atoms::color_shader() {
-                let mut paint = Paint::default();
-                paint.set_anti_alias(true).set_style(PaintStyle::Fill);
-                paint.set_shader(skia_safe::shaders::color(decode_color(color_term)?));
-                return Ok(paint);
-            }
+        Ok((tag, color_term)) if tag == atoms::color_shader() => {
+            let mut paint = Paint::default();
+            paint.set_anti_alias(true).set_style(PaintStyle::Fill);
+            paint.set_shader(skia_safe::shaders::color(decode_color(color_term)?));
+            Ok(paint)
         }
-        Err(_reason) => {}
-    };
+        _ => decode_radial_gradient_paint(term),
+    }
+}
+fn decode_radial_gradient_paint<'a>(term: Term<'a>) -> NifResult<Paint> {
     match term.decode::<(Atom, (f64, f64), f64, Vec<Term<'a>>, Atom, Term<'a>)>() {
-        Ok((tag, (center_x, center_y), radius, stops, tile_mode, matrix_term)) => {
-            if tag == atoms::radial_gradient() {
-                let (colors, positions) = decode_gradient_stops(stops)?;
-                let tile_mode = generated_enums::decode_tile_mode(tile_mode)?;
-                let matrix = optional_matrix_from_term(matrix_term)?;
-                let mut paint = Paint::default();
-                paint.set_anti_alias(true).set_style(PaintStyle::Fill);
-                match Shader::radial_gradient(
-                    (center_x as f32, center_y as f32),
-                    radius as f32,
-                    colors.as_slice(),
-                    positions.as_deref(),
-                    tile_mode,
-                    None,
-                    matrix.as_ref(),
-                ) {
-                    Some(shader) => {
-                        paint.set_shader(shader);
-                    }
-                    None => {}
-                };
-                return Ok(paint);
-            }
+        Ok(
+            (tag, (center_x, center_y), radius, stops, tile_mode, matrix_term),
+        ) if tag == atoms::radial_gradient() => {
+            let (colors, positions) = decode_gradient_stops(stops)?;
+            let tile_mode = generated_enums::decode_tile_mode(tile_mode)?;
+            let matrix = optional_matrix_from_term(matrix_term)?;
+            let mut paint = Paint::default();
+            paint.set_anti_alias(true).set_style(PaintStyle::Fill);
+            match Shader::radial_gradient(
+                (center_x as f32, center_y as f32),
+                radius as f32,
+                colors.as_slice(),
+                positions.as_deref(),
+                tile_mode,
+                None,
+                matrix.as_ref(),
+            ) {
+                Some(shader) => {
+                    paint.set_shader(shader);
+                }
+                None => {}
+            };
+            Ok(paint)
         }
-        Err(_reason) => {}
-    };
+        _ => decode_sweep_gradient_paint(term),
+    }
+}
+fn decode_sweep_gradient_paint<'a>(term: Term<'a>) -> NifResult<Paint> {
     match term.decode::<(Atom, (f64, f64), f64, f64, Vec<Term<'a>>, Atom, Term<'a>)>() {
         Ok(
             (
@@ -246,32 +288,32 @@ fn decode_paint<'a>(term: Term<'a>) -> NifResult<Paint> {
                 tile_mode,
                 matrix_term,
             ),
-        ) => {
-            if tag == atoms::sweep_gradient() {
-                let (colors, positions) = decode_gradient_stops(stops)?;
-                let tile_mode = generated_enums::decode_tile_mode(tile_mode)?;
-                let matrix = optional_matrix_from_term(matrix_term)?;
-                let mut paint = Paint::default();
-                paint.set_anti_alias(true).set_style(PaintStyle::Fill);
-                match Shader::sweep_gradient(
-                    (center_x as f32, center_y as f32),
-                    colors.as_slice(),
-                    positions.as_deref(),
-                    tile_mode,
-                    Some((start_degrees as f32, end_degrees as f32)),
-                    None,
-                    matrix.as_ref(),
-                ) {
-                    Some(shader) => {
-                        paint.set_shader(shader);
-                    }
-                    None => {}
-                };
-                return Ok(paint);
-            }
+        ) if tag == atoms::sweep_gradient() => {
+            let (colors, positions) = decode_gradient_stops(stops)?;
+            let tile_mode = generated_enums::decode_tile_mode(tile_mode)?;
+            let matrix = optional_matrix_from_term(matrix_term)?;
+            let mut paint = Paint::default();
+            paint.set_anti_alias(true).set_style(PaintStyle::Fill);
+            match Shader::sweep_gradient(
+                (center_x as f32, center_y as f32),
+                colors.as_slice(),
+                positions.as_deref(),
+                tile_mode,
+                Some((start_degrees as f32, end_degrees as f32)),
+                None,
+                matrix.as_ref(),
+            ) {
+                Some(shader) => {
+                    paint.set_shader(shader);
+                }
+                None => {}
+            };
+            Ok(paint)
         }
-        Err(_reason) => {}
-    };
+        _ => decode_runtime_effect_shader_paint(term),
+    }
+}
+fn decode_runtime_effect_shader_paint<'a>(term: Term<'a>) -> NifResult<Paint> {
     match term
         .decode::<
             (
@@ -284,95 +326,96 @@ fn decode_paint<'a>(term: Term<'a>) -> NifResult<Paint> {
             ),
         >()
     {
-        Ok((tag, effect_term, float_uniforms, int_uniforms, children, matrix_term)) => {
-            if tag == atoms::runtime_effect_shader() {
-                let effect = runtime_effect_from_term(effect_term)?;
-                let uniforms = runtime_uniform_data(
-                    &effect,
-                    float_uniforms,
-                    int_uniforms,
-                )?;
-                let children = runtime_children(&effect, children)?;
-                let matrix = optional_matrix_from_term(matrix_term)?;
-                let mut paint = Paint::default();
-                paint.set_anti_alias(true).set_style(PaintStyle::Fill);
-                paint
-                    .set_shader(
-                        effect
-                            .make_shader(uniforms, children.as_slice(), matrix.as_ref())
-                            .ok_or(rustler::Error::BadArg)?,
-                    );
-                return Ok(paint);
-            }
+        Ok(
+            (tag, effect_term, float_uniforms, int_uniforms, children, matrix_term),
+        ) if tag == atoms::runtime_effect_shader() => {
+            let effect = runtime_effect_from_term(effect_term)?;
+            let uniforms = runtime_uniform_data(&effect, float_uniforms, int_uniforms)?;
+            let children = runtime_children(&effect, children)?;
+            let matrix = optional_matrix_from_term(matrix_term)?;
+            let mut paint = Paint::default();
+            paint.set_anti_alias(true).set_style(PaintStyle::Fill);
+            paint
+                .set_shader(
+                    effect
+                        .make_shader(uniforms, children.as_slice(), matrix.as_ref())
+                        .ok_or(rustler::Error::BadArg)?,
+                );
+            Ok(paint)
         }
-        Err(_reason) => {}
-    };
+        _ => decode_image_shader_paint(term),
+    }
+}
+fn decode_image_shader_paint<'a>(term: Term<'a>) -> NifResult<Paint> {
     match term.decode::<(Atom, Term<'a>, Atom, Atom, Term<'a>, Term<'a>)>() {
-        Ok((tag, image_term, tile_x, tile_y, sampling_term, matrix_term)) => {
-            if tag == atoms::image_shader() {
-                let image = image_from_term(image_term)?;
-                let tile_x = generated_enums::decode_tile_mode(tile_x)?;
-                let tile_y = generated_enums::decode_tile_mode(tile_y)?;
-                let sampling = decode_sampling_options(sampling_term)?;
-                let matrix = optional_matrix_from_term(matrix_term)?;
-                let mut paint = Paint::default();
-                paint.set_anti_alias(true).set_style(PaintStyle::Fill);
-                match image.to_shader((tile_x, tile_y), sampling, matrix.as_ref()) {
-                    Some(shader) => {
-                        paint.set_shader(shader);
-                    }
-                    None => {}
-                };
-                return Ok(paint);
-            }
+        Ok(
+            (tag, image_term, tile_x, tile_y, sampling_term, matrix_term),
+        ) if tag == atoms::image_shader() => {
+            let image = image_from_term(image_term)?;
+            let tile_x = generated_enums::decode_tile_mode(tile_x)?;
+            let tile_y = generated_enums::decode_tile_mode(tile_y)?;
+            let sampling = decode_sampling_options(sampling_term)?;
+            let matrix = optional_matrix_from_term(matrix_term)?;
+            let mut paint = Paint::default();
+            paint.set_anti_alias(true).set_style(PaintStyle::Fill);
+            match image.to_shader((tile_x, tile_y), sampling, matrix.as_ref()) {
+                Some(shader) => {
+                    paint.set_shader(shader);
+                }
+                None => {}
+            };
+            Ok(paint)
         }
-        Err(_reason) => {}
-    };
+        _ => decode_picture_shader_paint(term),
+    }
+}
+fn decode_picture_shader_paint<'a>(term: Term<'a>) -> NifResult<Paint> {
     match term.decode::<(Atom, Term<'a>, Atom, Atom, Atom, Term<'a>, Term<'a>)>() {
         Ok(
             (tag, picture_term, tile_x, tile_y, filter_mode, matrix_term, tile_rect_term),
-        ) => {
-            if tag == atoms::picture_shader() {
-                let picture = picture_from_term(picture_term)?;
-                let tile_x = generated_enums::decode_tile_mode(tile_x)?;
-                let tile_y = generated_enums::decode_tile_mode(tile_y)?;
-                let filter_mode = generated_enums::decode_sampling(filter_mode)?;
-                let matrix = optional_matrix_from_term(matrix_term)?;
-                let tile_rect = optional_rect_from_term(tile_rect_term)?;
-                let mut paint = Paint::default();
-                paint.set_anti_alias(true).set_style(PaintStyle::Fill);
-                paint
-                    .set_shader(
-                        picture
-                            .to_shader(
-                                (tile_x, tile_y),
-                                filter_mode,
-                                matrix.as_ref(),
-                                tile_rect.as_ref(),
-                            ),
-                    );
-                return Ok(paint);
-            }
+        ) if tag == atoms::picture_shader() => {
+            let picture = picture_from_term(picture_term)?;
+            let tile_x = generated_enums::decode_tile_mode(tile_x)?;
+            let tile_y = generated_enums::decode_tile_mode(tile_y)?;
+            let filter_mode = generated_enums::decode_sampling(filter_mode)?;
+            let matrix = optional_matrix_from_term(matrix_term)?;
+            let tile_rect = optional_rect_from_term(tile_rect_term)?;
+            let mut paint = Paint::default();
+            paint.set_anti_alias(true).set_style(PaintStyle::Fill);
+            paint
+                .set_shader(
+                    picture
+                        .to_shader(
+                            (tile_x, tile_y),
+                            filter_mode,
+                            matrix.as_ref(),
+                            tile_rect.as_ref(),
+                        ),
+                );
+            Ok(paint)
         }
-        Err(_reason) => {}
-    };
-    Err(rustler::Error::BadArg)
+        _ => Err(rustler::Error::BadArg),
+    }
 }
 fn decode_color_filter<'a>(term: Term<'a>) -> NifResult<ColorFilter> {
     match term.decode::<(Atom, Term<'a>, Atom)>() {
         Ok((tag, color_term, blend_mode)) => {
             if tag == atoms::blend_color_filter() {
-                return Ok(
+                Ok(
                     color_filters::blend(
                             decode_color(color_term)?,
                             generated_enums::decode_blend_mode(blend_mode)?,
                         )
                         .ok_or(rustler::Error::BadArg)?,
-                );
+                )
+            } else {
+                decode_matrix_color_filter(term)
             }
         }
-        Err(_reason) => {}
-    };
+        Err(_reason) => decode_matrix_color_filter(term),
+    }
+}
+fn decode_matrix_color_filter<'a>(term: Term<'a>) -> NifResult<ColorFilter> {
     match term.decode::<(Atom, Vec<f64>, bool)>() {
         Ok((tag, matrix, clamp)) => {
             if tag == atoms::matrix_color_filter() && matrix.len() == 20 {
@@ -408,273 +451,286 @@ fn decode_color_filter<'a>(term: Term<'a>) -> NifResult<ColorFilter> {
                 } else {
                     color_filters::Clamp::No
                 };
-                return Ok(color_filters::matrix_row_major(&values, clamp));
+                Ok(color_filters::matrix_row_major(&values, clamp))
+            } else {
+                decode_compose_color_filter(term)
             }
         }
-        Err(_reason) => {}
-    };
+        Err(_reason) => decode_compose_color_filter(term),
+    }
+}
+fn decode_compose_color_filter<'a>(term: Term<'a>) -> NifResult<ColorFilter> {
     match term.decode::<(Atom, Term<'a>, Term<'a>)>() {
         Ok((tag, outer, inner)) => {
             if tag == atoms::compose_color_filter() {
-                return Ok(
+                Ok(
                     color_filters::compose(
                             decode_color_filter(outer)?,
                             decode_color_filter(inner)?,
                         )
                         .ok_or(rustler::Error::BadArg)?,
-                );
+                )
+            } else {
+                Err(rustler::Error::BadArg)
             }
         }
-        Err(_reason) => {}
-    };
-    Err(rustler::Error::BadArg)
+        Err(_reason) => Err(rustler::Error::BadArg),
+    }
 }
 fn decode_image_filter<'a>(term: Term<'a>) -> NifResult<skia_safe::ImageFilter> {
     match term.decode::<(Atom, f64, f64, Atom)>() {
-        Ok((tag, sigma_x, sigma_y, tile_mode)) => {
-            if tag == atoms::blur_filter() {
-                return Ok(
-                    image_filters::blur(
-                            (sigma_x as f32, sigma_y as f32),
-                            generated_enums::decode_tile_mode(tile_mode)?,
-                            None,
-                            None,
-                        )
-                        .ok_or(rustler::Error::BadArg)?,
-                );
-            }
+        Ok((tag, sigma_x, sigma_y, tile_mode)) if tag == atoms::blur_filter() => {
+            Ok(
+                image_filters::blur(
+                        (sigma_x as f32, sigma_y as f32),
+                        generated_enums::decode_tile_mode(tile_mode)?,
+                        None,
+                        None,
+                    )
+                    .ok_or(rustler::Error::BadArg)?,
+            )
         }
-        Err(_reason) => {}
-    };
+        _ => decode_compose_image_filter(term),
+    }
+}
+fn decode_compose_image_filter<'a>(term: Term<'a>) -> NifResult<skia_safe::ImageFilter> {
     match term.decode::<(Atom, Term<'a>, Term<'a>)>() {
-        Ok((tag, outer, inner)) => {
-            if tag == atoms::compose_filter() {
-                return Ok(
-                    image_filters::compose(
-                            decode_image_filter(outer)?,
-                            decode_image_filter(inner)?,
-                        )
-                        .ok_or(rustler::Error::BadArg)?,
-                );
-            }
+        Ok((tag, outer, inner)) if tag == atoms::compose_filter() => {
+            Ok(
+                image_filters::compose(
+                        decode_image_filter(outer)?,
+                        decode_image_filter(inner)?,
+                    )
+                    .ok_or(rustler::Error::BadArg)?,
+            )
         }
-        Err(_reason) => {}
-    };
+        _ => decode_offset_image_filter(term),
+    }
+}
+fn decode_offset_image_filter<'a>(term: Term<'a>) -> NifResult<skia_safe::ImageFilter> {
     match term.decode::<(Atom, f64, f64, Term<'a>)>() {
-        Ok((tag, x, y, input_term)) => {
-            if tag == atoms::offset_filter() {
-                return Ok(
-                    image_filters::offset(
-                            (x as f32, y as f32),
-                            optional_image_filter_from_term(input_term)?,
-                            None,
-                        )
-                        .ok_or(rustler::Error::BadArg)?,
-                );
-            }
+        Ok((tag, x, y, input_term)) if tag == atoms::offset_filter() => {
+            Ok(
+                image_filters::offset(
+                        (x as f32, y as f32),
+                        optional_image_filter_from_term(input_term)?,
+                        None,
+                    )
+                    .ok_or(rustler::Error::BadArg)?,
+            )
         }
-        Err(_reason) => {}
-    };
+        _ => decode_drop_shadow_image_filter(term),
+    }
+}
+fn decode_drop_shadow_image_filter<'a>(
+    term: Term<'a>,
+) -> NifResult<skia_safe::ImageFilter> {
     match term.decode::<(Atom, f64, f64, f64, f64, Term<'a>, Term<'a>)>() {
-        Ok((tag, dx, dy, sigma_x, sigma_y, color_term, shadow_opts)) => {
-            if tag == atoms::drop_shadow_filter() {
-                let (input_term, shadow_only) = shadow_opts
-                    .decode::<(Term<'a>, bool)>()?;
-                let color = decode_color(color_term)?;
-                let input = optional_image_filter_from_term(input_term)?;
-                let filter = if shadow_only {
-                    image_filters::drop_shadow_only(
-                        (dx as f32, dy as f32),
-                        (sigma_x as f32, sigma_y as f32),
-                        color,
-                        None,
-                        input,
-                        None,
-                    )
-                } else {
-                    image_filters::drop_shadow(
-                        (dx as f32, dy as f32),
-                        (sigma_x as f32, sigma_y as f32),
-                        color,
-                        None,
-                        input,
-                        None,
-                    )
-                };
-                return Ok(filter.ok_or(rustler::Error::BadArg)?);
-            }
+        Ok(
+            (tag, dx, dy, sigma_x, sigma_y, color_term, shadow_opts),
+        ) if tag == atoms::drop_shadow_filter() => {
+            let (input_term, shadow_only) = shadow_opts.decode::<(Term<'a>, bool)>()?;
+            let color = decode_color(color_term)?;
+            let input = optional_image_filter_from_term(input_term)?;
+            let filter = if shadow_only {
+                image_filters::drop_shadow_only(
+                    (dx as f32, dy as f32),
+                    (sigma_x as f32, sigma_y as f32),
+                    color,
+                    None,
+                    input,
+                    None,
+                )
+            } else {
+                image_filters::drop_shadow(
+                    (dx as f32, dy as f32),
+                    (sigma_x as f32, sigma_y as f32),
+                    color,
+                    None,
+                    input,
+                    None,
+                )
+            };
+            Ok(filter.ok_or(rustler::Error::BadArg)?)
         }
-        Err(_reason) => {}
-    };
+        _ => decode_color_filter_image_filter(term),
+    }
+}
+fn decode_color_filter_image_filter<'a>(
+    term: Term<'a>,
+) -> NifResult<skia_safe::ImageFilter> {
     match term.decode::<(Atom, Term<'a>, Term<'a>)>() {
-        Ok((tag, filter_term, input_term)) => {
-            if tag == atoms::color_filter_image_filter() {
-                return Ok(
-                    image_filters::color_filter(
-                            decode_color_filter(filter_term)?,
-                            optional_image_filter_from_term(input_term)?,
-                            None,
-                        )
-                        .ok_or(rustler::Error::BadArg)?,
-                );
-            }
+        Ok(
+            (tag, filter_term, input_term),
+        ) if tag == atoms::color_filter_image_filter() => {
+            Ok(
+                image_filters::color_filter(
+                        decode_color_filter(filter_term)?,
+                        optional_image_filter_from_term(input_term)?,
+                        None,
+                    )
+                    .ok_or(rustler::Error::BadArg)?,
+            )
         }
-        Err(_reason) => {}
-    };
+        _ => decode_shader_image_filter(term),
+    }
+}
+fn decode_shader_image_filter<'a>(term: Term<'a>) -> NifResult<skia_safe::ImageFilter> {
     match term.decode::<(Atom, Term<'a>)>() {
-        Ok((tag, shader_term)) => {
-            if tag == atoms::shader_image_filter() {
-                return Ok(
-                    image_filters::shader(decode_shader(shader_term)?, None)
-                        .ok_or(rustler::Error::BadArg)?,
-                );
-            }
+        Ok((tag, shader_term)) if tag == atoms::shader_image_filter() => {
+            Ok(
+                image_filters::shader(decode_shader(shader_term)?, None)
+                    .ok_or(rustler::Error::BadArg)?,
+            )
         }
-        Err(_reason) => {}
-    };
+        _ => decode_magnifier_image_filter(term),
+    }
+}
+fn decode_magnifier_image_filter<'a>(
+    term: Term<'a>,
+) -> NifResult<skia_safe::ImageFilter> {
     match term.decode::<(Atom, (f64, f64, f64, f64), f64, f64, Term<'a>, Term<'a>)>() {
-        Ok((tag, (x, y, width, height), zoom, inset, sampling_term, input_term)) => {
-            if tag == atoms::magnifier_filter() {
-                return Ok(
-                    image_filters::magnifier(
-                            Rect::from_xywh(
-                                x as f32,
-                                y as f32,
-                                width as f32,
-                                height as f32,
-                            ),
-                            zoom as f32,
-                            inset as f32,
-                            decode_sampling_options(sampling_term)?,
-                            optional_image_filter_from_term(input_term)?,
-                            None,
-                        )
-                        .ok_or(rustler::Error::BadArg)?,
-                );
-            }
+        Ok(
+            (tag, (x, y, width, height), zoom, inset, sampling_term, input_term),
+        ) if tag == atoms::magnifier_filter() => {
+            Ok(
+                image_filters::magnifier(
+                        Rect::from_xywh(x as f32, y as f32, width as f32, height as f32),
+                        zoom as f32,
+                        inset as f32,
+                        decode_sampling_options(sampling_term)?,
+                        optional_image_filter_from_term(input_term)?,
+                        None,
+                    )
+                    .ok_or(rustler::Error::BadArg)?,
+            )
         }
-        Err(_reason) => {}
-    };
+        _ => decode_matrix_convolution_image_filter(term),
+    }
+}
+fn decode_matrix_convolution_image_filter<'a>(
+    term: Term<'a>,
+) -> NifResult<skia_safe::ImageFilter> {
     match term.decode::<(Atom, (i64, i64), Vec<f64>, Term<'a>)>() {
-        Ok((tag, (kernel_width, kernel_height), kernel, conv_opts)) => {
-            if tag == atoms::matrix_convolution_filter() {
-                let (
-                    gain,
-                    bias,
-                    (offset_x, offset_y),
-                    tile,
-                    convolve_alpha,
-                    input_term,
-                ) = conv_opts.decode::<(f64, f64, (i64, i64), Atom, bool, Term<'a>)>()?;
-                let mut mapped_kernel = Vec::with_capacity(kernel.len());
-                for value in kernel {
-                    mapped_kernel.push(value as f32);
-                }
-                return Ok(
-                    image_filters::matrix_convolution(
-                            (kernel_width as i32, kernel_height as i32),
-                            mapped_kernel.as_slice(),
-                            gain as f32,
-                            bias as f32,
-                            (offset_x as i32, offset_y as i32),
-                            generated_enums::decode_tile_mode(tile)?,
-                            convolve_alpha,
-                            optional_image_filter_from_term(input_term)?,
-                            None,
-                        )
-                        .ok_or(rustler::Error::BadArg)?,
-                );
+        Ok(
+            (tag, (kernel_width, kernel_height), kernel, conv_opts),
+        ) if tag == atoms::matrix_convolution_filter() => {
+            let (gain, bias, (offset_x, offset_y), tile, convolve_alpha, input_term) = conv_opts
+                .decode::<(f64, f64, (i64, i64), Atom, bool, Term<'a>)>()?;
+            let mut mapped_kernel = Vec::with_capacity(kernel.len());
+            for value in kernel {
+                mapped_kernel.push(value as f32);
             }
+            Ok(
+                image_filters::matrix_convolution(
+                        (kernel_width as i32, kernel_height as i32),
+                        mapped_kernel.as_slice(),
+                        gain as f32,
+                        bias as f32,
+                        (offset_x as i32, offset_y as i32),
+                        generated_enums::decode_tile_mode(tile)?,
+                        convolve_alpha,
+                        optional_image_filter_from_term(input_term)?,
+                        None,
+                    )
+                    .ok_or(rustler::Error::BadArg)?,
+            )
         }
-        Err(_reason) => {}
-    };
+        _ => decode_matrix_transform_image_filter(term),
+    }
+}
+fn decode_matrix_transform_image_filter<'a>(
+    term: Term<'a>,
+) -> NifResult<skia_safe::ImageFilter> {
     match term.decode::<(Atom, Term<'a>, Term<'a>, Term<'a>)>() {
-        Ok((tag, matrix_term, sampling_term, input_term)) => {
-            if tag == atoms::matrix_transform_filter() {
-                return Ok(
-                    image_filters::matrix_transform(
-                            &matrix_from_term(matrix_term)?,
-                            decode_sampling_options(sampling_term)?,
-                            optional_image_filter_from_term(input_term)?,
-                        )
-                        .ok_or(rustler::Error::BadArg)?,
-                );
-            }
+        Ok(
+            (tag, matrix_term, sampling_term, input_term),
+        ) if tag == atoms::matrix_transform_filter() => {
+            Ok(
+                image_filters::matrix_transform(
+                        &matrix_from_term(matrix_term)?,
+                        decode_sampling_options(sampling_term)?,
+                        optional_image_filter_from_term(input_term)?,
+                    )
+                    .ok_or(rustler::Error::BadArg)?,
+            )
         }
-        Err(_reason) => {}
-    };
+        _ => decode_merge_image_filter(term),
+    }
+}
+fn decode_merge_image_filter<'a>(term: Term<'a>) -> NifResult<skia_safe::ImageFilter> {
     match term.decode::<(Atom, Vec<Term<'a>>)>() {
-        Ok((tag, filters)) => {
-            if tag == atoms::merge_filter() {
-                let mut mapped_filters = Vec::with_capacity(filters.len());
-                for filter in filters {
-                    mapped_filters.push(optional_image_filter_from_term(filter)?);
-                }
-                return Ok(
-                    image_filters::merge(mapped_filters, None)
-                        .ok_or(rustler::Error::BadArg)?,
-                );
+        Ok((tag, filters)) if tag == atoms::merge_filter() => {
+            let mut mapped_filters = Vec::with_capacity(filters.len());
+            for filter in filters {
+                mapped_filters.push(optional_image_filter_from_term(filter)?);
             }
+            Ok(image_filters::merge(mapped_filters, None).ok_or(rustler::Error::BadArg)?)
         }
-        Err(_reason) => {}
-    };
+        _ => decode_tile_image_filter(term),
+    }
+}
+fn decode_tile_image_filter<'a>(term: Term<'a>) -> NifResult<skia_safe::ImageFilter> {
     match term.decode::<(Atom, (f64, f64, f64, f64), (f64, f64, f64, f64), Term<'a>)>() {
         Ok(
             (tag, (src_x, src_y, src_w, src_h), (dst_x, dst_y, dst_w, dst_h), input_term),
-        ) => {
-            if tag == atoms::tile_filter() {
-                return Ok(
-                    image_filters::tile(
-                            Rect::from_xywh(
-                                src_x as f32,
-                                src_y as f32,
-                                src_w as f32,
-                                src_h as f32,
-                            ),
-                            Rect::from_xywh(
-                                dst_x as f32,
-                                dst_y as f32,
-                                dst_w as f32,
-                                dst_h as f32,
-                            ),
-                            optional_image_filter_from_term(input_term)?,
+        ) if tag == atoms::tile_filter() => {
+            Ok(
+                image_filters::tile(
+                        Rect::from_xywh(
+                            src_x as f32,
+                            src_y as f32,
+                            src_w as f32,
+                            src_h as f32,
+                        ),
+                        Rect::from_xywh(
+                            dst_x as f32,
+                            dst_y as f32,
+                            dst_w as f32,
+                            dst_h as f32,
+                        ),
+                        optional_image_filter_from_term(input_term)?,
+                    )
+                    .ok_or(rustler::Error::BadArg)?,
+            )
+        }
+        _ => decode_morphology_image_filter(term),
+    }
+}
+fn decode_morphology_image_filter<'a>(
+    term: Term<'a>,
+) -> NifResult<skia_safe::ImageFilter> {
+    match term.decode::<(Atom, Atom, f64, f64, Term<'a>)>() {
+        Ok(
+            (tag, op, radius_x, radius_y, input_term),
+        ) if tag == atoms::morphology_filter() => {
+            let input = optional_image_filter_from_term(input_term)?;
+            if op == atoms::dilate() {
+                Ok(
+                    image_filters::dilate(
+                            (radius_x as f32, radius_y as f32),
+                            input,
+                            None,
                         )
                         .ok_or(rustler::Error::BadArg)?,
-                );
-            }
-        }
-        Err(_reason) => {}
-    };
-    match term.decode::<(Atom, Atom, f64, f64, Term<'a>)>() {
-        Ok((tag, op, radius_x, radius_y, input_term)) => {
-            if tag == atoms::morphology_filter() {
-                let input = optional_image_filter_from_term(input_term)?;
-                if op == atoms::dilate() {
-                    return Ok(
-                        image_filters::dilate(
-                                (radius_x as f32, radius_y as f32),
-                                input,
-                                None,
-                            )
-                            .ok_or(rustler::Error::BadArg)?,
-                    );
-                }
+                )
+            } else {
                 if op == atoms::erode() {
-                    return Ok(
+                    Ok(
                         image_filters::erode(
                                 (radius_x as f32, radius_y as f32),
                                 input,
                                 None,
                             )
                             .ok_or(rustler::Error::BadArg)?,
-                    );
+                    )
+                } else {
+                    Err(rustler::Error::BadArg)
                 }
-                return Err(rustler::Error::BadArg);
             }
         }
-        Err(_reason) => {}
-    };
-    Err(rustler::Error::BadArg)
+        _ => Err(rustler::Error::BadArg),
+    }
 }
 fn decode_shader<'a>(term: Term<'a>) -> NifResult<Shader> {
     let paint = decode_paint(term)?;
@@ -684,164 +740,161 @@ fn decode_mask_filter<'a>(term: Term<'a>) -> NifResult<MaskFilter> {
     match term.decode::<(Atom, Atom, f64, bool)>() {
         Ok((tag, style, sigma, respect_ctm)) => {
             if tag == atoms::blur_mask_filter() {
-                return Ok(
+                Ok(
                     MaskFilter::blur(
                             generated_enums::decode_blur_style(style)?,
                             sigma as f32,
                             respect_ctm,
                         )
                         .ok_or(rustler::Error::BadArg)?,
-                );
+                )
+            } else {
+                Err(rustler::Error::BadArg)
             }
         }
-        Err(_reason) => {}
-    };
-    Err(rustler::Error::BadArg)
+        Err(_reason) => Err(rustler::Error::BadArg),
+    }
 }
 fn decode_path_effect<'a>(term: Term<'a>) -> NifResult<PathEffect> {
     match term.decode::<(Atom, Vec<f64>, f64)>() {
-        Ok((tag, intervals, phase)) => {
-            if tag == atoms::dash_path_effect() {
-                let mut mapped_intervals = Vec::with_capacity(intervals.len());
-                for value in intervals {
-                    mapped_intervals.push(value as f32);
-                }
-                return Ok(
-                    PathEffect::dash(mapped_intervals.as_slice(), phase as f32)
-                        .ok_or(rustler::Error::BadArg)?,
-                );
+        Ok((tag, intervals, phase)) if tag == atoms::dash_path_effect() => {
+            let mut mapped_intervals = Vec::with_capacity(intervals.len());
+            for value in intervals {
+                mapped_intervals.push(value as f32);
             }
+            Ok(
+                PathEffect::dash(mapped_intervals.as_slice(), phase as f32)
+                    .ok_or(rustler::Error::BadArg)?,
+            )
         }
-        Err(_reason) => {}
-    };
+        _ => decode_corner_path_effect(term),
+    }
+}
+fn decode_corner_path_effect<'a>(term: Term<'a>) -> NifResult<PathEffect> {
     match term.decode::<(Atom, f64)>() {
-        Ok((tag, radius)) => {
-            if tag == atoms::corner_path_effect() {
-                return Ok(
-                    PathEffect::corner_path(radius as f32).ok_or(rustler::Error::BadArg)?,
-                );
-            }
+        Ok((tag, radius)) if tag == atoms::corner_path_effect() => {
+            Ok(PathEffect::corner_path(radius as f32).ok_or(rustler::Error::BadArg)?)
         }
-        Err(_reason) => {}
-    };
+        _ => decode_trim_path_effect(term),
+    }
+}
+fn decode_trim_path_effect<'a>(term: Term<'a>) -> NifResult<PathEffect> {
     match term.decode::<(Atom, f64, f64, Atom)>() {
-        Ok((tag, start, stop, mode)) => {
-            if tag == atoms::trim_path_effect() {
-                if mode == atoms::inverted() {
-                    return Ok(
-                        PathEffect::trim(
-                                start as f32,
-                                stop as f32,
-                                skia_safe::trim_path_effect::Mode::Inverted,
-                            )
-                            .ok_or(rustler::Error::BadArg)?,
-                    );
-                }
+        Ok((tag, start, stop, mode)) if tag == atoms::trim_path_effect() => {
+            if mode == atoms::inverted() {
+                Ok(
+                    PathEffect::trim(
+                            start as f32,
+                            stop as f32,
+                            skia_safe::trim_path_effect::Mode::Inverted,
+                        )
+                        .ok_or(rustler::Error::BadArg)?,
+                )
+            } else {
                 if mode == atoms::normal() {
-                    return Ok(
+                    Ok(
                         PathEffect::trim(
                                 start as f32,
                                 stop as f32,
                                 skia_safe::trim_path_effect::Mode::Normal,
                             )
                             .ok_or(rustler::Error::BadArg)?,
-                    );
+                    )
+                } else {
+                    Err(rustler::Error::BadArg)
                 }
-                return Err(rustler::Error::BadArg);
             }
         }
-        Err(_reason) => {}
-    };
+        _ => decode_discrete_path_effect(term),
+    }
+}
+fn decode_discrete_path_effect<'a>(term: Term<'a>) -> NifResult<PathEffect> {
     match term.decode::<(Atom, f64, f64, Term<'a>)>() {
-        Ok((tag, segment_length, deviation, seed_term)) => {
-            if tag == atoms::discrete_path_effect() {
-                let seed = match seed_term.decode::<Atom>() {
-                    Ok(atom) => {
-                        if atom == atoms::nil() {
-                            None
-                        } else {
-                            Some(seed_term.decode::<i64>()? as u32)
-                        }
+        Ok(
+            (tag, segment_length, deviation, seed_term),
+        ) if tag == atoms::discrete_path_effect() => {
+            let seed = match seed_term.decode::<Atom>() {
+                Ok(atom) => {
+                    if atom == atoms::nil() {
+                        None
+                    } else {
+                        Some(seed_term.decode::<i64>()? as u32)
                     }
-                    Err(_reason) => Some(seed_term.decode::<i64>()? as u32),
-                };
-                return Ok(
-                    PathEffect::discrete(segment_length as f32, deviation as f32, seed)
-                        .ok_or(rustler::Error::BadArg)?,
-                );
-            }
+                }
+                Err(_reason) => Some(seed_term.decode::<i64>()? as u32),
+            };
+            Ok(
+                PathEffect::discrete(segment_length as f32, deviation as f32, seed)
+                    .ok_or(rustler::Error::BadArg)?,
+            )
         }
-        Err(_reason) => {}
-    };
+        _ => decode_path_1d_effect(term),
+    }
+}
+fn decode_path_1d_effect<'a>(term: Term<'a>) -> NifResult<PathEffect> {
     match term.decode::<(Atom, Term<'a>, f64, f64, Atom)>() {
-        Ok((tag, path_term, advance, phase, style)) => {
-            if tag == atoms::path_1d_effect() {
-                return Ok(
-                    PathEffect::path_1d(
-                            &build_path(path_term)?,
-                            advance as f32,
-                            phase as f32,
-                            decode_path_1d_style(style)?,
-                        )
-                        .ok_or(rustler::Error::BadArg)?,
-                );
-            }
+        Ok((tag, path_term, advance, phase, style)) if tag == atoms::path_1d_effect() => {
+            Ok(
+                PathEffect::path_1d(
+                        &build_path(path_term)?,
+                        advance as f32,
+                        phase as f32,
+                        decode_path_1d_style(style)?,
+                    )
+                    .ok_or(rustler::Error::BadArg)?,
+            )
         }
-        Err(_reason) => {}
-    };
+        _ => decode_line_2d_path_effect(term),
+    }
+}
+fn decode_line_2d_path_effect<'a>(term: Term<'a>) -> NifResult<PathEffect> {
     match term.decode::<(Atom, f64, Term<'a>)>() {
-        Ok((tag, width, matrix_term)) => {
-            if tag == atoms::line_2d_effect() {
-                return Ok(
-                    PathEffect::line_2d(width as f32, &matrix_from_term(matrix_term)?)
-                        .ok_or(rustler::Error::BadArg)?,
-                );
-            }
+        Ok((tag, width, matrix_term)) if tag == atoms::line_2d_effect() => {
+            Ok(
+                PathEffect::line_2d(width as f32, &matrix_from_term(matrix_term)?)
+                    .ok_or(rustler::Error::BadArg)?,
+            )
         }
-        Err(_reason) => {}
-    };
+        _ => decode_binary_path_effect(term),
+    }
+}
+fn decode_binary_path_effect<'a>(term: Term<'a>) -> NifResult<PathEffect> {
     match term.decode::<(Atom, Term<'a>, Term<'a>)>() {
-        Ok((tag, first, second)) => {
-            if tag == atoms::path_2d_effect() {
-                return Ok(
-                    PathEffect::path_2d(&matrix_from_term(first)?, &build_path(second)?),
-                );
-            }
-            if tag == atoms::compose_path_effect() {
-                return Ok(
-                    PathEffect::compose(
-                        decode_path_effect(first)?,
-                        decode_path_effect(second)?,
-                    ),
-                );
-            }
-            if tag == atoms::sum_path_effect() {
-                return Ok(
-                    PathEffect::sum(
-                        decode_path_effect(first)?,
-                        decode_path_effect(second)?,
-                    ),
-                );
-            }
+        Ok((tag, first, second)) if tag == atoms::path_2d_effect() => {
+            Ok(PathEffect::path_2d(&matrix_from_term(first)?, &build_path(second)?))
         }
-        Err(_reason) => {}
-    };
-    Err(rustler::Error::BadArg)
+        Ok((tag, first, second)) if tag == atoms::compose_path_effect() => {
+            Ok(
+                PathEffect::compose(
+                    decode_path_effect(first)?,
+                    decode_path_effect(second)?,
+                ),
+            )
+        }
+        Ok((tag, first, second)) if tag == atoms::sum_path_effect() => {
+            Ok(PathEffect::sum(decode_path_effect(first)?, decode_path_effect(second)?))
+        }
+        _ => Err(rustler::Error::BadArg),
+    }
 }
 fn decode_sampling_options<'a>(term: Term<'a>) -> NifResult<SamplingOptions> {
     match term.decode::<(Atom, Atom, Atom)>() {
         Ok((tag, filter, mipmap)) => {
             if tag == atoms::sampling_options() {
-                return Ok(
+                Ok(
                     SamplingOptions::new(
                         generated_enums::decode_sampling(filter)?,
                         generated_enums::decode_mipmap_mode(mipmap)?,
                     ),
-                );
+                )
+            } else {
+                decode_sampling_cubic_or_aniso(term)
             }
         }
-        Err(_reason) => {}
-    };
+        Err(_reason) => decode_sampling_cubic_or_aniso(term),
+    }
+}
+fn decode_sampling_cubic_or_aniso<'a>(term: Term<'a>) -> NifResult<SamplingOptions> {
     match term.decode::<(Atom, Term<'a>)>() {
         Ok((tag, cubic_term)) => {
             if tag == atoms::sampling_cubic() {
@@ -869,17 +922,17 @@ fn decode_sampling_options<'a>(term: Term<'a>) -> NifResult<SamplingOptions> {
                         }
                     }
                 };
-                return Ok(SamplingOptions::from(cubic));
-            }
-            if tag == atoms::sampling_aniso() {
-                return Ok(
-                    SamplingOptions::from_aniso(cubic_term.decode::<i64>()? as i32),
-                );
+                Ok(SamplingOptions::from(cubic))
+            } else {
+                if tag == atoms::sampling_aniso() {
+                    Ok(SamplingOptions::from_aniso(cubic_term.decode::<i64>()? as i32))
+                } else {
+                    Err(rustler::Error::BadArg)
+                }
             }
         }
-        Err(_reason) => {}
-    };
-    Err(rustler::Error::BadArg)
+        Err(_reason) => Err(rustler::Error::BadArg),
+    }
 }
 fn decode_color<'a>(term: Term<'a>) -> NifResult<Color> {
     match term.decode::<(Atom, u32)>() {
@@ -889,11 +942,15 @@ fn decode_color<'a>(term: Term<'a>) -> NifResult<Color> {
                 let green = (rgba >> 16 & 255) as u8;
                 let blue = (rgba >> 8 & 255) as u8;
                 let alpha = (rgba & 255) as u8;
-                return Ok(Color::from_argb(alpha, red, green, blue));
+                Ok(Color::from_argb(alpha, red, green, blue))
+            } else {
+                decode_rgba_color(term)
             }
         }
-        Err(_reason) => {}
-    };
+        Err(_reason) => decode_rgba_color(term),
+    }
+}
+fn decode_rgba_color<'a>(term: Term<'a>) -> NifResult<Color> {
     let (tag, red, green, blue, alpha) = term.decode::<(Atom, u8, u8, u8, u8)>()?;
     if tag == atoms::rgba() {
         Ok(Color::from_argb(alpha, red, green, blue))

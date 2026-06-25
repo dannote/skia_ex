@@ -99,26 +99,27 @@ fn draw_path_outline_impl<'a>(
     if path_utils::fill_path_with_paint(&path, &stroke, &mut builder, None, None)
         == false
     {
-        return Ok(());
+        Ok(())
+    } else {
+        let mut outline = builder.detach();
+        apply_fill_rule(&mut outline, raw_opts)?;
+        match opts.fill {
+            Some(fill) => {
+                let mut paint = decode_paint(fill)?;
+                apply_blend_mode(&mut paint, raw_opts)?;
+                canvas.draw_path(&outline, &paint);
+            }
+            None => {
+                match opts.stroke {
+                    Some(stroke_color) => {
+                        let mut paint = fill_paint(decode_color(stroke_color)?);
+                        apply_blend_mode(&mut paint, raw_opts)?;
+                        canvas.draw_path(&outline, &paint);
+                    }
+                    None => {}
+                };
+            }
+        };
+        Ok(())
     }
-    let mut outline = builder.detach();
-    apply_fill_rule(&mut outline, raw_opts)?;
-    match opts.fill {
-        Some(fill) => {
-            let mut paint = decode_paint(fill)?;
-            apply_blend_mode(&mut paint, raw_opts)?;
-            canvas.draw_path(&outline, &paint);
-        }
-        None => {
-            match opts.stroke {
-                Some(stroke_color) => {
-                    let mut paint = fill_paint(decode_color(stroke_color)?);
-                    apply_blend_mode(&mut paint, raw_opts)?;
-                    canvas.draw_path(&outline, &paint);
-                }
-                None => {}
-            };
-        }
-    };
-    Ok(())
 }
