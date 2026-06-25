@@ -3,6 +3,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
 
   use Skia.Codegen.Rusty.SkiaSafeSources,
     files: [
+      :color,
       :color_filter,
       :gradient_shader,
       :image,
@@ -588,7 +589,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
       {:ok, {tag, dx, dy, sigma_x, sigma_y, color_term, shadow_opts}} ->
         if tag == Atoms.drop_shadow_filter() do
           {input_term, shadow_only} = decode_as!(shadow_opts, {R.term(), R.bool()})
-          color = unwrap!(decode_color(color_term))
+          color = decode_color(color_term)
           input = optional_image_filter_from_term(input_term)
 
           filter =
