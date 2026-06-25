@@ -658,7 +658,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
                  ),
                  cast(zoom, :f32),
                  cast(inset, :f32),
-                 unwrap!(decode_sampling_options(sampling_term)),
+                 decode_sampling_options(sampling_term),
                  optional_image_filter_from_term(input_term),
                  none()
                ).ok_or(badarg())
@@ -694,7 +694,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
                  cast(gain, :f32),
                  cast(bias, :f32),
                  {cast(offset_x, :i32), cast(offset_y, :i32)},
-                 unwrap!(GeneratedEnums.decode_tile_mode(tile)),
+                 GeneratedEnums.decode_tile_mode(tile),
                  convolve_alpha,
                  optional_image_filter_from_term(input_term),
                  none()
@@ -715,7 +715,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
              unwrap!(
                ImageFilters.matrix_transform(
                  ref(unwrap!(matrix_from_term(matrix_term))),
-                 unwrap!(decode_sampling_options(sampling_term)),
+                 decode_sampling_options(sampling_term),
                  optional_image_filter_from_term(input_term)
                ).ok_or(badarg())
              )}
