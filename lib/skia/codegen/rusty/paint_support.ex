@@ -12,7 +12,9 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
       :paint,
       :path_effects,
       :picture,
-      :runtime_effect
+      :runtime_effect,
+      :sampling_options,
+      :shader
     ],
     rust_sources: [
       "native/skia_native/src/lib.rs",
@@ -231,7 +233,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
         if tag == Atoms.color_shader() do
           paint = Paint.default()
           paint.set_anti_alias(true).set_style(PaintStyle.Fill)
-          paint.set_shader(SkiaSafe.Shaders.color(unwrap!(decode_color(color_term))))
+          paint.set_shader(SkiaSafe.Shaders.color(decode_color(color_term)))
           return!({:ok, paint})
         end
 
@@ -387,8 +389,8 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
           return!(
             {:ok,
              SkiaSafe.SamplingOptions.new(
-               unwrap!(GeneratedEnums.decode_sampling(filter)),
-               unwrap!(GeneratedEnums.decode_mipmap_mode(mipmap))
+               GeneratedEnums.decode_sampling(filter),
+               GeneratedEnums.decode_mipmap_mode(mipmap)
              )}
           )
         end
@@ -745,7 +747,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
           mapped_filters = Vec.with_capacity(filters.len())
 
           for filter <- filters do
-            mapped_filters.push(unwrap!(optional_image_filter_from_term(filter)))
+            mapped_filters.push(optional_image_filter_from_term(filter))
           end
 
           return!({:ok, ok_or!(ImageFilters.merge(mapped_filters, none()), badarg())})

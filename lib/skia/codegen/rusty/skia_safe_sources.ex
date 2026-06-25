@@ -22,7 +22,9 @@ defmodule Skia.Codegen.Rusty.SkiaSafeSources do
       "effects/_1d_path_effect.rs",
       "effects/_2d_path_effect.rs"
     ],
-    runtime_effect: ["effects/runtime_effect.rs"]
+    runtime_effect: ["effects/runtime_effect.rs"],
+    sampling_options: ["core/sampling_options.rs"],
+    shader: ["core/shader.rs"]
   }
 
   defmacro __using__(opts) do
