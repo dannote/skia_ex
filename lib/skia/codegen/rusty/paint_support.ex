@@ -2,8 +2,12 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
   @moduledoc false
 
   use Skia.Codegen.Rusty.SkiaSafeSources,
-    files: [:gradient_shader, :image, :image_filters, :picture, :runtime_effect],
-    rust_sources: ["native/skia_native/src/lib.rs", "native/skia_native/src/generated_enums.rs"]
+    files: [:gradient_shader, :image, :image_filters, :path_effects, :picture, :runtime_effect],
+    rust_sources: [
+      "native/skia_native/src/lib.rs",
+      "native/skia_native/src/generated_enums.rs",
+      "native/skia_native/src/generated_path.rs"
+    ]
 
   alias RustQ.Type, as: R
 
@@ -714,7 +718,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
             {:ok,
              unwrap!(
                ImageFilters.matrix_transform(
-                 ref(unwrap!(matrix_from_term(matrix_term))),
+                 ref(matrix_from_term(matrix_term)),
                  decode_sampling_options(sampling_term),
                  optional_image_filter_from_term(input_term)
                ).ok_or(badarg())
@@ -970,7 +974,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
             {:ok,
              unwrap!(
                SkiaSafe.PathEffect.path_1d(
-                 ref(unwrap!(build_path(path_term))),
+                 ref(build_path(path_term)),
                  cast(advance, :f32),
                  cast(phase, :f32),
                  unwrap!(decode_path_1d_style(style))
@@ -1007,8 +1011,8 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
           return!(
             {:ok,
              SkiaSafe.PathEffect.path_2d(
-               ref(unwrap!(matrix_from_term(first))),
-               ref(unwrap!(build_path(second)))
+               ref(matrix_from_term(first)),
+               ref(build_path(second))
              )}
           )
         end

@@ -14,18 +14,22 @@ defmodule Skia.Codegen.Rusty.SkiaSafeSources do
     picture: ["core/picture.rs"],
     paint: ["core.rs", "core/paint.rs"],
     path: ["core/path.rs"],
+    path_effects: ["effects/_1d_path_effect.rs", "effects/_2d_path_effect.rs"],
     runtime_effect: ["effects/runtime_effect.rs"]
   }
 
   defmacro __using__(opts) do
     rust_sources = Keyword.get(opts, :rust_sources, []) |> List.wrap()
+    callable_modules = Keyword.get(opts, :callable_modules, []) |> List.wrap()
     files = Keyword.get(opts, :files, Map.keys(@source_files)) |> List.wrap()
     manifest_path = Keyword.get(opts, :manifest_path, "native/skia_native/Cargo.toml")
 
     skia_safe_sources = skia_safe_sources!(files, manifest_path)
 
     quote do
-      use RustQ.Meta, rust_sources: unquote(Macro.escape(rust_sources ++ skia_safe_sources))
+      use RustQ.Meta,
+        rust_sources: unquote(Macro.escape(rust_sources ++ skia_safe_sources)),
+        callable_modules: unquote(Macro.escape(callable_modules))
     end
   end
 
