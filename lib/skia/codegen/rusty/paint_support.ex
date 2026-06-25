@@ -82,7 +82,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
     bytes.resize(effect.uniform_size(), 0)
 
     for {name, values} <- float_uniforms do
-      uniform = unwrap!(effect.find_uniform(ref(name)).ok_or(badarg()))
+      uniform = ok_or!(effect.find_uniform(ref(name)), badarg())
       offset = uniform.offset()
       byte_len = values.len() * 4
 
@@ -101,7 +101,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
     end
 
     for {name, values} <- int_uniforms do
-      uniform = unwrap!(effect.find_uniform(ref(name)).ok_or(badarg()))
+      uniform = ok_or!(effect.find_uniform(ref(name)), badarg())
       offset = uniform.offset()
       byte_len = values.len() * 4
 
@@ -133,9 +133,9 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
     end
 
     for {name, child_term} <- children do
-      child = unwrap!(effect.find_child(ref(name)).ok_or(badarg()))
+      child = ok_or!(effect.find_child(ref(name)), badarg())
       paint = decode_paint(child_term)
-      shader = unwrap!(paint.shader().ok_or(badarg()))
+      shader = ok_or!(paint.shader(), badarg())
       assign!(index(ordered, child.index()), some(ChildPtr.from(shader)))
     end
 
@@ -320,9 +320,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
           paint.set_anti_alias(true).set_style(PaintStyle.Fill)
 
           paint.set_shader(
-            unwrap!(
-              effect.make_shader(uniforms, children.as_slice(), matrix.as_ref()).ok_or(badarg())
-            )
+            ok_or!(effect.make_shader(uniforms, children.as_slice(), matrix.as_ref()), badarg())
           )
 
           return!({:ok, paint})
@@ -445,11 +443,12 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
         if tag == Atoms.blend_color_filter() do
           return!(
             {:ok,
-             unwrap!(
+             ok_or!(
                ColorFilters.blend(
                  decode_color(color_term),
                  GeneratedEnums.decode_blend_mode(blend_mode)
-               ).ok_or(badarg())
+               ),
+               badarg()
              )}
           )
         end
@@ -511,11 +510,9 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
         if tag == Atoms.compose_color_filter() do
           return!(
             {:ok,
-             unwrap!(
-               ColorFilters.compose(
-                 decode_color_filter(outer),
-                 decode_color_filter(inner)
-               ).ok_or(badarg())
+             ok_or!(
+               ColorFilters.compose(decode_color_filter(outer), decode_color_filter(inner)),
+               badarg()
              )}
           )
         end
@@ -534,13 +531,14 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
         if tag == Atoms.blur_filter() do
           return!(
             {:ok,
-             unwrap!(
+             ok_or!(
                ImageFilters.blur(
                  {cast(sigma_x, :f32), cast(sigma_y, :f32)},
                  GeneratedEnums.decode_tile_mode(tile_mode),
                  none(),
                  none()
-               ).ok_or(badarg())
+               ),
+               badarg()
              )}
           )
         end
@@ -554,11 +552,9 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
         if tag == Atoms.compose_filter() do
           return!(
             {:ok,
-             unwrap!(
-               ImageFilters.compose(
-                 decode_image_filter(outer),
-                 decode_image_filter(inner)
-               ).ok_or(badarg())
+             ok_or!(
+               ImageFilters.compose(decode_image_filter(outer), decode_image_filter(inner)),
+               badarg()
              )}
           )
         end
@@ -572,12 +568,13 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
         if tag == Atoms.offset_filter() do
           return!(
             {:ok,
-             unwrap!(
+             ok_or!(
                ImageFilters.offset(
                  {cast(x, :f32), cast(y, :f32)},
                  optional_image_filter_from_term(input_term),
                  none()
-               ).ok_or(badarg())
+               ),
+               badarg()
              )}
           )
         end
@@ -614,7 +611,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
               )
             end
 
-          return!({:ok, unwrap!(filter.ok_or(badarg()))})
+          return!({:ok, ok_or!(filter, badarg())})
         end
 
       {:error, _reason} ->
@@ -626,12 +623,13 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
         if tag == Atoms.color_filter_image_filter() do
           return!(
             {:ok,
-             unwrap!(
+             ok_or!(
                ImageFilters.color_filter(
                  decode_color_filter(filter_term),
                  optional_image_filter_from_term(input_term),
                  none()
-               ).ok_or(badarg())
+               ),
+               badarg()
              )}
           )
         end
@@ -644,8 +642,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
       {:ok, {tag, shader_term}} ->
         if tag == Atoms.shader_image_filter() do
           return!(
-            {:ok,
-             unwrap!(ImageFilters.shader(decode_shader(shader_term), none()).ok_or(badarg()))}
+            {:ok, ok_or!(ImageFilters.shader(decode_shader(shader_term), none()), badarg())}
           )
         end
 
@@ -661,7 +658,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
         if tag == Atoms.magnifier_filter() do
           return!(
             {:ok,
-             unwrap!(
+             ok_or!(
                ImageFilters.magnifier(
                  Rect.from_xywh(
                    cast(x, :f32),
@@ -674,7 +671,8 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
                  decode_sampling_options(sampling_term),
                  optional_image_filter_from_term(input_term),
                  none()
-               ).ok_or(badarg())
+               ),
+               badarg()
              )}
           )
         end
@@ -700,7 +698,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
 
           return!(
             {:ok,
-             unwrap!(
+             ok_or!(
                ImageFilters.matrix_convolution(
                  {cast(kernel_width, :i32), cast(kernel_height, :i32)},
                  mapped_kernel.as_slice(),
@@ -711,7 +709,8 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
                  convolve_alpha,
                  optional_image_filter_from_term(input_term),
                  none()
-               ).ok_or(badarg())
+               ),
+               badarg()
              )}
           )
         end
@@ -725,12 +724,13 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
         if tag == Atoms.matrix_transform_filter() do
           return!(
             {:ok,
-             unwrap!(
+             ok_or!(
                ImageFilters.matrix_transform(
                  ref(matrix_from_term(matrix_term)),
                  decode_sampling_options(sampling_term),
                  optional_image_filter_from_term(input_term)
-               ).ok_or(badarg())
+               ),
+               badarg()
              )}
           )
         end
@@ -748,7 +748,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
             mapped_filters.push(unwrap!(optional_image_filter_from_term(filter)))
           end
 
-          return!({:ok, unwrap!(ImageFilters.merge(mapped_filters, none()).ok_or(badarg()))})
+          return!({:ok, ok_or!(ImageFilters.merge(mapped_filters, none()), badarg())})
         end
 
       {:error, _reason} ->
@@ -764,7 +764,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
         if tag == Atoms.tile_filter() do
           return!(
             {:ok,
-             unwrap!(
+             ok_or!(
                ImageFilters.tile(
                  Rect.from_xywh(
                    cast(src_x, :f32),
@@ -779,7 +779,8 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
                    cast(dst_h, :f32)
                  ),
                  optional_image_filter_from_term(input_term)
-               ).ok_or(badarg())
+               ),
+               badarg()
              )}
           )
         end
@@ -796,10 +797,9 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
           if op == Atoms.dilate() do
             return!(
               {:ok,
-               unwrap!(
-                 ImageFilters.dilate({cast(radius_x, :f32), cast(radius_y, :f32)}, input, none()).ok_or(
-                   badarg()
-                 )
+               ok_or!(
+                 ImageFilters.dilate({cast(radius_x, :f32), cast(radius_y, :f32)}, input, none()),
+                 badarg()
                )}
             )
           end
@@ -807,10 +807,9 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
           if op == Atoms.erode() do
             return!(
               {:ok,
-               unwrap!(
-                 ImageFilters.erode({cast(radius_x, :f32), cast(radius_y, :f32)}, input, none()).ok_or(
-                   badarg()
-                 )
+               ok_or!(
+                 ImageFilters.erode({cast(radius_x, :f32), cast(radius_y, :f32)}, input, none()),
+                 badarg()
                )}
             )
           end
@@ -854,12 +853,13 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
         if tag == Atoms.blur_mask_filter() do
           return!(
             {:ok,
-             unwrap!(
+             ok_or!(
                SkiaSafe.MaskFilter.blur(
                  GeneratedEnums.decode_blur_style(style),
                  cast(sigma, :f32),
                  respect_ctm
-               ).ok_or(badarg())
+               ),
+               badarg()
              )}
           )
         end
@@ -884,10 +884,9 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
 
           return!(
             {:ok,
-             unwrap!(
-               SkiaSafe.PathEffect.dash(mapped_intervals.as_slice(), cast(phase, :f32)).ok_or(
-                 badarg()
-               )
+             ok_or!(
+               SkiaSafe.PathEffect.dash(mapped_intervals.as_slice(), cast(phase, :f32)),
+               badarg()
              )}
           )
         end
@@ -899,9 +898,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
     case decode_as(term, {R.atom(), R.f64()}) do
       {:ok, {tag, radius}} ->
         if tag == Atoms.corner_path_effect() do
-          return!(
-            {:ok, unwrap!(SkiaSafe.PathEffect.corner_path(cast(radius, :f32)).ok_or(badarg()))}
-          )
+          return!({:ok, ok_or!(SkiaSafe.PathEffect.corner_path(cast(radius, :f32)), badarg())})
         end
 
       {:error, _reason} ->
@@ -914,12 +911,13 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
           if mode == Atoms.inverted() do
             return!(
               {:ok,
-               unwrap!(
+               ok_or!(
                  SkiaSafe.PathEffect.trim(
                    cast(start, :f32),
                    cast(stop, :f32),
                    SkiaSafe.TrimPathMode.Inverted
-                 ).ok_or(badarg())
+                 ),
+                 badarg()
                )}
             )
           end
@@ -927,12 +925,13 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
           if mode == Atoms.normal() do
             return!(
               {:ok,
-               unwrap!(
+               ok_or!(
                  SkiaSafe.PathEffect.trim(
                    cast(start, :f32),
                    cast(stop, :f32),
                    SkiaSafe.TrimPathMode.Normal
-                 ).ok_or(badarg())
+                 ),
+                 badarg()
                )}
             )
           end
@@ -962,12 +961,13 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
 
           return!(
             {:ok,
-             unwrap!(
+             ok_or!(
                SkiaSafe.PathEffect.discrete(
                  cast(segment_length, :f32),
                  cast(deviation, :f32),
                  seed
-               ).ok_or(badarg())
+               ),
+               badarg()
              )}
           )
         end
@@ -981,13 +981,14 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
         if tag == Atoms.path_1d_effect() do
           return!(
             {:ok,
-             unwrap!(
+             ok_or!(
                SkiaSafe.PathEffect.path_1d(
                  ref(build_path(path_term)),
                  cast(advance, :f32),
                  cast(phase, :f32),
                  decode_path_1d_style(style)
-               ).ok_or(badarg())
+               ),
+               badarg()
              )}
           )
         end
@@ -1001,11 +1002,9 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
         if tag == Atoms.line_2d_effect() do
           return!(
             {:ok,
-             unwrap!(
-               SkiaSafe.PathEffect.line_2d(
-                 cast(width, :f32),
-                 ref(matrix_from_term(matrix_term))
-               ).ok_or(badarg())
+             ok_or!(
+               SkiaSafe.PathEffect.line_2d(cast(width, :f32), ref(matrix_from_term(matrix_term))),
+               badarg()
              )}
           )
         end
