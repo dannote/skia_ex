@@ -3,6 +3,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
 
   use Skia.Codegen.Rusty.SkiaSafeSources,
     files: [
+      :color_filter,
       :gradient_shader,
       :image,
       :image_filters,
@@ -443,8 +444,8 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
             {:ok,
              unwrap!(
                ColorFilters.blend(
-                 unwrap!(decode_color(color_term)),
-                 unwrap!(GeneratedEnums.decode_blend_mode(blend_mode))
+                 decode_color(color_term),
+                 GeneratedEnums.decode_blend_mode(blend_mode)
                ).ok_or(badarg())
              )}
           )
@@ -509,8 +510,8 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
             {:ok,
              unwrap!(
                ColorFilters.compose(
-                 unwrap!(decode_color_filter(outer)),
-                 unwrap!(decode_color_filter(inner))
+                 decode_color_filter(outer),
+                 decode_color_filter(inner)
                ).ok_or(badarg())
              )}
           )
