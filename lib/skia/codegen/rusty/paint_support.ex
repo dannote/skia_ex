@@ -9,6 +9,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
       :image,
       :image_filters,
       :mask_filter,
+      :paint,
       :path_effects,
       :picture,
       :runtime_effect
@@ -133,7 +134,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
 
     for {name, child_term} <- children do
       child = unwrap!(effect.find_child(ref(name)).ok_or(badarg()))
-      paint = unwrap!(decode_paint(child_term))
+      paint = decode_paint(child_term)
       shader = unwrap!(paint.shader().ok_or(badarg()))
       assign!(index(ordered, child.index()), some(ChildPtr.from(shader)))
     end
@@ -842,7 +843,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
 
   @spec decode_shader(R.term()) :: R.nif_result(R.path(:Shader))
   defrust decode_shader(term) do
-    paint = unwrap!(decode_paint(term))
+    paint = decode_paint(term)
     paint.shader().ok_or(badarg())
   end
 
