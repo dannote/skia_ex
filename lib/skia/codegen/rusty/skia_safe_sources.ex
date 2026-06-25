@@ -12,10 +12,15 @@ defmodule Skia.Codegen.Rusty.SkiaSafeSources do
     gradient_shader: ["effects/gradient_shader.rs"],
     image: ["core/image.rs"],
     image_filters: ["effects/image_filters.rs"],
+    mask_filter: ["core/mask_filter.rs"],
     picture: ["core/picture.rs"],
     paint: ["core.rs", "core/paint.rs"],
     path: ["core/path.rs"],
-    path_effects: ["effects/_1d_path_effect.rs", "effects/_2d_path_effect.rs"],
+    path_effects: [
+      "core/path_effect.rs",
+      "effects/_1d_path_effect.rs",
+      "effects/_2d_path_effect.rs"
+    ],
     runtime_effect: ["effects/runtime_effect.rs"]
   }
 

@@ -7,6 +7,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
       :gradient_shader,
       :image,
       :image_filters,
+      :mask_filter,
       :path_effects,
       :picture,
       :runtime_effect
@@ -625,7 +626,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
             {:ok,
              unwrap!(
                ImageFilters.color_filter(
-                 unwrap!(decode_color_filter(filter_term)),
+                 decode_color_filter(filter_term),
                  optional_image_filter_from_term(input_term),
                  none()
                ).ok_or(badarg())
@@ -642,9 +643,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
         if tag == Atoms.shader_image_filter() do
           return!(
             {:ok,
-             unwrap!(
-               ImageFilters.shader(unwrap!(decode_shader(shader_term)), none()).ok_or(badarg())
-             )}
+             unwrap!(ImageFilters.shader(decode_shader(shader_term), none()).ok_or(badarg()))}
           )
         end
 
@@ -855,7 +854,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
             {:ok,
              unwrap!(
                SkiaSafe.MaskFilter.blur(
-                 unwrap!(GeneratedEnums.decode_blur_style(style)),
+                 GeneratedEnums.decode_blur_style(style),
                  cast(sigma, :f32),
                  respect_ctm
                ).ok_or(badarg())
@@ -985,7 +984,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
                  ref(build_path(path_term)),
                  cast(advance, :f32),
                  cast(phase, :f32),
-                 unwrap!(decode_path_1d_style(style))
+                 decode_path_1d_style(style)
                ).ok_or(badarg())
              )}
           )
@@ -1003,7 +1002,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
              unwrap!(
                SkiaSafe.PathEffect.line_2d(
                  cast(width, :f32),
-                 ref(unwrap!(matrix_from_term(matrix_term)))
+                 ref(matrix_from_term(matrix_term))
                ).ok_or(badarg())
              )}
           )
@@ -1029,8 +1028,8 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
           return!(
             {:ok,
              SkiaSafe.PathEffect.compose(
-               unwrap!(decode_path_effect(first)),
-               unwrap!(decode_path_effect(second))
+               decode_path_effect(first),
+               decode_path_effect(second)
              )}
           )
         end
@@ -1039,8 +1038,8 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
           return!(
             {:ok,
              SkiaSafe.PathEffect.sum(
-               unwrap!(decode_path_effect(first)),
-               unwrap!(decode_path_effect(second))
+               decode_path_effect(first),
+               decode_path_effect(second)
              )}
           )
         end
