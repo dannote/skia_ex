@@ -333,7 +333,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
     case decode_as(term, {R.atom(), R.term(), R.atom(), R.atom(), R.term(), R.term()}) do
       {:ok, {tag, image_term, tile_x, tile_y, sampling_term, matrix_term}} ->
         if tag == Atoms.image_shader() do
-          image = unwrap!(image_from_term(image_term))
+          image = image_from_term(image_term)
           tile_x = GeneratedEnums.decode_tile_mode(tile_x)
           tile_y = GeneratedEnums.decode_tile_mode(tile_y)
           sampling = decode_sampling_options(sampling_term)
@@ -356,7 +356,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
     case decode_as(term, {R.atom(), R.term(), R.atom(), R.atom(), R.atom(), R.term(), R.term()}) do
       {:ok, {tag, picture_term, tile_x, tile_y, filter_mode, matrix_term, tile_rect_term}} ->
         if tag == Atoms.picture_shader() do
-          picture = unwrap!(picture_from_term(picture_term))
+          picture = picture_from_term(picture_term)
           tile_x = GeneratedEnums.decode_tile_mode(tile_x)
           tile_y = GeneratedEnums.decode_tile_mode(tile_y)
           filter_mode = GeneratedEnums.decode_sampling(filter_mode)
