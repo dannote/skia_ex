@@ -311,9 +311,9 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
          ) do
       {:ok, {tag, effect_term, float_uniforms, int_uniforms, children, matrix_term}} ->
         if tag == Atoms.runtime_effect_shader() do
-          effect = unwrap!(runtime_effect_from_term(effect_term))
-          uniforms = unwrap!(runtime_uniform_data(ref(effect), float_uniforms, int_uniforms))
-          children = unwrap!(runtime_children(ref(effect), children))
+          effect = runtime_effect_from_term(effect_term)
+          uniforms = runtime_uniform_data(ref(effect), float_uniforms, int_uniforms)
+          children = runtime_children(ref(effect), children)
           matrix = optional_matrix_from_term(matrix_term)
           paint = Paint.default()
           paint.set_anti_alias(true).set_style(PaintStyle.Fill)
