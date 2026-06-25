@@ -2,7 +2,14 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
   @moduledoc false
 
   use Skia.Codegen.Rusty.SkiaSafeSources,
-    files: [:gradient_shader, :image, :image_filters, :path_effects, :picture, :runtime_effect],
+    files: [
+      :gradient_shader,
+      :image,
+      :image_filters,
+      :path_effects,
+      :picture,
+      :runtime_effect
+    ],
     rust_sources: [
       "native/skia_native/src/lib.rs",
       "native/skia_native/src/generated_enums.rs",
@@ -526,7 +533,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
              unwrap!(
                ImageFilters.blur(
                  {cast(sigma_x, :f32), cast(sigma_y, :f32)},
-                 unwrap!(GeneratedEnums.decode_tile_mode(tile_mode)),
+                 GeneratedEnums.decode_tile_mode(tile_mode),
                  none(),
                  none()
                ).ok_or(badarg())
@@ -545,8 +552,8 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
             {:ok,
              unwrap!(
                ImageFilters.compose(
-                 unwrap!(decode_image_filter(outer)),
-                 unwrap!(decode_image_filter(inner))
+                 decode_image_filter(outer),
+                 decode_image_filter(inner)
                ).ok_or(badarg())
              )}
           )
