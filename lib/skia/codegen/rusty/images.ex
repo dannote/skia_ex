@@ -34,7 +34,7 @@ defmodule Skia.Codegen.Rusty.Images do
         :ok
     end
 
-    unwrap!(apply_blend_mode(mut_ref(paint), raw_opts))
+    unwrap!(apply_blend_mode(paint, raw_opts))
     sampling = unwrap!(opt_sampling(raw_opts, Atoms.sampling()))
 
     source =
@@ -58,11 +58,11 @@ defmodule Skia.Codegen.Rusty.Images do
             )
 
           :none ->
-            draw_image_source_or_default(canvas, image, source, opts, sampling, ref(paint))
+            draw_image_source_or_default(canvas, image, source, opts, sampling, paint)
         end
 
       :none ->
-        draw_image_source_or_default(canvas, image, source, opts, sampling, ref(paint))
+        draw_image_source_or_default(canvas, image, source, opts, sampling, paint)
     end
 
     :ok
@@ -114,7 +114,7 @@ defmodule Skia.Codegen.Rusty.Images do
         :ok
     end
 
-    unwrap!(apply_blend_mode(mut_ref(paint), raw_opts))
+    unwrap!(apply_blend_mode(paint, raw_opts))
     canvas.save()
     canvas.translate({opts.x.unwrap_or(0.0), opts.y.unwrap_or(0.0)})
     canvas.draw_picture(ref(picture), none(), some(ref(paint)))

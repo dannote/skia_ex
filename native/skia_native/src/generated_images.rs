@@ -15,13 +15,10 @@ fn draw_image_impl<'a>(
     let image = image_from_term(*args.first().ok_or(rustler::Error::BadArg)?)?;
     let mut paint = Paint::default();
     paint.set_anti_alias(true);
-    match opts.opacity {
-        Some(opacity) => {
-            let alpha = (opacity.clamp(0.0, 1.0) * 255.0).round() as u8;
-            paint.set_alpha(alpha);
-        }
-        None => {}
-    };
+    if let Some(opacity) = opts.opacity {
+        let alpha = (opacity.clamp(0.0, 1.0) * 255.0).round() as u8;
+        paint.set_alpha(alpha);
+    }
     apply_blend_mode(&mut paint, raw_opts)?;
     let sampling = opt_sampling(raw_opts, atoms::sampling())?;
     let source = match opts.source {
@@ -77,13 +74,10 @@ fn draw_picture_impl<'a>(
     let picture = picture_from_term(*args.first().ok_or(rustler::Error::BadArg)?)?;
     let mut paint = Paint::default();
     paint.set_anti_alias(true);
-    match opts.opacity {
-        Some(opacity) => {
-            let alpha = (opacity.clamp(0.0, 1.0) * 255.0).round() as u8;
-            paint.set_alpha(alpha);
-        }
-        None => {}
-    };
+    if let Some(opacity) = opts.opacity {
+        let alpha = (opacity.clamp(0.0, 1.0) * 255.0).round() as u8;
+        paint.set_alpha(alpha);
+    }
     apply_blend_mode(&mut paint, raw_opts)?;
     canvas.save();
     canvas.translate((opts.x.unwrap_or(0.0), opts.y.unwrap_or(0.0)));
