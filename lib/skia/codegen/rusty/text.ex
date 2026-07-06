@@ -13,7 +13,8 @@ defmodule Skia.Codegen.Rusty.Text do
       :text_style_from_opts,
       :decode_text_align,
       :decode_text_direction
-    ]
+    ],
+    rust_packages: [{"skia-safe", [manifest_path: "native/skia_native/Cargo.toml"]}]
 
   use Skia.Codegen.Rusty.Args
 
@@ -34,8 +35,8 @@ defmodule Skia.Codegen.Rusty.Text do
         :none -> fill_paint(Color.BLACK)
       end
 
-    unwrap!(apply_paint_effects(mut_ref(paint), raw_opts))
-    canvas.draw_text_blob(ref(blob), {opts.x, opts.y}, ref(paint))
+    unwrap!(apply_paint_effects(paint, raw_opts))
+    canvas.draw_text_blob(blob, {opts.x, opts.y}, paint)
 
     :ok
   end
@@ -74,13 +75,13 @@ defmodule Skia.Codegen.Rusty.Text do
             opts.y,
             width,
             size,
-            ref(paint),
-            ref(opts)
+            paint,
+            opts
           )
         )
 
       :none ->
-        canvas.draw_str(text, {opts.x, opts.y}, ref(font), ref(paint))
+        canvas.draw_str(text, {opts.x, opts.y}, font, paint)
     end
 
     :ok

@@ -18,7 +18,7 @@ fn draw_text_blob_impl<'a>(
         None => fill_paint(Color::BLACK),
     };
     apply_paint_effects(&mut paint, raw_opts)?;
-    canvas.draw_text_blob(&blob, (opts.x, opts.y), &paint);
+    canvas.draw_text_blob(blob, (opts.x, opts.y), &paint);
     Ok(())
 }
 fn draw_text<'a>(canvas: &skia_safe::Canvas, command: Term<'a>) -> NifResult<()> {
@@ -76,33 +76,21 @@ fn draw_paragraph_text<'a>(
     let mut text_style = TextStyle::new();
     text_style.set_font_size(size);
     text_style.set_color(paint.color());
-    match &opts.font_family {
-        Some(family) => {
-            text_style.set_font_families(&vec![family]);
-        }
-        None => {}
-    };
-    match opts.line_height {
-        Some(line_height) => {
-            text_style.set_height(line_height / size);
-            text_style.set_height_override(true);
-        }
-        None => {}
-    };
+    if let Some(family) = &opts.font_family {
+        text_style.set_font_families(&vec![family]);
+    }
+    if let Some(line_height) = opts.line_height {
+        text_style.set_height(line_height / size);
+        text_style.set_height_override(true);
+    }
     let mut paragraph_style = ParagraphStyle::new();
     paragraph_style.set_text_style(&text_style);
-    match opts.align {
-        Some(align) => {
-            paragraph_style.set_text_align(decode_text_align(align)?);
-        }
-        None => {}
-    };
-    match opts.direction {
-        Some(direction) => {
-            paragraph_style.set_text_direction(decode_text_direction(direction)?);
-        }
-        None => {}
-    };
+    if let Some(align) = opts.align {
+        paragraph_style.set_text_align(decode_text_align(align)?);
+    }
+    if let Some(direction) = opts.direction {
+        paragraph_style.set_text_direction(decode_text_direction(direction)?);
+    }
     let mut font_collection = FontCollection::new();
     font_collection.set_default_font_manager(FontMgr::default(), None);
     let mut paragraph_builder = ParagraphBuilder::new(&paragraph_style, font_collection);
@@ -132,34 +120,21 @@ fn text_style_from_opts<'a>(
     opts: &[(Atom, Term<'a>)],
 ) -> NifResult<TextStyle> {
     let mut style = base.clone();
-    match opt_f32_option(opts, atoms::size())? {
-        Some(size) => {
-            style.set_font_size(size);
-        }
-        None => {}
-    };
-    match opt_term(opts, atoms::fill()) {
-        Some(fill) => {
-            style.set_color(decode_color(fill)?);
-        }
-        None => {}
-    };
-    match opt_term(opts, atoms::font_family()) {
-        Some(term) => {
-            let family = term.decode::<String>()?;
-            style.set_font_families(&vec![& family]);
-        }
-        None => {}
-    };
-    match opt_f32_option(opts, atoms::line_height())? {
-        Some(line_height) => {
-            let font_size = opt_f32_option(opts, atoms::size())?
-                .unwrap_or(base.font_size());
-            style.set_height(line_height / font_size);
-            style.set_height_override(true);
-        }
-        None => {}
-    };
+    if let Some(size) = opt_f32_option(opts, atoms::size())? {
+        style.set_font_size(size);
+    }
+    if let Some(fill) = opt_term(opts, atoms::fill()) {
+        style.set_color(decode_color(fill)?);
+    }
+    if let Some(term) = opt_term(opts, atoms::font_family()) {
+        let family = term.decode::<String>()?;
+        style.set_font_families(&vec![& family]);
+    }
+    if let Some(line_height) = opt_f32_option(opts, atoms::line_height())? {
+        let font_size = opt_f32_option(opts, atoms::size())?.unwrap_or(base.font_size());
+        style.set_height(line_height / font_size);
+        style.set_height_override(true);
+    }
     Ok(style)
 }
 fn decode_text_align(value: Atom) -> NifResult<TextAlign> {
