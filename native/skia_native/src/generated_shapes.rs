@@ -8,12 +8,9 @@ fn draw_clear_impl<'a>(
     canvas: &skia_safe::Canvas,
     args: Vec<Term<'a>>,
 ) -> NifResult<()> {
-    match args.first().and_then(|term| decode_color(*term).ok()) {
-        Some(color) => {
-            canvas.clear(color);
-        }
-        None => {}
-    };
+    if let Some(color) = args.first().and_then(|term| decode_color(*term).ok()) {
+        canvas.clear(color);
+    }
     Ok(())
 }
 fn draw_rect<'a>(canvas: &skia_safe::Canvas, command: Term<'a>) -> NifResult<()> {
@@ -28,24 +25,18 @@ fn draw_rect_impl<'a>(
 ) -> NifResult<()> {
     let rect = Rect::from_xywh(opts.x, opts.y, opts.width, opts.height);
     let radius = opts.radius.unwrap_or(0.0);
-    match opt_fill_paint(raw_opts, atoms::fill())? {
-        Some(mut paint) => {
-            apply_blend_mode(&mut paint, raw_opts)?;
-            draw_rect_shape(canvas, rect, radius, &paint);
-        }
-        None => {}
-    };
-    match opt_color(raw_opts, atoms::stroke())? {
-        Some(color) => {
-            let stroke_paint_value = stroke_paint(
-                color,
-                opts.stroke_width.unwrap_or(1.0),
-                raw_opts,
-            )?;
-            draw_rect_shape(canvas, rect, radius, &stroke_paint_value);
-        }
-        None => {}
-    };
+    if let Some(mut paint) = opt_fill_paint(raw_opts, atoms::fill())? {
+        apply_blend_mode(&mut paint, raw_opts)?;
+        draw_rect_shape(canvas, rect, radius, &paint);
+    }
+    if let Some(color) = opt_color(raw_opts, atoms::stroke())? {
+        let stroke_paint_value = stroke_paint(
+            color,
+            opts.stroke_width.unwrap_or(1.0),
+            raw_opts,
+        )?;
+        draw_rect_shape(canvas, rect, radius, &stroke_paint_value);
+    }
     Ok(())
 }
 fn draw_oval<'a>(canvas: &skia_safe::Canvas, command: Term<'a>) -> NifResult<()> {
@@ -59,24 +50,18 @@ fn draw_oval_impl<'a>(
     raw_opts: &[(Atom, Term<'a>)],
 ) -> NifResult<()> {
     let rect = Rect::from_xywh(opts.x, opts.y, opts.width, opts.height);
-    match opt_fill_paint(raw_opts, atoms::fill())? {
-        Some(mut paint) => {
-            apply_blend_mode(&mut paint, raw_opts)?;
-            canvas.draw_oval(rect, &paint);
-        }
-        None => {}
-    };
-    match opt_color(raw_opts, atoms::stroke())? {
-        Some(color) => {
-            let stroke_paint_value = stroke_paint(
-                color,
-                opts.stroke_width.unwrap_or(1.0),
-                raw_opts,
-            )?;
-            canvas.draw_oval(rect, &stroke_paint_value);
-        }
-        None => {}
-    };
+    if let Some(mut paint) = opt_fill_paint(raw_opts, atoms::fill())? {
+        apply_blend_mode(&mut paint, raw_opts)?;
+        canvas.draw_oval(rect, &paint);
+    }
+    if let Some(color) = opt_color(raw_opts, atoms::stroke())? {
+        let stroke_paint_value = stroke_paint(
+            color,
+            opts.stroke_width.unwrap_or(1.0),
+            raw_opts,
+        )?;
+        canvas.draw_oval(rect, &stroke_paint_value);
+    }
     Ok(())
 }
 fn draw_arc<'a>(canvas: &skia_safe::Canvas, command: Term<'a>) -> NifResult<()> {
@@ -91,38 +76,26 @@ fn draw_arc_impl<'a>(
 ) -> NifResult<()> {
     let rect = Rect::from_xywh(opts.x, opts.y, opts.width, opts.height);
     let use_center = opts.use_center.unwrap_or(false);
-    match opt_fill_paint(raw_opts, atoms::fill())? {
-        Some(mut paint) => {
-            apply_blend_mode(&mut paint, raw_opts)?;
-            canvas
-                .draw_arc(
-                    rect,
-                    opts.start_degrees,
-                    opts.sweep_degrees,
-                    use_center,
-                    &paint,
-                );
-        }
-        None => {}
-    };
-    match opt_color(raw_opts, atoms::stroke())? {
-        Some(color) => {
-            let stroke_paint_value = stroke_paint(
-                color,
-                opts.stroke_width.unwrap_or(1.0),
-                raw_opts,
-            )?;
-            canvas
-                .draw_arc(
-                    rect,
-                    opts.start_degrees,
-                    opts.sweep_degrees,
-                    use_center,
-                    &stroke_paint_value,
-                );
-        }
-        None => {}
-    };
+    if let Some(mut paint) = opt_fill_paint(raw_opts, atoms::fill())? {
+        apply_blend_mode(&mut paint, raw_opts)?;
+        canvas
+            .draw_arc(rect, opts.start_degrees, opts.sweep_degrees, use_center, &paint);
+    }
+    if let Some(color) = opt_color(raw_opts, atoms::stroke())? {
+        let stroke_paint_value = stroke_paint(
+            color,
+            opts.stroke_width.unwrap_or(1.0),
+            raw_opts,
+        )?;
+        canvas
+            .draw_arc(
+                rect,
+                opts.start_degrees,
+                opts.sweep_degrees,
+                use_center,
+                &stroke_paint_value,
+            );
+    }
     Ok(())
 }
 fn draw_circle<'a>(canvas: &skia_safe::Canvas, command: Term<'a>) -> NifResult<()> {
@@ -136,24 +109,18 @@ fn draw_circle_impl<'a>(
     raw_opts: &[(Atom, Term<'a>)],
 ) -> NifResult<()> {
     let center = Point::new(opts.x, opts.y);
-    match opt_fill_paint(raw_opts, atoms::fill())? {
-        Some(mut paint) => {
-            apply_blend_mode(&mut paint, raw_opts)?;
-            canvas.draw_circle(center, opts.radius, &paint);
-        }
-        None => {}
-    };
-    match opt_color(raw_opts, atoms::stroke())? {
-        Some(color) => {
-            let stroke_paint_value = stroke_paint(
-                color,
-                opts.stroke_width.unwrap_or(1.0),
-                raw_opts,
-            )?;
-            canvas.draw_circle(center, opts.radius, &stroke_paint_value);
-        }
-        None => {}
-    };
+    if let Some(mut paint) = opt_fill_paint(raw_opts, atoms::fill())? {
+        apply_blend_mode(&mut paint, raw_opts)?;
+        canvas.draw_circle(center, opts.radius, &paint);
+    }
+    if let Some(color) = opt_color(raw_opts, atoms::stroke())? {
+        let stroke_paint_value = stroke_paint(
+            color,
+            opts.stroke_width.unwrap_or(1.0),
+            raw_opts,
+        )?;
+        canvas.draw_circle(center, opts.radius, &stroke_paint_value);
+    }
     Ok(())
 }
 fn draw_vertices<'a>(canvas: &skia_safe::Canvas, command: Term<'a>) -> NifResult<()> {

@@ -7,15 +7,15 @@ defmodule Skia.Codegen.Rusty.Shapes do
   """
 
   alias Skia.Codegen.Commands.Shapes
+  alias RustQ.Type, as: R
 
   use Skia.Codegen.Rusty.Domain,
     from: Shapes,
     commands: [:clear, :rect, :circle, :oval, :arc, :vertices, :line],
-    helpers: [:draw_rect_shape]
+    helpers: [:draw_rect_shape],
+    rust_packages: [{"skia-safe", [manifest_path: "native/skia_native/Cargo.toml"]}]
 
   use Skia.Codegen.Rusty.Paint
-
-  alias RustQ.Type, as: R
 
   @spec draw_clear_impl(R.ref(SkiaSafe.Canvas.t()), R.vec(term())) :: R.nif_result(R.unit())
   defrust draw_clear_impl(canvas, args) do
@@ -37,11 +37,11 @@ defmodule Skia.Codegen.Rusty.Shapes do
     radius = opts.radius.unwrap_or(0.0)
 
     with_fill_paint do
-      draw_rect_shape(canvas, rect, radius, ref(paint))
+      draw_rect_shape(canvas, rect, radius, paint)
     end
 
     with_stroke_paint opts.stroke_width.unwrap_or(1.0) do
-      draw_rect_shape(canvas, rect, radius, ref(stroke_paint_value))
+      draw_rect_shape(canvas, rect, radius, stroke_paint_value)
     end
 
     :ok
@@ -56,11 +56,11 @@ defmodule Skia.Codegen.Rusty.Shapes do
     center = Point.new(opts.x, opts.y)
 
     with_fill_paint do
-      canvas.draw_circle(center, opts.radius, ref(paint))
+      canvas.draw_circle(center, opts.radius, paint)
     end
 
     with_stroke_paint opts.stroke_width.unwrap_or(1.0) do
-      canvas.draw_circle(center, opts.radius, ref(stroke_paint_value))
+      canvas.draw_circle(center, opts.radius, stroke_paint_value)
     end
 
     :ok
@@ -75,11 +75,11 @@ defmodule Skia.Codegen.Rusty.Shapes do
     rect = Rect.from_xywh(opts.x, opts.y, opts.width, opts.height)
 
     with_fill_paint do
-      canvas.draw_oval(rect, ref(paint))
+      canvas.draw_oval(rect, paint)
     end
 
     with_stroke_paint opts.stroke_width.unwrap_or(1.0) do
-      canvas.draw_oval(rect, ref(stroke_paint_value))
+      canvas.draw_oval(rect, stroke_paint_value)
     end
 
     :ok
@@ -95,7 +95,7 @@ defmodule Skia.Codegen.Rusty.Shapes do
     use_center = opts.use_center.unwrap_or(false)
 
     with_fill_paint do
-      canvas.draw_arc(rect, opts.start_degrees, opts.sweep_degrees, use_center, ref(paint))
+      canvas.draw_arc(rect, opts.start_degrees, opts.sweep_degrees, use_center, paint)
     end
 
     with_stroke_paint opts.stroke_width.unwrap_or(1.0) do
@@ -104,7 +104,7 @@ defmodule Skia.Codegen.Rusty.Shapes do
         opts.start_degrees,
         opts.sweep_degrees,
         use_center,
-        ref(stroke_paint_value)
+        stroke_paint_value
       )
     end
 
@@ -149,7 +149,7 @@ defmodule Skia.Codegen.Rusty.Shapes do
     canvas.draw_line(
       unwrap!(point_from_term(opts.from)),
       unwrap!(point_from_term(opts.to)),
-      ref(paint)
+      paint
     )
 
     :ok
