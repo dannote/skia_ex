@@ -89,6 +89,12 @@ defmodule Skia.Codegen.CommandSpecs do
 
   defp command_type(ast, aliases), do: ast |> spec_type(aliases) |> command_type()
 
+  defp command_type(%Type{kind: :alias, meta: %{elixir_name: name, target: %Type{} = target}}) do
+    target
+    |> put_elixir_name(name)
+    |> command_type()
+  end
+
   defp command_type(%Type{kind: :alias, meta: %{elixir_name: name, ast: ast}}) do
     ast
     |> RustQ.Spec.type(%{})

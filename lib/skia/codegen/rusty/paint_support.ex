@@ -85,7 +85,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
 
     for {name, values} <- float_uniforms, reduce: :ok do
       :ok ->
-        uniform = ok_or!(effect.find_uniform(ref(name)), badarg())
+        uniform = ok_or!(effect.find_uniform(name), badarg())
         offset = uniform.offset()
         byte_len = values.len() * 4
 
@@ -107,7 +107,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
 
     for {name, values} <- int_uniforms, reduce: :ok do
       :ok ->
-        uniform = ok_or!(effect.find_uniform(ref(name)), badarg())
+        uniform = ok_or!(effect.find_uniform(name), badarg())
         offset = uniform.offset()
         byte_len = values.len() * 4
 
@@ -141,7 +141,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
     end
 
     for {name, child_term} <- children do
-      child = ok_or!(effect.find_child(ref(name)), badarg())
+      child = ok_or!(effect.find_child(name), badarg())
       paint = decode_paint(child_term)
       shader = ok_or!(paint.shader(), badarg())
       assign!(index(ordered, child.index()), some(ChildPtr.from(shader)))

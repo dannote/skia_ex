@@ -67,7 +67,7 @@ fn runtime_uniform_data(
             __rustq_reduce = match __rustq_reduce {
                 Ok(()) => {
                     let uniform = effect
-                        .find_uniform(&name)
+                        .find_uniform(name)
                         .ok_or(rustler::Error::BadArg)?;
                     let offset = uniform.offset();
                     let byte_len = values.len() * 4;
@@ -98,7 +98,7 @@ fn runtime_uniform_data(
             __rustq_reduce = match __rustq_reduce {
                 Ok(()) => {
                     let uniform = effect
-                        .find_uniform(&name)
+                        .find_uniform(name)
                         .ok_or(rustler::Error::BadArg)?;
                     let offset = uniform.offset();
                     let byte_len = values.len() * 4;
@@ -135,7 +135,7 @@ fn runtime_children<'a>(
         ordered.push(None);
     }
     for (name, child_term) in children {
-        let child = effect.find_child(&name).ok_or(rustler::Error::BadArg)?;
+        let child = effect.find_child(name).ok_or(rustler::Error::BadArg)?;
         let paint = decode_paint(child_term)?;
         let shader = paint.shader().ok_or(rustler::Error::BadArg)?;
         ordered[child.index()] = Some(ChildPtr::from(shader));
@@ -178,7 +178,7 @@ fn decode_linear_gradient_paint<'a>(term: Term<'a>) -> NifResult<Paint> {
             let matrix = optional_matrix_from_term(matrix_term)?;
             let mut paint = Paint::default();
             paint.set_anti_alias(true).set_style(PaintStyle::Fill);
-            match Shader::linear_gradient(
+            if let Some(shader) = Shader::linear_gradient(
                 ((from_x as f32, from_y as f32), (to_x as f32, to_y as f32)),
                 colors.as_slice(),
                 positions.as_deref(),
@@ -186,11 +186,8 @@ fn decode_linear_gradient_paint<'a>(term: Term<'a>) -> NifResult<Paint> {
                 None,
                 matrix.as_ref(),
             ) {
-                Some(shader) => {
-                    paint.set_shader(shader);
-                }
-                None => {}
-            };
+                paint.set_shader(shader);
+            }
             Ok(paint)
         }
         _ => decode_two_point_conical_gradient_paint(term),
@@ -215,7 +212,7 @@ fn decode_two_point_conical_gradient_paint<'a>(term: Term<'a>) -> NifResult<Pain
             let matrix = optional_matrix_from_term(matrix_term)?;
             let mut paint = Paint::default();
             paint.set_anti_alias(true).set_style(PaintStyle::Fill);
-            match Shader::two_point_conical_gradient(
+            if let Some(shader) = Shader::two_point_conical_gradient(
                 (start_x as f32, start_y as f32),
                 start_radius as f32,
                 (end_x as f32, end_y as f32),
@@ -226,11 +223,8 @@ fn decode_two_point_conical_gradient_paint<'a>(term: Term<'a>) -> NifResult<Pain
                 None,
                 matrix.as_ref(),
             ) {
-                Some(shader) => {
-                    paint.set_shader(shader);
-                }
-                None => {}
-            };
+                paint.set_shader(shader);
+            }
             Ok(paint)
         }
         _ => decode_color_shader_paint(term),
@@ -257,7 +251,7 @@ fn decode_radial_gradient_paint<'a>(term: Term<'a>) -> NifResult<Paint> {
             let matrix = optional_matrix_from_term(matrix_term)?;
             let mut paint = Paint::default();
             paint.set_anti_alias(true).set_style(PaintStyle::Fill);
-            match Shader::radial_gradient(
+            if let Some(shader) = Shader::radial_gradient(
                 (center_x as f32, center_y as f32),
                 radius as f32,
                 colors.as_slice(),
@@ -266,11 +260,8 @@ fn decode_radial_gradient_paint<'a>(term: Term<'a>) -> NifResult<Paint> {
                 None,
                 matrix.as_ref(),
             ) {
-                Some(shader) => {
-                    paint.set_shader(shader);
-                }
-                None => {}
-            };
+                paint.set_shader(shader);
+            }
             Ok(paint)
         }
         _ => decode_sweep_gradient_paint(term),
@@ -294,7 +285,7 @@ fn decode_sweep_gradient_paint<'a>(term: Term<'a>) -> NifResult<Paint> {
             let matrix = optional_matrix_from_term(matrix_term)?;
             let mut paint = Paint::default();
             paint.set_anti_alias(true).set_style(PaintStyle::Fill);
-            match Shader::sweep_gradient(
+            if let Some(shader) = Shader::sweep_gradient(
                 (center_x as f32, center_y as f32),
                 colors.as_slice(),
                 positions.as_deref(),
@@ -303,11 +294,8 @@ fn decode_sweep_gradient_paint<'a>(term: Term<'a>) -> NifResult<Paint> {
                 None,
                 matrix.as_ref(),
             ) {
-                Some(shader) => {
-                    paint.set_shader(shader);
-                }
-                None => {}
-            };
+                paint.set_shader(shader);
+            }
             Ok(paint)
         }
         _ => decode_runtime_effect_shader_paint(term),
@@ -358,12 +346,11 @@ fn decode_image_shader_paint<'a>(term: Term<'a>) -> NifResult<Paint> {
             let matrix = optional_matrix_from_term(matrix_term)?;
             let mut paint = Paint::default();
             paint.set_anti_alias(true).set_style(PaintStyle::Fill);
-            match image.to_shader((tile_x, tile_y), sampling, matrix.as_ref()) {
-                Some(shader) => {
-                    paint.set_shader(shader);
-                }
-                None => {}
-            };
+            if let Some(shader) = image
+                .to_shader((tile_x, tile_y), sampling, matrix.as_ref())
+            {
+                paint.set_shader(shader);
+            }
             Ok(paint)
         }
         _ => decode_picture_shader_paint(term),
@@ -444,7 +431,7 @@ fn decode_matrix_color_filter<'a>(term: Term<'a>) -> NifResult<ColorFilter> {
                 let mut index = 0 as usize;
                 for value in matrix {
                     values[index] = value as f32;
-                    index = index + 1 as usize;
+                    index += 1 as usize;
                 }
                 let clamp = if clamp {
                     color_filters::Clamp::Yes
