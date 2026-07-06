@@ -460,8 +460,7 @@ defmodule Skia.Codegen.Rusty.Paths do
     unwrap!(apply_stroke_options(stroke, raw_opts))
     builder = PathBuilder.new()
 
-    if PathUtils.fill_path_with_paint(ref(path), ref(stroke), mut_ref(builder), none(), none()) ==
-         false do
+    if PathUtils.fill_path_with_paint(path, stroke, builder, none(), none()) == false do
       :ok
     else
       outline = builder.detach()
