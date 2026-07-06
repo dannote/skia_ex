@@ -7,7 +7,8 @@ defmodule Skia.Codegen.Rusty.Paths do
 
   use Skia.Codegen.Rusty.Domain,
     from: Paths,
-    commands: [:path, :path_op, :path_outline]
+    commands: [:path, :path_op, :path_outline],
+    rust_packages: [{"skia-safe", [manifest_path: "native/skia_native/Cargo.toml"]}]
 
   use Skia.Codegen.Rusty.Args
 
@@ -371,13 +372,13 @@ defmodule Skia.Codegen.Rusty.Paths do
         ) :: R.nif_result(R.unit())
   defrust draw_path_impl(canvas, args, opts, raw_opts) do
     path = unwrap!(build_path(first_arg_term!()))
-    unwrap!(apply_fill_rule(mut_ref(path), raw_opts))
+    unwrap!(apply_fill_rule(path, raw_opts))
 
     case opts.fill do
       {:some, fill} ->
         paint = unwrap!(decode_paint(fill))
-        unwrap!(apply_blend_mode(mut_ref(paint), raw_opts))
-        canvas.draw_path(ref(path), ref(paint))
+        unwrap!(apply_blend_mode(paint, raw_opts))
+        canvas.draw_path(path, paint)
 
       :none ->
         :ok
@@ -394,7 +395,7 @@ defmodule Skia.Codegen.Rusty.Paths do
             )
           )
 
-        canvas.draw_path(ref(path), ref(stroke_paint_value))
+        canvas.draw_path(path, stroke_paint_value)
 
       :none ->
         :ok
@@ -413,14 +414,14 @@ defmodule Skia.Codegen.Rusty.Paths do
     a = unwrap!(build_path(first_arg_term!()))
     b = unwrap!(build_path(arg_term!(1)))
     op = unwrap!(GeneratedEnums.decode_path_op(opts.path_op))
-    path = unwrap!(a.op(ref(b), op).ok_or(badarg()))
-    unwrap!(apply_fill_rule(mut_ref(path), raw_opts))
+    path = unwrap!(a.op(b, op).ok_or(badarg()))
+    unwrap!(apply_fill_rule(path, raw_opts))
 
     case opts.fill do
       {:some, fill} ->
         paint = unwrap!(decode_paint(fill))
-        unwrap!(apply_blend_mode(mut_ref(paint), raw_opts))
-        canvas.draw_path(ref(path), ref(paint))
+        unwrap!(apply_blend_mode(paint, raw_opts))
+        canvas.draw_path(path, paint)
 
       :none ->
         :ok
@@ -437,7 +438,7 @@ defmodule Skia.Codegen.Rusty.Paths do
             )
           )
 
-        canvas.draw_path(ref(path), ref(stroke_paint_value))
+        canvas.draw_path(path, stroke_paint_value)
 
       :none ->
         :ok
@@ -456,7 +457,7 @@ defmodule Skia.Codegen.Rusty.Paths do
     path = unwrap!(build_path(first_arg_term!()))
     stroke = Paint.default()
     stroke.set_anti_alias(true).set_style(PaintStyle.Stroke).set_stroke_width(opts.outline_width)
-    unwrap!(apply_stroke_options(mut_ref(stroke), raw_opts))
+    unwrap!(apply_stroke_options(stroke, raw_opts))
     builder = PathBuilder.new()
 
     if PathUtils.fill_path_with_paint(ref(path), ref(stroke), mut_ref(builder), none(), none()) ==
@@ -464,20 +465,20 @@ defmodule Skia.Codegen.Rusty.Paths do
       :ok
     else
       outline = builder.detach()
-      unwrap!(apply_fill_rule(mut_ref(outline), raw_opts))
+      unwrap!(apply_fill_rule(outline, raw_opts))
 
       case opts.fill do
         {:some, fill} ->
           paint = unwrap!(decode_paint(fill))
-          unwrap!(apply_blend_mode(mut_ref(paint), raw_opts))
-          canvas.draw_path(ref(outline), ref(paint))
+          unwrap!(apply_blend_mode(paint, raw_opts))
+          canvas.draw_path(outline, paint)
 
         :none ->
           case opts.stroke do
             {:some, stroke_color} ->
               paint = fill_paint(unwrap!(decode_color(stroke_color)))
-              unwrap!(apply_blend_mode(mut_ref(paint), raw_opts))
-              canvas.draw_path(ref(outline), ref(paint))
+              unwrap!(apply_blend_mode(paint, raw_opts))
+              canvas.draw_path(outline, paint)
 
             :none ->
               :ok

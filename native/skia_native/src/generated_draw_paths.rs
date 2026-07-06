@@ -14,25 +14,19 @@ fn draw_path_impl<'a>(
 ) -> NifResult<()> {
     let mut path = build_path(*args.first().ok_or(rustler::Error::BadArg)?)?;
     apply_fill_rule(&mut path, raw_opts)?;
-    match opts.fill {
-        Some(fill) => {
-            let mut paint = decode_paint(fill)?;
-            apply_blend_mode(&mut paint, raw_opts)?;
-            canvas.draw_path(&path, &paint);
-        }
-        None => {}
-    };
-    match opts.stroke {
-        Some(stroke) => {
-            let stroke_paint_value = stroke_paint(
-                decode_color(stroke)?,
-                opts.stroke_width.unwrap_or(1.0),
-                raw_opts,
-            )?;
-            canvas.draw_path(&path, &stroke_paint_value);
-        }
-        None => {}
-    };
+    if let Some(fill) = opts.fill {
+        let mut paint = decode_paint(fill)?;
+        apply_blend_mode(&mut paint, raw_opts)?;
+        canvas.draw_path(&path, &paint);
+    }
+    if let Some(stroke) = opts.stroke {
+        let stroke_paint_value = stroke_paint(
+            decode_color(stroke)?,
+            opts.stroke_width.unwrap_or(1.0),
+            raw_opts,
+        )?;
+        canvas.draw_path(&path, &stroke_paint_value);
+    }
     Ok(())
 }
 fn draw_path_op<'a>(canvas: &skia_safe::Canvas, command: Term<'a>) -> NifResult<()> {
@@ -52,25 +46,19 @@ fn draw_path_op_impl<'a>(
     let op = generated_enums::decode_path_op(opts.path_op)?;
     let mut path = a.op(&b, op).ok_or(rustler::Error::BadArg)?;
     apply_fill_rule(&mut path, raw_opts)?;
-    match opts.fill {
-        Some(fill) => {
-            let mut paint = decode_paint(fill)?;
-            apply_blend_mode(&mut paint, raw_opts)?;
-            canvas.draw_path(&path, &paint);
-        }
-        None => {}
-    };
-    match opts.stroke {
-        Some(stroke) => {
-            let stroke_paint_value = stroke_paint(
-                decode_color(stroke)?,
-                opts.stroke_width.unwrap_or(1.0),
-                raw_opts,
-            )?;
-            canvas.draw_path(&path, &stroke_paint_value);
-        }
-        None => {}
-    };
+    if let Some(fill) = opts.fill {
+        let mut paint = decode_paint(fill)?;
+        apply_blend_mode(&mut paint, raw_opts)?;
+        canvas.draw_path(&path, &paint);
+    }
+    if let Some(stroke) = opts.stroke {
+        let stroke_paint_value = stroke_paint(
+            decode_color(stroke)?,
+            opts.stroke_width.unwrap_or(1.0),
+            raw_opts,
+        )?;
+        canvas.draw_path(&path, &stroke_paint_value);
+    }
     Ok(())
 }
 fn draw_path_outline<'a>(
@@ -110,14 +98,11 @@ fn draw_path_outline_impl<'a>(
                 canvas.draw_path(&outline, &paint);
             }
             None => {
-                match opts.stroke {
-                    Some(stroke_color) => {
-                        let mut paint = fill_paint(decode_color(stroke_color)?);
-                        apply_blend_mode(&mut paint, raw_opts)?;
-                        canvas.draw_path(&outline, &paint);
-                    }
-                    None => {}
-                };
+                if let Some(stroke_color) = opts.stroke {
+                    let mut paint = fill_paint(decode_color(stroke_color)?);
+                    apply_blend_mode(&mut paint, raw_opts)?;
+                    canvas.draw_path(&outline, &paint);
+                }
             }
         };
         Ok(())
