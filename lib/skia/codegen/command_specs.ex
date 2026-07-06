@@ -63,6 +63,10 @@ defmodule Skia.Codegen.CommandSpecs do
     }
   end
 
+  defp resolve_opts_alias(%Type{kind: :alias, meta: %{target: %Type{} = target}}, aliases) do
+    resolve_opts_alias(target, aliases)
+  end
+
   defp resolve_opts_alias(%Type{kind: :alias, meta: %{ast: ast}}, aliases) do
     ast |> spec_type(aliases) |> resolve_opts_alias(aliases)
   end
