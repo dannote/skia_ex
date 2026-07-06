@@ -7,7 +7,8 @@ defmodule Skia.Codegen.Rusty.Clips do
 
   use Skia.Codegen.Rusty.Domain,
     from: Clips,
-    commands: [:clip_rect, :clip_circle, :clip_path]
+    commands: [:clip_rect, :clip_circle, :clip_path],
+    rust_packages: [{"skia-safe", [manifest_path: "native/skia_native/Cargo.toml"]}]
 
   use Skia.Codegen.Rusty.Args
 
@@ -43,7 +44,7 @@ defmodule Skia.Codegen.Rusty.Clips do
     builder.add_circle(Point.new(opts.x, opts.y), opts.radius, none())
     path = builder.detach()
     clip_op = unwrap!(decode_clip_op(opts.clip_op.unwrap_or(Atoms.intersect())))
-    canvas.clip_path(ref(path), clip_op, opts.antialias.unwrap_or(true))
+    canvas.clip_path(path, clip_op, opts.antialias.unwrap_or(true))
 
     :ok
   end
@@ -56,9 +57,9 @@ defmodule Skia.Codegen.Rusty.Clips do
         ) :: R.nif_result(R.unit())
   defrust clip_path_impl(canvas, args, opts, raw_opts) do
     path = unwrap!(build_path(first_arg_term!()))
-    unwrap!(apply_fill_rule(mut_ref(path), raw_opts))
+    unwrap!(apply_fill_rule(path, raw_opts))
     clip_op = unwrap!(decode_clip_op(opts.clip_op.unwrap_or(Atoms.intersect())))
-    canvas.clip_path(ref(path), clip_op, opts.antialias.unwrap_or(true))
+    canvas.clip_path(path, clip_op, opts.antialias.unwrap_or(true))
 
     :ok
   end
