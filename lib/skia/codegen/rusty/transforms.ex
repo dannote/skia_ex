@@ -10,7 +10,8 @@ defmodule Skia.Codegen.Rusty.Transforms do
 
   use Skia.Codegen.Rusty.Domain,
     from: Transforms,
-    commands: [:translate, :scale, :rotate, :rotate_at, :concat]
+    commands: [:translate, :scale, :rotate, :rotate_at, :concat],
+    rust_packages: [{"skia-safe", [manifest_path: "native/skia_native/Cargo.toml"]}]
 
   alias RustQ.Type, as: R
 
@@ -61,7 +62,7 @@ defmodule Skia.Codegen.Rusty.Transforms do
         ) :: R.nif_result(R.unit())
   defrust draw_concat_impl(canvas, opts, _raw_opts) do
     matrix = unwrap!(matrix_from_term(opts.matrix))
-    canvas.concat(ref(matrix))
+    canvas.concat(matrix)
     :ok
   end
 end

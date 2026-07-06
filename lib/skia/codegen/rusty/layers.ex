@@ -18,7 +18,8 @@ defmodule Skia.Codegen.Rusty.Layers do
 
   use Skia.Codegen.Rusty.Domain,
     from: Layers,
-    commands: [:save_layer]
+    commands: [:save_layer],
+    rust_packages: [{"skia-safe", [manifest_path: "native/skia_native/Cargo.toml"]}]
 
   alias RustQ.Type, as: R
 
@@ -56,7 +57,7 @@ defmodule Skia.Codegen.Rusty.Layers do
       |> cast(:u8)
 
     paint.set_alpha(alpha)
-    unwrap!(apply_blend_mode(mut_ref(paint), raw_opts))
+    unwrap!(apply_blend_mode(paint, raw_opts))
 
     case opts.blur do
       {:some, sigma} ->
@@ -86,7 +87,7 @@ defmodule Skia.Codegen.Rusty.Layers do
         :none -> rec
       end
 
-    canvas.save_layer(ref(rec))
+    canvas.save_layer(rec)
 
     :ok
   end

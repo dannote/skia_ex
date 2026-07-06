@@ -129,8 +129,8 @@ defmodule Skia.Codegen.Rusty.Shapes do
         :none -> fill_paint(Color.WHITE)
       end
 
-    unwrap!(apply_paint_effects(mut_ref(paint), raw_opts))
-    canvas.draw_vertices(ref(vertices), blend_mode, ref(paint))
+    unwrap!(apply_paint_effects(paint, raw_opts))
+    canvas.draw_vertices(vertices, blend_mode, paint)
 
     :ok
   end
