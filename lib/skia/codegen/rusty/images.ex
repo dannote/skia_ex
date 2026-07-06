@@ -8,7 +8,8 @@ defmodule Skia.Codegen.Rusty.Images do
   use Skia.Codegen.Rusty.Domain,
     from: Images,
     commands: [:image, :picture],
-    helpers: [:draw_image_source_or_default]
+    helpers: [:draw_image_source_or_default],
+    rust_packages: [{"skia-safe", [manifest_path: "native/skia_native/Cargo.toml"]}]
 
   use Skia.Codegen.Rusty.Args
 
@@ -54,7 +55,7 @@ defmodule Skia.Codegen.Rusty.Images do
               src,
               Rect.from_xywh(opts.x, opts.y, width, height),
               sampling,
-              ref(paint)
+              paint
             )
 
           :none ->
@@ -81,7 +82,7 @@ defmodule Skia.Codegen.Rusty.Images do
       {:some, source} ->
         canvas.draw_image_rect_with_sampling_options(
           image,
-          some({ref(source), SrcRectConstraint.Strict}),
+          some({source, SrcRectConstraint.Strict}),
           Rect.from_xywh(opts.x, opts.y, source.width(), source.height()),
           sampling,
           paint
@@ -117,7 +118,7 @@ defmodule Skia.Codegen.Rusty.Images do
     unwrap!(apply_blend_mode(paint, raw_opts))
     canvas.save()
     canvas.translate({opts.x.unwrap_or(0.0), opts.y.unwrap_or(0.0)})
-    canvas.draw_picture(ref(picture), none(), some(ref(paint)))
+    canvas.draw_picture(picture, none(), some(paint))
     canvas.restore()
 
     :ok

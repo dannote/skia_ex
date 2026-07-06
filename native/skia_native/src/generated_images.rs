@@ -81,7 +81,7 @@ fn draw_picture_impl<'a>(
     apply_blend_mode(&mut paint, raw_opts)?;
     canvas.save();
     canvas.translate((opts.x.unwrap_or(0.0), opts.y.unwrap_or(0.0)));
-    canvas.draw_picture(&picture, None, Some(&paint));
+    canvas.draw_picture(picture, None, Some(&paint));
     canvas.restore();
     Ok(())
 }
