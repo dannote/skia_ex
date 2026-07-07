@@ -118,18 +118,18 @@ defmodule Skia.Codegen.Rusty.Command.Shapes do
           R.slice({atom(), term()})
         ) :: R.nif_result(R.unit())
   defrust draw_vertices_impl(canvas, args, opts, raw_opts) do
-    vertices = unwrap!(vertices_from_term(deref(unwrap!(args.first().ok_or(badarg())))))
+    vertices = vertices_from_term(deref(unwrap!(args.first().ok_or(badarg()))))
 
     blend_mode =
       unwrap!(GeneratedEnums.decode_blend_mode(opts.blend_mode.unwrap_or(Atoms.src_over())))
 
     paint =
       case opts.fill do
-        {:some, term} -> unwrap!(decode_paint(term))
+        {:some, term} -> decode_paint(term)
         :none -> fill_paint(Color.WHITE)
       end
 
-    unwrap!(apply_paint_effects(paint, raw_opts))
+    apply_paint_effects(paint, raw_opts)
     canvas.draw_vertices(vertices, blend_mode, paint)
 
     :ok
@@ -141,14 +141,13 @@ defmodule Skia.Codegen.Rusty.Command.Shapes do
           R.slice({atom(), term()})
         ) :: R.nif_result(R.unit())
   defrust draw_line_impl(canvas, opts, raw_opts) do
-    color = unwrap!(decode_color(opts.stroke))
+    color = decode_color(opts.stroke)
 
-    paint =
-      unwrap!(stroke_paint(color, opts.stroke_width.unwrap_or(1.0), raw_opts))
+    paint = stroke_paint(color, opts.stroke_width.unwrap_or(1.0), raw_opts)
 
     canvas.draw_line(
-      unwrap!(point_from_term(opts.from)),
-      unwrap!(point_from_term(opts.to)),
+      point_from_term(opts.from),
+      point_from_term(opts.to),
       paint
     )
 
