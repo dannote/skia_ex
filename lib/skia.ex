@@ -12,7 +12,7 @@ defmodule Skia do
         |> Skia.to_png()
   """
 
-  alias Skia.Codegen.Commands
+  alias Skia.Codegen.Command.Registry, as: Commands
   alias Skia.{Command, Document}
 
   @type document :: Document.t()

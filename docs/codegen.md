@@ -56,33 +56,43 @@ hand-written Rust interop/decoder code that is not yet clearer as Rusty Elixir.
 
 ## Module structure
 
-The codegen root is orchestration only:
+The codegen tree is organized by pipeline concern:
 
 ```text
-lib/skia/codegen.ex
-lib/skia/codegen/handler_shells.ex
+lib/skia/codegen.ex                    # generated Rust target orchestration
+lib/skia/codegen/command/              # command model and docs metadata
+lib/skia/codegen/native/               # skia-safe/native metadata
+lib/skia/codegen/rusty/                # Rusty-Elixir implementation source
 ```
 
-Rusty Elixir semantic implementations live under `Skia.Codegen.Rusty`:
+Command metadata is pure Elixir command shape:
 
 ```text
-lib/skia/codegen/rusty/paint.ex
-lib/skia/codegen/rusty/args.ex
-lib/skia/codegen/rusty/geometry.ex
-lib/skia/codegen/rusty/transforms.ex
-lib/skia/codegen/rusty/shapes.ex
-lib/skia/codegen/rusty/layers.ex
-lib/skia/codegen/rusty/clips.ex
-lib/skia/codegen/rusty/paths.ex
-lib/skia/codegen/rusty/images.ex
-lib/skia/codegen/rusty/text.ex
+lib/skia/codegen/command/registry.ex
+lib/skia/codegen/command/spec_reader.ex
+lib/skia/codegen/command/overlay.ex
+lib/skia/codegen/command/domain/*.ex
 ```
 
-Family modules are plural (`Shapes`, `Transforms`, `Clips`). Helper macro modules are singular concepts (`Paint`, `Args`, `Geometry`).
+Native metadata is about external Skia/skia-safe facts:
+
+```text
+lib/skia/codegen/native/schema.ex
+lib/skia/codegen/native/skia_safe.ex
+lib/skia/codegen/native/enums.ex
+```
+
+Rusty Elixir semantic implementations are split between command bodies and support helpers:
+
+```text
+lib/skia/codegen/rusty/command/*.ex
+lib/skia/codegen/rusty/support/*.ex
+lib/skia/codegen/rusty/source_sets/*.ex
+```
 
 ## Command metadata direction
 
-`Skia.Codegen.Commands` is the command aggregate. Command args/options are declared as real Elixir `@type`/`@spec` declarations in `Skia.Codegen.Commands.*` modules and reflected structurally from quoted Elixir AST. Do not reintroduce parallel keyword-list command specs. For example, option requirements belong in map types such as:
+`Skia.Codegen.Command.Registry` is the command aggregate. Command args/options are declared as real Elixir `@type`/`@spec` declarations in `Skia.Codegen.Command.Domain.*` modules and reflected structurally from quoted Elixir AST. Do not reintroduce parallel keyword-list command specs. For example, option requirements belong in map types such as:
 
 ```elixir
 @type path_op_opts :: %{

@@ -10,7 +10,7 @@ defmodule Skia.Command do
   """
 
   alias RustQ.Meta.Type
-  alias Skia.Codegen.Commands
+  alias Skia.Codegen.Command.Registry, as: Commands
   alias Skia.{ColorFilter, Command, Font, Image, ImageFilter, MaskFilter, Paint, Path, PathEffect}
   alias Skia.{Picture, SamplingOptions, TextBlob, Vertices}
 

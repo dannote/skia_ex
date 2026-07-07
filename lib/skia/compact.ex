@@ -12,7 +12,7 @@ defmodule Skia.Compact do
       {:ok, raw} = Skia.Compact.to_raw(document)
   """
 
-  alias Skia.Codegen.Commands
+  alias Skia.Codegen.Command.Registry, as: Commands
   alias Skia.{Command, Document}
 
   @op_ids Commands.all()

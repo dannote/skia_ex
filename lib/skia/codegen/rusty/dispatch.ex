@@ -6,7 +6,7 @@ defmodule Skia.Codegen.Rusty.Dispatch do
   use RustQ.Meta
 
   alias RustQ.Type, as: R
-  alias Skia.Codegen.Commands
+  alias Skia.Codegen.Command.Registry, as: Commands
 
   defmacro compact_op_case(id) do
     clauses =

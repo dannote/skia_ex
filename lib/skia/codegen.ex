@@ -3,9 +3,10 @@ defmodule Skia.Codegen do
 
   alias RustQ.Rust
   alias RustQ.Rust.AST
-  alias Skia.Codegen.Commands
-  alias Skia.Codegen.Enums
-  alias Skia.Codegen.Rusty
+  alias Skia.Codegen.Command.Registry, as: Commands
+  alias Skia.Codegen.Native.Enums, as: Enums
+  alias Skia.Codegen.Rusty.Command
+  alias Skia.Codegen.Rusty.Support
 
   @spec generated_targets() :: [{atom(), keyword()}]
   def generated_targets do
@@ -329,14 +330,14 @@ defmodule Skia.Codegen do
         unknown: "Err(rustler::Error::BadArg)"
       )
 
-    items = [dispatch, RustQ.Meta.AST.item(Rusty.Dispatch, :compact_op_atom)]
+    items = [dispatch, RustQ.Meta.AST.item(Skia.Codegen.Rusty.Dispatch, :compact_op_atom)]
 
     render_items(items, "generated_dispatch.rs")
   end
 
   @spec generated_style_helpers() :: String.t()
   def generated_style_helpers do
-    Rusty.StyleHelpers
+    Support.StyleHelpers
     |> rusty_asts()
     |> Enum.map(&render_rustq_item/1)
     |> render_items("generated_style_helpers.rs")
@@ -378,7 +379,7 @@ defmodule Skia.Codegen do
   @spec generated_layers() :: String.t()
   def generated_layers do
     items =
-      (Rusty.Layers.generated_command_asts() ++ Rusty.Layers.generated_asts())
+      (Command.Layers.generated_command_asts() ++ Command.Layers.generated_asts())
       |> Enum.map(&render_rustq_item/1)
 
     render_items(items, "generated_layers.rs")
@@ -393,7 +394,7 @@ defmodule Skia.Codegen do
 
   @doc false
   @spec generated_transform_impl_asts() :: [AST.Function.t()]
-  def generated_transform_impl_asts, do: Rusty.Transforms.generated_asts()
+  def generated_transform_impl_asts, do: Command.Transforms.generated_asts()
 
   @spec generated_shapes() :: String.t()
   def generated_shapes do
@@ -404,32 +405,32 @@ defmodule Skia.Codegen do
 
   @doc false
   @spec generated_shape_impl_asts() :: [AST.Function.t()]
-  def generated_shape_impl_asts, do: Rusty.Shapes.generated_asts()
+  def generated_shape_impl_asts, do: Command.Shapes.generated_asts()
 
   @spec generated_text() :: String.t()
   def generated_text do
-    Rusty.Text.generated_asts()
+    Command.Text.generated_asts()
     |> Enum.map(&render_rustq_item/1)
     |> render_items("generated_text.rs")
   end
 
   @spec generated_images() :: String.t()
   def generated_images do
-    Rusty.Images.generated_asts()
+    Command.Images.generated_asts()
     |> Enum.map(&render_rustq_item/1)
     |> render_items("generated_images.rs")
   end
 
   @spec generated_draw_paths() :: String.t()
   def generated_draw_paths do
-    Rusty.Paths.generated_asts()
+    Command.Paths.generated_asts()
     |> Enum.map(&render_rustq_item/1)
     |> render_items("generated_draw_paths.rs")
   end
 
   @spec generated_clips() :: String.t()
   def generated_clips do
-    Rusty.Clips.generated_asts()
+    Command.Clips.generated_asts()
     |> Enum.map(&render_rustq_item/1)
     |> render_items("generated_clips.rs")
   end
@@ -482,7 +483,7 @@ defmodule Skia.Codegen do
       :decode_rgba_color,
       :decode_gradient_stops
     ]
-    |> Enum.map(&rusty_ast(Rusty.PaintSupport, &1))
+    |> Enum.map(&rusty_ast(Support.PaintDecoders, &1))
     |> Enum.map(&render_rustq_item/1)
     |> render_items("generated_paint.rs")
   end
@@ -497,7 +498,7 @@ defmodule Skia.Codegen do
       :build_path_from_segments_field,
       :build_compact_path
     ]
-    |> Enum.map(&rusty_ast(Rusty.Paths, &1))
+    |> Enum.map(&rusty_ast(Command.Paths, &1))
     |> Enum.map(&render_rustq_item/1)
     |> render_items("generated_path.rs")
   end
