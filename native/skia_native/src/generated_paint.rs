@@ -326,7 +326,7 @@ fn decode_runtime_effect_shader_paint<'a>(term: Term<'a>) -> NifResult<Paint> {
             paint
                 .set_shader(
                     effect
-                        .make_shader(uniforms, children.as_slice(), matrix.as_ref())
+                        .make_shader(uniforms, &children, matrix.as_ref())
                         .ok_or(rustler::Error::BadArg)?,
                 );
             Ok(paint)
@@ -611,7 +611,7 @@ fn decode_matrix_convolution_image_filter<'a>(
             Ok(
                 image_filters::matrix_convolution(
                         (kernel_width as i32, kernel_height as i32),
-                        mapped_kernel.as_slice(),
+                        &mapped_kernel,
                         gain as f32,
                         bias as f32,
                         (offset_x as i32, offset_y as i32),

@@ -345,7 +345,7 @@ defmodule Skia.Codegen.Rusty.Support.PaintDecoders do
         paint.set_anti_alias(true).set_style(PaintStyle.Fill)
 
         paint.set_shader(
-          ok_or!(effect.make_shader(uniforms, children.as_slice(), matrix.as_ref()), badarg())
+          ok_or!(effect.make_shader(uniforms, children, matrix.as_ref()), badarg())
         )
 
         {:ok, paint}
@@ -728,7 +728,7 @@ defmodule Skia.Codegen.Rusty.Support.PaintDecoders do
          ok_or!(
            ImageFilters.matrix_convolution(
              {cast(kernel_width, :i32), cast(kernel_height, :i32)},
-             mapped_kernel.as_slice(),
+             mapped_kernel,
              cast(gain, :f32),
              cast(bias, :f32),
              {cast(offset_x, :i32), cast(offset_y, :i32)},
