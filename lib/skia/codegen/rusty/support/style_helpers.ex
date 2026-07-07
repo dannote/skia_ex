@@ -4,12 +4,12 @@ defmodule Skia.Codegen.Rusty.Support.StyleHelpers do
   use Skia.Codegen.Rusty.SourceSets.SkiaSafe,
     files: [:paint, :path],
     rust_sources: ["native/skia_native/src/generated_enums.rs"],
-    callable_modules: [Skia.Codegen.Rusty.Support.PaintDecoders]
+    callable_modules: [
+      Skia.Codegen.Rusty.Support.PaintDecoders,
+      Skia.Codegen.Rusty.Support.GeneratedCallables
+    ]
 
   alias RustQ.Type, as: R
-
-  @spec opt_f32_option(R.slice({atom(), term()}), atom()) :: R.nif_result(R.option(R.f32()))
-  def opt_f32_option(_opts, _key), do: raise("RustQ metadata only")
 
   @spec apply_blend_mode(R.mut_ref(Paint.t()), R.slice({atom(), term()})) ::
           R.nif_result(R.unit())

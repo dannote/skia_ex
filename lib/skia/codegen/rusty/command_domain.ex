@@ -15,7 +15,8 @@ defmodule Skia.Codegen.Rusty.CommandDomain do
       opts
       |> Keyword.get(:callable_modules, [
         Skia.Codegen.Rusty.Support.PaintDecoders,
-        Skia.Codegen.Rusty.Support.StyleHelpers
+        Skia.Codegen.Rusty.Support.StyleHelpers,
+        Skia.Codegen.Rusty.Support.GeneratedCallables
       ])
       |> expand_value!(__CALLER__)
 

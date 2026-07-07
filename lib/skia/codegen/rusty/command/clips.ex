@@ -8,18 +8,11 @@ defmodule Skia.Codegen.Rusty.Command.Clips do
   use Skia.Codegen.Rusty.CommandDomain,
     from: Clips,
     commands: [:clip_rect, :clip_circle, :clip_path],
-    callable_modules: [
-      Skia.Codegen.Rusty.Support.PaintDecoders,
-      Skia.Codegen.Rusty.Support.StyleHelpers
-    ],
     rust_packages: [{"skia-safe", [manifest_path: "native/skia_native/Cargo.toml"]}]
 
   use Skia.Codegen.Rusty.Support.Args
 
   alias RustQ.Type, as: R
-
-  @spec build_path(term()) :: R.nif_result(R.path({:skia_safe, :Path}))
-  def build_path(_path_term), do: raise("RustQ metadata only")
 
   @spec clip_rect_impl(
           R.ref(SkiaSafe.Canvas.t()),
