@@ -13,6 +13,7 @@ defmodule Skia.Codegen.Rusty.Command.Shapes do
     from: Shapes,
     commands: [:clear, :rect, :circle, :oval, :arc, :vertices, :line],
     helpers: [:draw_rect_shape],
+    rust_sources: ["native/skia_native/src/lib.rs", "native/skia_native/src/generated_enums.rs"],
     rust_packages: [{"skia-safe", [manifest_path: "native/skia_native/Cargo.toml"]}]
 
   use Skia.Codegen.Rusty.Support.PaintMacros
@@ -120,8 +121,7 @@ defmodule Skia.Codegen.Rusty.Command.Shapes do
   defrust draw_vertices_impl(canvas, args, opts, raw_opts) do
     vertices = vertices_from_term(deref(unwrap!(args.first().ok_or(badarg()))))
 
-    blend_mode =
-      unwrap!(GeneratedEnums.decode_blend_mode(opts.blend_mode.unwrap_or(Atoms.src_over())))
+    blend_mode = GeneratedEnums.decode_blend_mode(opts.blend_mode.unwrap_or(Atoms.src_over()))
 
     paint =
       case opts.fill do
