@@ -8,6 +8,7 @@ defmodule Skia.Codegen.Rusty.Command.Paths do
   use Skia.Codegen.Rusty.CommandDomain,
     from: Paths,
     commands: [:path, :path_op, :path_outline],
+    rust_sources: ["native/skia_native/src/lib.rs", "native/skia_native/src/generated_enums.rs"],
     rust_packages: [{"skia-safe", [manifest_path: "native/skia_native/Cargo.toml"]}]
 
   use Skia.Codegen.Rusty.Support.Args
@@ -72,7 +73,7 @@ defmodule Skia.Codegen.Rusty.Command.Paths do
 
   @spec build_path_from_segments_field(term()) :: R.nif_result(R.path({:skia_safe, :Path}))
   defrust build_path_from_segments_field(path_term) do
-    segments = decode_as!(unwrap!(path_term.map_get(Atoms.segments())), R.vec(term()))
+    segments = decode_as!(path_term.map_get(Atoms.segments()), R.vec(term()))
     builder = PathBuilder.new()
 
     for segment <- segments.into_iter().rev() do
@@ -167,7 +168,7 @@ defmodule Skia.Codegen.Rusty.Command.Paths do
               {cast(rx, :f32), cast(ry, :f32)},
               cast(x_axis_rotate, :f32),
               arc_size,
-              unwrap!(decode_path_direction(sweep)),
+              decode_path_direction(sweep),
               {cast(dx, :f32), cast(dy, :f32)}
             )
           end
@@ -351,7 +352,7 @@ defmodule Skia.Codegen.Rusty.Command.Paths do
               {cast(rx, :f32), cast(ry, :f32)},
               cast(x_axis_rotate, :f32),
               arc_size,
-              unwrap!(decode_path_direction(sweep)),
+              decode_path_direction(sweep),
               {cast(dx, :f32), cast(dy, :f32)}
             )
           end
@@ -387,12 +388,10 @@ defmodule Skia.Codegen.Rusty.Command.Paths do
     case opts.stroke do
       {:some, stroke} ->
         stroke_paint_value =
-          unwrap!(
-            stroke_paint(
-              decode_color(stroke),
-              opts.stroke_width.unwrap_or(1.0),
-              raw_opts
-            )
+          stroke_paint(
+            decode_color(stroke),
+            opts.stroke_width.unwrap_or(1.0),
+            raw_opts
           )
 
         canvas.draw_path(path, stroke_paint_value)
@@ -413,7 +412,7 @@ defmodule Skia.Codegen.Rusty.Command.Paths do
   defrust draw_path_op_impl(canvas, args, opts, raw_opts) do
     a = build_path(first_arg_term!())
     b = build_path(arg_term!(1))
-    op = unwrap!(GeneratedEnums.decode_path_op(opts.path_op))
+    op = GeneratedEnums.decode_path_op(opts.path_op)
     path = a.op(b, op).ok_or(badarg())
     apply_fill_rule(path, raw_opts)
 
@@ -430,12 +429,10 @@ defmodule Skia.Codegen.Rusty.Command.Paths do
     case opts.stroke do
       {:some, stroke} ->
         stroke_paint_value =
-          unwrap!(
-            stroke_paint(
-              decode_color(stroke),
-              opts.stroke_width.unwrap_or(1.0),
-              raw_opts
-            )
+          stroke_paint(
+            decode_color(stroke),
+            opts.stroke_width.unwrap_or(1.0),
+            raw_opts
           )
 
         canvas.draw_path(path, stroke_paint_value)
