@@ -11,13 +11,13 @@ defmodule Skia.Codegen.Rusty.Support.Args do
 
   defmacro first_arg_term! do
     quote do
-      deref(unwrap!(var!(args).first().ok_or(badarg())))
+      deref(var!(args).first().ok_or(badarg()))
     end
   end
 
   defmacro arg_term!(index) do
     quote do
-      deref(unwrap!(var!(args).get(unquote(index)).ok_or(badarg())))
+      deref(var!(args).get(unquote(index)).ok_or(badarg()))
     end
   end
 end

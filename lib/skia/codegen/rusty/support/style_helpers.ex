@@ -3,7 +3,8 @@ defmodule Skia.Codegen.Rusty.Support.StyleHelpers do
 
   use Skia.Codegen.Rusty.SourceSets.SkiaSafe,
     files: [:paint, :path],
-    rust_sources: ["native/skia_native/src/generated_enums.rs"]
+    rust_sources: ["native/skia_native/src/generated_enums.rs"],
+    callable_modules: [Skia.Codegen.Rusty.Support.PaintDecoders]
 
   alias RustQ.Type, as: R
 
@@ -79,22 +80,22 @@ defmodule Skia.Codegen.Rusty.Support.StyleHelpers do
           R.nif_result(R.unit())
   defrust apply_paint_effects(paint, opts) do
     case opt_term(opts, Atoms.image_filter()) do
-      {:some, term} -> paint.set_image_filter(unwrap!(decode_image_filter(term)))
+      {:some, term} -> paint.set_image_filter(decode_image_filter(term))
       :none -> :ok
     end
 
     case opt_term(opts, Atoms.path_effect()) do
-      {:some, term} -> paint.set_path_effect(unwrap!(decode_path_effect(term)))
+      {:some, term} -> paint.set_path_effect(decode_path_effect(term))
       :none -> :ok
     end
 
     case opt_term(opts, Atoms.color_filter()) do
-      {:some, term} -> paint.set_color_filter(unwrap!(decode_color_filter(term)))
+      {:some, term} -> paint.set_color_filter(decode_color_filter(term))
       :none -> :ok
     end
 
     case opt_term(opts, Atoms.mask_filter()) do
-      {:some, term} -> paint.set_mask_filter(unwrap!(decode_mask_filter(term)))
+      {:some, term} -> paint.set_mask_filter(decode_mask_filter(term))
       :none -> :ok
     end
 

@@ -29,10 +29,22 @@ defmodule Skia.Codegen.Rusty.SourceSets.SkiaSafe do
   }
 
   defmacro __using__(opts) do
-    rust_sources = Keyword.get(opts, :rust_sources, []) |> List.wrap()
-    callable_modules = Keyword.get(opts, :callable_modules, []) |> List.wrap()
-    files = Keyword.get(opts, :files, Map.keys(@source_files)) |> List.wrap()
-    manifest_path = Keyword.get(opts, :manifest_path, "native/skia_native/Cargo.toml")
+    rust_sources =
+      opts |> Keyword.get(:rust_sources, []) |> expand_value!(__CALLER__) |> List.wrap()
+
+    callable_modules =
+      opts |> Keyword.get(:callable_modules, []) |> expand_value!(__CALLER__) |> List.wrap()
+
+    files =
+      opts
+      |> Keyword.get(:files, Map.keys(@source_files))
+      |> expand_value!(__CALLER__)
+      |> List.wrap()
+
+    manifest_path =
+      opts
+      |> Keyword.get(:manifest_path, "native/skia_native/Cargo.toml")
+      |> expand_value!(__CALLER__)
 
     skia_safe_sources = skia_safe_sources!(files, manifest_path)
 
@@ -41,6 +53,13 @@ defmodule Skia.Codegen.Rusty.SourceSets.SkiaSafe do
         rust_sources: unquote(Macro.escape(rust_sources ++ skia_safe_sources)),
         callable_modules: unquote(Macro.escape(callable_modules))
     end
+  end
+
+  defp expand_value!(quoted, _env) when is_binary(quoted), do: quoted
+
+  defp expand_value!(quoted, env) do
+    {value, _binding} = Code.eval_quoted(quoted, [], env)
+    value
   end
 
   defp skia_safe_sources!(files, manifest_path) do
