@@ -92,7 +92,7 @@ defmodule Skia.Codegen.Rusty.Command.Text do
     text_style.set_color(paint.color())
 
     case ref(opts.font_family) do
-      {:some, family} -> text_style.set_font_families(ref([family]))
+      {:some, family} -> text_style.set_font_families([family])
       :none -> :ok
     end
 
@@ -130,7 +130,7 @@ defmodule Skia.Codegen.Rusty.Command.Text do
         spans = decode_as!(spans_term, R.vec({R.path(:String), R.vec({atom(), term()})}))
 
         for {span_text, style_opts} <- spans do
-          span_style = text_style_from_opts(text_style, ref(style_opts))
+          span_style = text_style_from_opts(text_style, style_opts)
           paragraph_builder.push_style(span_style)
           paragraph_builder.add_text(span_text)
           paragraph_builder.pop()
@@ -166,7 +166,7 @@ defmodule Skia.Codegen.Rusty.Command.Text do
     case opt_term(opts, Atoms.font_family()) do
       {:some, term} ->
         family = decode_as!(term, R.path(:String))
-        style.set_font_families(ref([ref(family)]))
+        style.set_font_families([family])
 
       :none ->
         :ok

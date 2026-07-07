@@ -128,7 +128,7 @@ fn text_style_from_opts<'a>(
     }
     if let Some(term) = opt_term(opts, atoms::font_family()) {
         let family = term.decode::<String>()?;
-        style.set_font_families(&vec![& family]);
+        style.set_font_families(&vec![family]);
     }
     if let Some(line_height) = opt_f32_option(opts, atoms::line_height())? {
         let font_size = opt_f32_option(opts, atoms::size())?.unwrap_or(base.font_size());
