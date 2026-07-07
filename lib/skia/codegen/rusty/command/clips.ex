@@ -8,11 +8,18 @@ defmodule Skia.Codegen.Rusty.Command.Clips do
   use Skia.Codegen.Rusty.CommandDomain,
     from: Clips,
     commands: [:clip_rect, :clip_circle, :clip_path],
+    callable_modules: [
+      Skia.Codegen.Rusty.Support.PaintDecoders,
+      Skia.Codegen.Rusty.Support.StyleHelpers
+    ],
     rust_packages: [{"skia-safe", [manifest_path: "native/skia_native/Cargo.toml"]}]
 
   use Skia.Codegen.Rusty.Support.Args
 
   alias RustQ.Type, as: R
+
+  @spec build_path(term()) :: R.nif_result(R.path({:skia_safe, :Path}))
+  def build_path(_path_term), do: raise("RustQ metadata only")
 
   @spec clip_rect_impl(
           R.ref(SkiaSafe.Canvas.t()),
@@ -56,8 +63,8 @@ defmodule Skia.Codegen.Rusty.Command.Clips do
           R.slice({atom(), term()})
         ) :: R.nif_result(R.unit())
   defrust clip_path_impl(canvas, args, opts, raw_opts) do
-    path = unwrap!(build_path(first_arg_term!()))
-    unwrap!(apply_fill_rule(path, raw_opts))
+    path = build_path(first_arg_term!())
+    apply_fill_rule(path, raw_opts)
     clip_op = decode_clip_op(opts.clip_op.unwrap_or(Atoms.intersect()))
     canvas.clip_path(path, clip_op, opts.antialias.unwrap_or(true))
 

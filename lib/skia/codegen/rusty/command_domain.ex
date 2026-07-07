@@ -107,8 +107,6 @@ defmodule Skia.Codegen.Rusty.CommandDomain do
     |> Enum.filter(fn {_name, spec} -> Keyword.has_key?(spec, :handler) end)
   end
 
-  defp expand_value!(value, _env) when is_list(value), do: value
-
   defp expand_value!({:@, _, [{name, _, _}]}, env) when is_atom(name) do
     Module.get_attribute(env.module, name) ||
       raise ArgumentError, "expected @#{name} to be set before handlers/2"
