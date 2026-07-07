@@ -5,6 +5,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
     files: [
       :color,
       :color_filter,
+      :data,
       :gradient_shader,
       :image,
       :image_filters,
@@ -127,7 +128,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
         end
     end
 
-    {:ok, Data.new_copy(ref(bytes))}
+    {:ok, Data.new_copy(bytes)}
   end
 
   @spec runtime_children(R.ref(R.path(:RuntimeEffect)), R.vec({R.path(:String), term()})) ::
