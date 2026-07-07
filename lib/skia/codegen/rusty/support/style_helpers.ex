@@ -7,6 +7,9 @@ defmodule Skia.Codegen.Rusty.Support.StyleHelpers do
 
   alias RustQ.Type, as: R
 
+  @spec opt_f32_option(R.slice({atom(), term()}), atom()) :: R.nif_result(R.option(R.f32()))
+  def opt_f32_option(_opts, _key), do: raise("RustQ metadata only")
+
   @spec apply_blend_mode(R.mut_ref(Paint.t()), R.slice({atom(), term()})) ::
           R.nif_result(R.unit())
   defrust apply_blend_mode(paint, opts) do
@@ -44,7 +47,7 @@ defmodule Skia.Codegen.Rusty.Support.StyleHelpers do
         :ok
     end
 
-    case unwrap!(opt_f32_option(opts, Atoms.stroke_miter())) do
+    case opt_f32_option(opts, Atoms.stroke_miter()) do
       {:some, miter} -> paint.set_stroke_miter(miter)
       :none -> :ok
     end

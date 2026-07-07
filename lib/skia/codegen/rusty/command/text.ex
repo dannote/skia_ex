@@ -153,7 +153,7 @@ defmodule Skia.Codegen.Rusty.Command.Text do
   defrust text_style_from_opts(base, opts) do
     style = base.clone()
 
-    case unwrap!(opt_f32_option(opts, Atoms.size())) do
+    case opt_f32_option(opts, Atoms.size()) do
       {:some, size} -> style.set_font_size(size)
       :none -> :ok
     end
@@ -172,9 +172,9 @@ defmodule Skia.Codegen.Rusty.Command.Text do
         :ok
     end
 
-    case unwrap!(opt_f32_option(opts, Atoms.line_height())) do
+    case opt_f32_option(opts, Atoms.line_height()) do
       {:some, line_height} ->
-        font_size = unwrap!(opt_f32_option(opts, Atoms.size())).unwrap_or(base.font_size())
+        font_size = opt_f32_option(opts, Atoms.size()).unwrap_or(base.font_size())
         style.set_height(line_height / font_size)
         style.set_height_override(true)
 
