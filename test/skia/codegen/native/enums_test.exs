@@ -4,14 +4,9 @@ defmodule Skia.Codegen.Native.EnumsTest do
   alias RustQ.Meta.Type
   alias RustQ.Native.EnumDescriptor, as: NativeEnumDescriptor
   alias RustQ.Syn
-  alias Skia.Codegen
   alias Skia.Codegen.Command.Registry, as: Commands
   alias Skia.Codegen.Native.Enums, as: Enums
   alias Skia.Codegen.Native.SkiaSafe, as: SkiaSafe
-
-  test "top-level enum generation delegates to enum module" do
-    assert Codegen.generated_enums() == Enums.generated()
-  end
 
   test "SkiaSafe resolves native enum descriptors through RustQ" do
     assert %NativeEnumDescriptor{

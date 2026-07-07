@@ -59,10 +59,9 @@ hand-written Rust interop/decoder code that is not yet clearer as Rusty Elixir.
 The codegen tree is organized by pipeline concern:
 
 ```text
-lib/skia/codegen.ex                    # facade for generated Rust builders
 lib/skia/codegen/command/              # command model and docs metadata
 lib/skia/codegen/native/               # skia-safe/native metadata
-lib/skia/codegen/rust/                 # generated Rust target registry
+lib/skia/codegen/rust/                 # generated Rust builders and target registry
 lib/skia/codegen/rusty/                # Rusty-Elixir implementation source
 ```
 
@@ -83,11 +82,13 @@ lib/skia/codegen/native/skia_safe.ex
 lib/skia/codegen/native/enums.ex
 ```
 
-Generated Rust target metadata lives under `Skia.Codegen.Rust`:
+Generated Rust builders and target metadata live under `Skia.Codegen.Rust`:
 
 ```text
+lib/skia/codegen/rust/commands.ex
 lib/skia/codegen/rust/core.ex
 lib/skia/codegen/rust/nifs.ex
+lib/skia/codegen/rust/opts.ex
 lib/skia/codegen/rust/targets.ex
 ```
 

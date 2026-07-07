@@ -2,7 +2,7 @@ defmodule Skia.Codegen.Rusty.CodegenTest do
   use ExUnit.Case, async: true
 
   test "generated save/restore handlers come from direct Rusty layer bodies" do
-    layers = Skia.Codegen.generated_layers()
+    layers = Skia.Codegen.Rust.Commands.generated_layers()
 
     assert layers =~
              "fn draw_save<'a>(canvas: &skia_safe::Canvas, _command: Term<'a>) -> NifResult<()>"
@@ -18,7 +18,7 @@ defmodule Skia.Codegen.Rusty.CodegenTest do
   end
 
   test "layer impls are generated from Rusty Elixir" do
-    source = Skia.Codegen.generated_layers()
+    source = Skia.Codegen.Rust.Commands.generated_layers()
 
     assert source =~ "fn draw_save_layer_impl<'a>("
 
@@ -29,7 +29,7 @@ defmodule Skia.Codegen.Rusty.CodegenTest do
   end
 
   test "generated Rusty command handlers decode command plumbing in domain modules" do
-    source = Skia.Codegen.generated_draw_paths()
+    source = Skia.Codegen.Rust.Commands.generated_draw_paths()
 
     assert source =~ "fn draw_path<'a>("
     assert source =~ "let args = decode_args(command)?;"
@@ -38,7 +38,7 @@ defmodule Skia.Codegen.Rusty.CodegenTest do
   end
 
   test "text impls are generated from Rusty Elixir" do
-    source = Skia.Codegen.generated_text()
+    source = Skia.Codegen.Rust.Commands.generated_text()
 
     assert source =~ "fn draw_text_blob_impl<'a>("
 
@@ -57,7 +57,7 @@ defmodule Skia.Codegen.Rusty.CodegenTest do
   end
 
   test "transform impls are generated from Rusty Elixir" do
-    source = Skia.Codegen.generated_transforms()
+    source = Skia.Codegen.Rust.Commands.generated_transforms()
 
     assert source =~ "fn draw_translate_impl<'a>("
     assert source =~ "opts: generated_opts::TranslateOpts<'a>"
@@ -78,7 +78,7 @@ defmodule Skia.Codegen.Rusty.CodegenTest do
   end
 
   test "clip impls are generated from Rusty Elixir" do
-    source = Skia.Codegen.generated_clips()
+    source = Skia.Codegen.Rust.Commands.generated_clips()
 
     assert source =~ "fn clip_rect_impl<'a>("
     assert source =~ "let rect = Rect::from_xywh(opts.x, opts.y, opts.width, opts.height);"
@@ -94,7 +94,7 @@ defmodule Skia.Codegen.Rusty.CodegenTest do
   end
 
   test "image impls are generated from Rusty Elixir" do
-    source = Skia.Codegen.generated_images()
+    source = Skia.Codegen.Rust.Commands.generated_images()
 
     assert source =~ "fn draw_image_impl<'a>("
     assert source =~ "let image = image_from_term(*args.first().ok_or(rustler::Error::BadArg)?)?;"
@@ -108,7 +108,7 @@ defmodule Skia.Codegen.Rusty.CodegenTest do
   end
 
   test "paint support infers wrapper propagation for optional helpers" do
-    source = Skia.Codegen.generated_paint()
+    source = Skia.Codegen.Rust.Commands.generated_paint()
 
     assert source =~ "let (colors, positions) = decode_gradient_stops(stops)?;"
     assert source =~ "Ok(Some(matrix_from_term(matrix_term)?))"
@@ -117,7 +117,7 @@ defmodule Skia.Codegen.Rusty.CodegenTest do
   end
 
   test "style helpers infer propagation from narrow skia-safe source metadata" do
-    source = Skia.Codegen.generated_style_helpers()
+    source = Skia.Codegen.Rust.Core.generated_style_helpers()
 
     assert source =~ "paint.set_blend_mode(generated_enums::decode_blend_mode(atom)?);"
     assert source =~ "paint.set_stroke_cap(generated_enums::decode_stroke_cap(atom)?);"
@@ -128,7 +128,7 @@ defmodule Skia.Codegen.Rusty.CodegenTest do
   end
 
   test "path impls are generated from Rusty Elixir" do
-    source = Skia.Codegen.generated_draw_paths()
+    source = Skia.Codegen.Rust.Commands.generated_draw_paths()
 
     assert source =~ "fn draw_path_impl<'a>("
     assert source =~ "let mut path = build_path(*args.first().ok_or(rustler::Error::BadArg)?)?;"
@@ -144,7 +144,7 @@ defmodule Skia.Codegen.Rusty.CodegenTest do
   end
 
   test "shape impls are generated from Rusty Elixir" do
-    source = Skia.Codegen.generated_shapes()
+    source = Skia.Codegen.Rust.Commands.generated_shapes()
 
     assert source =~ "fn draw_clear_impl<'a>("
     assert source =~ "canvas.clear(color);"
