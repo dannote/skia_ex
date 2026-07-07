@@ -371,13 +371,13 @@ defmodule Skia.Codegen.Rusty.Paths do
           R.slice({atom(), term()})
         ) :: R.nif_result(R.unit())
   defrust draw_path_impl(canvas, args, opts, raw_opts) do
-    path = unwrap!(build_path(first_arg_term!()))
-    unwrap!(apply_fill_rule(path, raw_opts))
+    path = build_path(first_arg_term!())
+    apply_fill_rule(path, raw_opts)
 
     case opts.fill do
       {:some, fill} ->
-        paint = unwrap!(decode_paint(fill))
-        unwrap!(apply_blend_mode(paint, raw_opts))
+        paint = decode_paint(fill)
+        apply_blend_mode(paint, raw_opts)
         canvas.draw_path(path, paint)
 
       :none ->
@@ -411,16 +411,16 @@ defmodule Skia.Codegen.Rusty.Paths do
           R.slice({atom(), term()})
         ) :: R.nif_result(R.unit())
   defrust draw_path_op_impl(canvas, args, opts, raw_opts) do
-    a = unwrap!(build_path(first_arg_term!()))
-    b = unwrap!(build_path(arg_term!(1)))
+    a = build_path(first_arg_term!())
+    b = build_path(arg_term!(1))
     op = unwrap!(GeneratedEnums.decode_path_op(opts.path_op))
-    path = unwrap!(a.op(b, op).ok_or(badarg()))
-    unwrap!(apply_fill_rule(path, raw_opts))
+    path = a.op(b, op).ok_or(badarg())
+    apply_fill_rule(path, raw_opts)
 
     case opts.fill do
       {:some, fill} ->
-        paint = unwrap!(decode_paint(fill))
-        unwrap!(apply_blend_mode(paint, raw_opts))
+        paint = decode_paint(fill)
+        apply_blend_mode(paint, raw_opts)
         canvas.draw_path(path, paint)
 
       :none ->
@@ -454,29 +454,29 @@ defmodule Skia.Codegen.Rusty.Paths do
           R.slice({atom(), term()})
         ) :: R.nif_result(R.unit())
   defrust draw_path_outline_impl(canvas, args, opts, raw_opts) do
-    path = unwrap!(build_path(first_arg_term!()))
+    path = build_path(first_arg_term!())
     stroke = Paint.default()
     stroke.set_anti_alias(true).set_style(PaintStyle.Stroke).set_stroke_width(opts.outline_width)
-    unwrap!(apply_stroke_options(stroke, raw_opts))
+    apply_stroke_options(stroke, raw_opts)
     builder = PathBuilder.new()
 
     if PathUtils.fill_path_with_paint(path, stroke, builder, none(), none()) == false do
       :ok
     else
       outline = builder.detach()
-      unwrap!(apply_fill_rule(outline, raw_opts))
+      apply_fill_rule(outline, raw_opts)
 
       case opts.fill do
         {:some, fill} ->
-          paint = unwrap!(decode_paint(fill))
-          unwrap!(apply_blend_mode(paint, raw_opts))
+          paint = decode_paint(fill)
+          apply_blend_mode(paint, raw_opts)
           canvas.draw_path(outline, paint)
 
         :none ->
           case opts.stroke do
             {:some, stroke_color} ->
-              paint = fill_paint(unwrap!(decode_color(stroke_color)))
-              unwrap!(apply_blend_mode(paint, raw_opts))
+              paint = fill_paint(decode_color(stroke_color))
+              apply_blend_mode(paint, raw_opts)
               canvas.draw_path(outline, paint)
 
             :none ->

@@ -338,8 +338,8 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
       {:ok, {tag, effect_term, float_uniforms, int_uniforms, children, matrix_term}}
       when tag == Atoms.runtime_effect_shader() ->
         effect = runtime_effect_from_term(effect_term)
-        uniforms = runtime_uniform_data(ref(effect), float_uniforms, int_uniforms)
-        children = runtime_children(ref(effect), children)
+        uniforms = runtime_uniform_data(effect, float_uniforms, int_uniforms)
+        children = runtime_children(effect, children)
         matrix = optional_matrix_from_term(matrix_term)
         paint = Paint.default()
         paint.set_anti_alias(true).set_style(PaintStyle.Fill)
@@ -528,7 +528,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
               SkiaSafe.ColorFilterClamp.No
             end
 
-          {:ok, ColorFilters.matrix_row_major(ref(values), clamp)}
+          {:ok, ColorFilters.matrix_row_major(values, clamp)}
         else
           decode_compose_color_filter(term)
         end
@@ -754,7 +754,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
         {:ok,
          ok_or!(
            ImageFilters.matrix_transform(
-             ref(matrix_from_term(matrix_term)),
+             matrix_from_term(matrix_term),
              decode_sampling_options(sampling_term),
              optional_image_filter_from_term(input_term)
            ),
@@ -994,7 +994,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
         {:ok,
          ok_or!(
            SkiaSafe.PathEffect.path_1d(
-             ref(build_path(path_term)),
+             build_path(path_term),
              cast(advance, :f32),
              cast(phase, :f32),
              decode_path_1d_style(style)
@@ -1013,7 +1013,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
       {:ok, {tag, width, matrix_term}} when tag == Atoms.line_2d_effect() ->
         {:ok,
          ok_or!(
-           SkiaSafe.PathEffect.line_2d(cast(width, :f32), ref(matrix_from_term(matrix_term))),
+           SkiaSafe.PathEffect.line_2d(cast(width, :f32), matrix_from_term(matrix_term)),
            badarg()
          )}
 
@@ -1026,7 +1026,7 @@ defmodule Skia.Codegen.Rusty.PaintSupport do
   defrust decode_binary_path_effect(term) do
     case decode_as(term, {atom(), term(), term()}) do
       {:ok, {tag, first, second}} when tag == Atoms.path_2d_effect() ->
-        {:ok, SkiaSafe.PathEffect.path_2d(ref(matrix_from_term(first)), ref(build_path(second)))}
+        {:ok, SkiaSafe.PathEffect.path_2d(matrix_from_term(first), build_path(second))}
 
       {:ok, {tag, first, second}} when tag == Atoms.compose_path_effect() ->
         {:ok, SkiaSafe.PathEffect.compose(decode_path_effect(first), decode_path_effect(second))}

@@ -133,7 +133,7 @@ defmodule Skia.Codegen.Rusty.Domain do
       defrust unquote(handler)(canvas, command) do
         opts = unwrap!(decode_opts(command))
         decoded_opts = unwrap!(unquote(generated_opts_call(decoder)))
-        unquote(impl)(canvas, decoded_opts, ref(opts))
+        unquote(impl)(canvas, decoded_opts, opts)
       end
     end
   end
@@ -144,7 +144,7 @@ defmodule Skia.Codegen.Rusty.Domain do
         args = unwrap!(decode_args(command))
         opts = unwrap!(decode_opts(command))
         decoded_opts = unwrap!(unquote(generated_opts_call(decoder)))
-        unquote(impl)(canvas, args, decoded_opts, ref(opts))
+        unquote(impl)(canvas, args, decoded_opts, opts)
       end
     end
   end

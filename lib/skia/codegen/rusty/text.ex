@@ -117,7 +117,7 @@ defmodule Skia.Codegen.Rusty.Text do
     end
 
     paragraph_style = ParagraphStyle.new()
-    paragraph_style.set_text_style(ref(text_style))
+    paragraph_style.set_text_style(text_style)
 
     case opts.align do
       {:some, align} -> paragraph_style.set_text_align(unwrap!(decode_text_align(align)))
@@ -134,21 +134,21 @@ defmodule Skia.Codegen.Rusty.Text do
 
     font_collection = FontCollection.new()
     font_collection.set_default_font_manager(FontMgr.default(), none())
-    paragraph_builder = ParagraphBuilder.new(ref(paragraph_style), font_collection)
+    paragraph_builder = ParagraphBuilder.new(paragraph_style, font_collection)
 
     case opts.spans do
       {:some, spans_term} ->
         spans = decode_as!(spans_term, R.vec({R.path(:String), R.vec({atom(), term()})}))
 
         for {span_text, style_opts} <- spans do
-          span_style = unwrap!(text_style_from_opts(ref(text_style), ref(style_opts)))
-          paragraph_builder.push_style(ref(span_style))
+          span_style = unwrap!(text_style_from_opts(text_style, ref(style_opts)))
+          paragraph_builder.push_style(span_style)
           paragraph_builder.add_text(span_text)
           paragraph_builder.pop()
         end
 
       :none ->
-        paragraph_builder.push_style(ref(text_style))
+        paragraph_builder.push_style(text_style)
         paragraph_builder.add_text(text)
         paragraph_builder.pop()
     end

@@ -23,7 +23,7 @@ defmodule Skia.Codegen.Rusty.Clips do
     rect = Rect.from_xywh(opts.x, opts.y, opts.width, opts.height)
     radius = opts.radius.unwrap_or(0.0)
     antialias = opts.antialias.unwrap_or(true)
-    clip_op = unwrap!(decode_clip_op(opts.clip_op.unwrap_or(Atoms.intersect())))
+    clip_op = decode_clip_op(opts.clip_op.unwrap_or(Atoms.intersect()))
 
     if radius > 0.0 do
       canvas.clip_rrect(RRect.new_rect_xy(rect, radius, radius), clip_op, antialias)
@@ -43,7 +43,7 @@ defmodule Skia.Codegen.Rusty.Clips do
     builder = PathBuilder.new()
     builder.add_circle(Point.new(opts.x, opts.y), opts.radius, none())
     path = builder.detach()
-    clip_op = unwrap!(decode_clip_op(opts.clip_op.unwrap_or(Atoms.intersect())))
+    clip_op = decode_clip_op(opts.clip_op.unwrap_or(Atoms.intersect()))
     canvas.clip_path(path, clip_op, opts.antialias.unwrap_or(true))
 
     :ok
@@ -58,7 +58,7 @@ defmodule Skia.Codegen.Rusty.Clips do
   defrust clip_path_impl(canvas, args, opts, raw_opts) do
     path = unwrap!(build_path(first_arg_term!()))
     unwrap!(apply_fill_rule(path, raw_opts))
-    clip_op = unwrap!(decode_clip_op(opts.clip_op.unwrap_or(Atoms.intersect())))
+    clip_op = decode_clip_op(opts.clip_op.unwrap_or(Atoms.intersect()))
     canvas.clip_path(path, clip_op, opts.antialias.unwrap_or(true))
 
     :ok

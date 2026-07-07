@@ -61,7 +61,7 @@ defmodule Skia.Codegen.Rusty.Transforms do
           R.slice({atom(), term()})
         ) :: R.nif_result(R.unit())
   defrust draw_concat_impl(canvas, opts, _raw_opts) do
-    matrix = unwrap!(matrix_from_term(opts.matrix))
+    matrix = matrix_from_term(opts.matrix)
     canvas.concat(matrix)
     :ok
   end

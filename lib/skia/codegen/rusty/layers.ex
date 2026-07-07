@@ -57,7 +57,7 @@ defmodule Skia.Codegen.Rusty.Layers do
       |> cast(:u8)
 
     paint.set_alpha(alpha)
-    unwrap!(apply_blend_mode(paint, raw_opts))
+    apply_blend_mode(paint, raw_opts)
 
     case opts.blur do
       {:some, sigma} ->
@@ -79,7 +79,7 @@ defmodule Skia.Codegen.Rusty.Layers do
         :ok
     end
 
-    rec = SaveLayerRec.default().paint(ref(paint))
+    rec = SaveLayerRec.default().paint(paint)
 
     rec =
       case bounds.as_ref() do

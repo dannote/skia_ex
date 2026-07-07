@@ -22,7 +22,7 @@ defmodule Skia.Codegen.Rusty.Images do
           R.slice({atom(), term()})
         ) :: R.nif_result(R.unit())
   defrust draw_image_impl(canvas, args, opts, raw_opts) do
-    image = unwrap!(image_from_term(first_arg_term!()))
+    image = image_from_term(first_arg_term!())
     paint = Paint.default()
     paint.set_anti_alias(true)
 
@@ -35,12 +35,12 @@ defmodule Skia.Codegen.Rusty.Images do
         :ok
     end
 
-    unwrap!(apply_blend_mode(paint, raw_opts))
-    sampling = unwrap!(opt_sampling(raw_opts, Atoms.sampling()))
+    apply_blend_mode(paint, raw_opts)
+    sampling = opt_sampling(raw_opts, Atoms.sampling())
 
     source =
       case opts.source do
-        {:some, term} -> some(unwrap!(rect_from_term(term)))
+        {:some, term} -> some(rect_from_term(term))
         :none -> none()
       end
 
@@ -102,7 +102,7 @@ defmodule Skia.Codegen.Rusty.Images do
           R.slice({atom(), term()})
         ) :: R.nif_result(R.unit())
   defrust draw_picture_impl(canvas, args, opts, raw_opts) do
-    picture = unwrap!(picture_from_term(first_arg_term!()))
+    picture = picture_from_term(first_arg_term!())
     paint = Paint.default()
     paint.set_anti_alias(true)
 
@@ -115,7 +115,7 @@ defmodule Skia.Codegen.Rusty.Images do
         :ok
     end
 
-    unwrap!(apply_blend_mode(paint, raw_opts))
+    apply_blend_mode(paint, raw_opts)
     canvas.save()
     canvas.translate({opts.x.unwrap_or(0.0), opts.y.unwrap_or(0.0)})
     canvas.draw_picture(picture, none(), some(paint))
