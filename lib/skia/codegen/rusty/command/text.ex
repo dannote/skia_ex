@@ -48,7 +48,7 @@ defmodule Skia.Codegen.Rusty.Command.Text do
           R.slice({atom(), term()})
         ) :: R.nif_result(R.unit())
   defrust draw_text_impl(canvas, args, opts, _raw_opts) do
-    text = decode_as!(unwrap!(args.first().ok_or(badarg())), R.path(:String))
+    text = decode_as!(args.first().ok_or(badarg()), R.path(:String))
     size = opts.size.unwrap_or(16.0)
 
     font =

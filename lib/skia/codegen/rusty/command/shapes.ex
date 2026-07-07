@@ -119,7 +119,7 @@ defmodule Skia.Codegen.Rusty.Command.Shapes do
           R.slice({atom(), term()})
         ) :: R.nif_result(R.unit())
   defrust draw_vertices_impl(canvas, args, opts, raw_opts) do
-    vertices = vertices_from_term(deref(unwrap!(args.first().ok_or(badarg()))))
+    vertices = vertices_from_term(deref(args.first().ok_or(badarg())))
 
     blend_mode = GeneratedEnums.decode_blend_mode(opts.blend_mode.unwrap_or(Atoms.src_over()))
 
