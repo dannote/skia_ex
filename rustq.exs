@@ -28,6 +28,7 @@ require_file("lib/skia/codegen/rusty/command/paths.ex")
 require_file("lib/skia/codegen/rusty/command/text.ex")
 require_file("lib/skia/codegen/rusty/command/transforms.ex")
 require_file("lib/skia/codegen/rusty/command/shapes.ex")
+require_file("lib/skia/codegen/rust/targets.ex")
 require_file("lib/skia/codegen.ex")
 
 generate :native, "lib/skia/native.ex" do
