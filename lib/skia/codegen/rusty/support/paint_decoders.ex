@@ -344,9 +344,7 @@ defmodule Skia.Codegen.Rusty.Support.PaintDecoders do
         paint = Paint.default()
         paint.set_anti_alias(true).set_style(PaintStyle.Fill)
 
-        paint.set_shader(
-          ok_or!(effect.make_shader(uniforms, children, matrix.as_ref()), badarg())
-        )
+        paint.set_shader(ok_or!(effect.make_shader(uniforms, children, matrix), badarg()))
 
         {:ok, paint}
 
