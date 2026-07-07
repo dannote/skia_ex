@@ -27,15 +27,15 @@ defmodule Skia.Codegen.Rusty.Command.Text do
           R.slice({atom(), term()})
         ) :: R.nif_result(R.unit())
   defrust draw_text_blob_impl(canvas, args, opts, raw_opts) do
-    blob = unwrap!(text_blob_from_term(first_arg_term!()))
+    blob = text_blob_from_term(first_arg_term!())
 
     paint =
       case opts.fill do
-        {:some, term} -> unwrap!(decode_paint(term))
+        {:some, term} -> decode_paint(term)
         :none -> fill_paint(Color.BLACK)
       end
 
-    unwrap!(apply_paint_effects(paint, raw_opts))
+    apply_paint_effects(paint, raw_opts)
     canvas.draw_text_blob(blob, {opts.x, opts.y}, paint)
 
     :ok
@@ -53,7 +53,7 @@ defmodule Skia.Codegen.Rusty.Command.Text do
 
     font =
       case opts.font do
-        {:some, term} -> unwrap!(font_from_term(term, size))
+        {:some, term} -> font_from_term(term, size)
         :none -> Font.default()
       end
 
@@ -61,24 +61,13 @@ defmodule Skia.Codegen.Rusty.Command.Text do
 
     paint =
       case opts.fill do
-        {:some, term} -> fill_paint(unwrap!(decode_color(term)))
+        {:some, term} -> fill_paint(decode_color(term))
         :none -> fill_paint(Color.BLACK)
       end
 
     case opts.width do
       {:some, width} ->
-        unwrap!(
-          draw_paragraph_text(
-            canvas,
-            ref(text),
-            opts.x,
-            opts.y,
-            width,
-            size,
-            paint,
-            opts
-          )
-        )
+        draw_paragraph_text(canvas, text, opts.x, opts.y, width, size, paint, opts)
 
       :none ->
         canvas.draw_str(text, {opts.x, opts.y}, font, paint)
@@ -120,13 +109,13 @@ defmodule Skia.Codegen.Rusty.Command.Text do
     paragraph_style.set_text_style(text_style)
 
     case opts.align do
-      {:some, align} -> paragraph_style.set_text_align(unwrap!(decode_text_align(align)))
+      {:some, align} -> paragraph_style.set_text_align(decode_text_align(align))
       :none -> :ok
     end
 
     case opts.direction do
       {:some, direction} ->
-        paragraph_style.set_text_direction(unwrap!(decode_text_direction(direction)))
+        paragraph_style.set_text_direction(decode_text_direction(direction))
 
       :none ->
         :ok
@@ -141,7 +130,7 @@ defmodule Skia.Codegen.Rusty.Command.Text do
         spans = decode_as!(spans_term, R.vec({R.path(:String), R.vec({atom(), term()})}))
 
         for {span_text, style_opts} <- spans do
-          span_style = unwrap!(text_style_from_opts(text_style, ref(style_opts)))
+          span_style = text_style_from_opts(text_style, ref(style_opts))
           paragraph_builder.push_style(span_style)
           paragraph_builder.add_text(span_text)
           paragraph_builder.pop()
@@ -170,7 +159,7 @@ defmodule Skia.Codegen.Rusty.Command.Text do
     end
 
     case opt_term(opts, Atoms.fill()) do
-      {:some, fill} -> style.set_color(unwrap!(decode_color(fill)))
+      {:some, fill} -> style.set_color(decode_color(fill))
       :none -> :ok
     end
 
