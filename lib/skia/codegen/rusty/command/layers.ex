@@ -43,7 +43,7 @@ defmodule Skia.Codegen.Rusty.Command.Layers do
   defrust draw_save_layer_impl(canvas, opts, raw_opts) do
     bounds =
       case opts.bounds do
-        {:some, term} -> some(unwrap!(rect_from_term(term)))
+        {:some, term} -> some(rect_from_term(term))
         :none -> none()
       end
 
