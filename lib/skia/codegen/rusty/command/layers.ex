@@ -72,7 +72,7 @@ defmodule Skia.Codegen.Rusty.Command.Layers do
 
     case opts.image_filter do
       {:some, term} ->
-        filter = unwrap!(decode_image_filter(term))
+        filter = decode_image_filter(term)
         paint.set_image_filter(filter)
 
       :none ->
