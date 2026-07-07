@@ -87,6 +87,7 @@ Generated Rust target metadata lives under `Skia.Codegen.Rust`:
 
 ```text
 lib/skia/codegen/rust/targets.ex
+lib/skia/codegen/rust/nifs.ex
 ```
 
 Rusty Elixir semantic implementations are split between command bodies and support helpers:
