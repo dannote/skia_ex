@@ -86,8 +86,9 @@ lib/skia/codegen/native/enums.ex
 Generated Rust target metadata lives under `Skia.Codegen.Rust`:
 
 ```text
-lib/skia/codegen/rust/targets.ex
+lib/skia/codegen/rust/core.ex
 lib/skia/codegen/rust/nifs.ex
+lib/skia/codegen/rust/targets.ex
 ```
 
 Rusty Elixir semantic implementations are split between command bodies and support helpers:
