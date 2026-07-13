@@ -8,17 +8,13 @@ defmodule Skia.Codegen.Rust.Commands do
 
   @spec generated_layers() :: String.t()
   def generated_layers do
-    items =
-      (Command.Layers.generated_command_asts() ++ Command.Layers.generated_asts())
-      |> Enum.map(&Core.render_rustq_item/1)
-
+    items = Command.Layers.generated_command_asts() ++ Command.Layers.generated_asts()
     Core.render_items(items, "generated_layers.rs")
   end
 
   @spec generated_transforms() :: String.t()
   def generated_transforms do
     generated_transform_impl_asts()
-    |> Enum.map(&Core.render_rustq_item/1)
     |> Core.render_items("generated_transforms.rs")
   end
 
@@ -29,7 +25,6 @@ defmodule Skia.Codegen.Rust.Commands do
   @spec generated_shapes() :: String.t()
   def generated_shapes do
     generated_shape_impl_asts()
-    |> Enum.map(&Core.render_rustq_item/1)
     |> Core.render_items("generated_shapes.rs")
   end
 
@@ -40,28 +35,24 @@ defmodule Skia.Codegen.Rust.Commands do
   @spec generated_text() :: String.t()
   def generated_text do
     Command.Text.generated_asts()
-    |> Enum.map(&Core.render_rustq_item/1)
     |> Core.render_items("generated_text.rs")
   end
 
   @spec generated_images() :: String.t()
   def generated_images do
     Command.Images.generated_asts()
-    |> Enum.map(&Core.render_rustq_item/1)
     |> Core.render_items("generated_images.rs")
   end
 
   @spec generated_draw_paths() :: String.t()
   def generated_draw_paths do
     Command.Paths.generated_asts()
-    |> Enum.map(&Core.render_rustq_item/1)
     |> Core.render_items("generated_draw_paths.rs")
   end
 
   @spec generated_clips() :: String.t()
   def generated_clips do
     Command.Clips.generated_asts()
-    |> Enum.map(&Core.render_rustq_item/1)
     |> Core.render_items("generated_clips.rs")
   end
 
@@ -114,7 +105,6 @@ defmodule Skia.Codegen.Rust.Commands do
       :decode_gradient_stops
     ]
     |> Enum.map(&Core.rusty_ast(Support.PaintDecoders, &1))
-    |> Enum.map(&Core.render_rustq_item/1)
     |> Core.render_items("generated_paint.rs")
   end
 
@@ -129,7 +119,6 @@ defmodule Skia.Codegen.Rust.Commands do
       :build_compact_path
     ]
     |> Enum.map(&Core.rusty_ast(Command.Paths, &1))
-    |> Enum.map(&Core.render_rustq_item/1)
     |> Core.render_items("generated_path.rs")
   end
 end

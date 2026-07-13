@@ -1,6 +1,8 @@
 defmodule Skia.Codegen.Rusty.CommandDomain do
   @moduledoc false
 
+  alias RustQ.Rust.Identifier
+
   defmacro __using__(opts) do
     commands_module = opts |> Keyword.fetch!(:from) |> Macro.expand(__CALLER__)
     commands = opts |> Keyword.fetch!(:commands) |> expand_value!(__CALLER__)
@@ -57,7 +59,7 @@ defmodule Skia.Codegen.Rusty.CommandDomain do
 
       defp impl_ast!(handler) do
         handler
-        |> then(&RustQ.Atom.identifier!("#{&1}_impl"))
+        |> then(&Identifier.atom!("#{&1}_impl"))
         |> rust_ast!()
       end
 
@@ -87,8 +89,8 @@ defmodule Skia.Codegen.Rusty.CommandDomain do
       handler = Keyword.fetch!(spec, :handler)
       args? = Keyword.get(spec, :args, []) != []
       opts? = Keyword.get(spec, :opts, []) != []
-      impl = RustQ.Atom.identifier!("#{handler}_impl")
-      decoder = RustQ.Atom.identifier!("decode_#{command_name}_opts")
+      impl = Identifier.atom!("#{handler}_impl")
+      decoder = Identifier.atom!("decode_#{command_name}_opts")
 
       quote do
         @spec unquote(handler)(RustQ.Type.ref(SkiaSafe.Canvas.t()), term()) ::

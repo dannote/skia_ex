@@ -16,12 +16,13 @@ defmodule Skia.Codegen.Command.SpecReader do
   alias RustQ.Meta.Type
   alias RustQ.Rust.AST.Render
   alias RustQ.Rust.AST.TypeBuilder
+  alias RustQ.Rust.Identifier
   alias Skia.Codegen.Native.Enums, as: Enums
 
   @type command :: %{name: atom(), args: keyword(), opts: [keyword()]}
 
   @spec from_file(Path.t()) :: [command()]
-  def from_file(path), do: path |> RustQ.Spec.declarations() |> from_declarations()
+  def from_file(path), do: path |> RustQ.Spec.declarations_file!() |> from_declarations()
 
   @spec command_metadata_from_file(Path.t(), String.t()) :: keyword()
   def command_metadata_from_file(path, handler_prefix) do
@@ -30,7 +31,7 @@ defmodule Skia.Codegen.Command.SpecReader do
     |> Enum.map(fn command ->
       {command.name,
        [
-         handler: RustQ.Atom.identifier!("#{handler_prefix}_#{command.name}"),
+         handler: Identifier.atom!("#{handler_prefix}_#{command.name}"),
          args: command.args,
          opts: command.opts
        ]}

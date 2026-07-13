@@ -2,7 +2,7 @@ defmodule Skia.Codegen.Rust.Core do
   @moduledoc false
 
   alias RustQ.Meta.AST, as: MetaAST
-  alias RustQ.Rust
+  alias RustQ.Rustler.{Atom, Opts, Resource}
   alias Skia.Codegen.Command.Registry, as: Commands
   alias Skia.Codegen.Native.Enums, as: Enums
   alias Skia.Codegen.Rusty.{Dispatch, Support}
@@ -27,7 +27,7 @@ defmodule Skia.Codegen.Rust.Core do
     |> RustQ.render!(
       "generated_atoms.rs",
       preamble: generated_rust_preamble(),
-      splice: [atoms: RustQ.Rustler.atoms(atoms, module: false)]
+      splice: [atoms: Atom.declaration(atoms, module: false)]
     )
   end
 
@@ -48,14 +48,14 @@ defmodule Skia.Codegen.Rust.Core do
       |> Enum.sort()
 
     dispatch =
-      RustQ.Rustler.atom_dispatch(:draw_command,
+      Atom.dispatch(:draw_command,
         args: [canvas: "&skia_safe::Canvas", command: :Term],
         on: "command.map_get(atoms::op())?.decode::<Atom>()?",
         cases: cases,
         unknown: "Err(rustler::Error::BadArg)"
       )
 
-    items = [dispatch, MetaAST.item(Dispatch, :compact_op_atom)]
+    items = [dispatch, MetaAST.function!(Dispatch, :compact_op_atom)]
 
     render_items(items, "generated_dispatch.rs")
   end
@@ -64,13 +64,12 @@ defmodule Skia.Codegen.Rust.Core do
   def generated_style_helpers do
     Support.StyleHelpers
     |> rusty_asts()
-    |> Enum.map(&render_rustq_item/1)
     |> render_items("generated_style_helpers.rs")
   end
 
   @spec generated_opts_helpers() :: String.t()
   def generated_opts_helpers do
-    RustQ.Rustler.opts_helpers()
+    Opts.helpers()
     |> render_items("generated_opts_helpers.rs")
   end
 
@@ -96,7 +95,7 @@ defmodule Skia.Codegen.Rust.Core do
   def generated_resources do
     resources =
       resource_specs()
-      |> Enum.flat_map(fn {name, opts} -> RustQ.Rustler.resource_handle(name, opts) end)
+      |> Enum.flat_map(fn {name, opts} -> Resource.handle_items(name, opts) end)
 
     render_items(resources, "generated_resources.rs")
   end
@@ -120,8 +119,6 @@ defmodule Skia.Codegen.Rust.Core do
     "__rq_items!();"
     |> RustQ.render!(file, preamble: generated_rust_preamble(), splice: [items: items])
   end
-
-  def render_rustq_item(ast), do: Rust.ast_item(ast)
 
   def rusty_asts(module), do: module.__rustq_asts__()
 

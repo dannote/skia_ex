@@ -1,6 +1,7 @@
 defmodule Skia.Codegen.Rust.Opts do
   @moduledoc false
 
+  alias RustQ.Rustler.Opts
   alias Skia.Codegen.Command.Registry, as: Commands
   alias Skia.Codegen.Rust.Core
 
@@ -13,7 +14,7 @@ defmodule Skia.Codegen.Rust.Opts do
         struct_name = name |> Atom.to_string() |> Macro.camelize() |> Kernel.<>("Opts")
         opts = Keyword.get(spec, :opts, [])
 
-        RustQ.Rustler.opts_decoder(struct_name,
+        Opts.decoder(struct_name,
           lifetime: :a,
           fn: "decode_#{name}_opts",
           fields: Enum.map(opts, &opts_decoder_field/1)

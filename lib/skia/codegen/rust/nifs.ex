@@ -1,7 +1,7 @@
 defmodule Skia.Codegen.Rust.Nifs do
   @moduledoc false
 
-  alias RustQ.Rustler
+  alias RustQ.Rustler.Nif
 
   @source "native/skia_native/src/lib.rs"
   @native_nifs [
@@ -34,12 +34,12 @@ defmodule Skia.Codegen.Rust.Nifs do
 
   @doc false
   @spec native_nif_specs() :: [{atom(), keyword()}]
-  def native_nif_specs, do: Enum.map(@native_nifs, &{&1, [lifetime: :a]})
+  def native_nif_specs, do: Enum.map(@native_nifs, &{&1, []})
 
   @spec generated_native_nifs() :: String.t()
   def generated_native_nifs do
     wrappers =
-      Rustler.nif_exports_from_source(
+      Nif.wrappers_from_source(
         @source,
         native_nif_specs(),
         schedule: :dirty_cpu
@@ -50,7 +50,7 @@ defmodule Skia.Codegen.Rust.Nifs do
 
   @spec generated_native_stubs() :: String.t()
   def generated_native_stubs do
-    Rustler.nif_stubs_from_source(
+    Nif.stubs_from_source(
       @source,
       native_nif_specs(),
       Skia.Native.GeneratedStubs

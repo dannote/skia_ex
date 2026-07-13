@@ -1,6 +1,7 @@
 defmodule Skia.Codegen.Command.Domain.Shapes do
   @moduledoc false
 
+  alias RustQ.Rust.Identifier
   alias Skia.Codegen.Command.SpecReader, as: CommandSpecs
 
   @type color :: Skia.Command.color()
@@ -139,7 +140,7 @@ defmodule Skia.Codegen.Command.Domain.Shapes do
     end)
   end
 
-  defp handler(name), do: RustQ.Atom.identifier!("draw_#{name}")
+  defp handler(name), do: Identifier.atom!("draw_#{name}")
 
   @spec clear(Skia.Document.t(), color(), clear_opts()) :: Skia.Document.t()
   def clear(document, color, opts), do: keep_command_shape(document, color, opts)
