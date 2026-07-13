@@ -29,6 +29,14 @@ defmodule Skia.Codegen.Rust.Targets do
         path: "native/skia_native/src/generated_resources.rs",
         build: &Core.generated_resources/0
       ],
+      generated_dispatch: [
+        path: "native/skia_native/src/generated_dispatch.rs",
+        build: &Core.generated_dispatch/0
+      ],
+      generated_style_helpers: [
+        path: "native/skia_native/src/generated_style_helpers.rs",
+        build: &Core.generated_style_helpers/0
+      ],
       generated_layers: [
         path: "native/skia_native/src/generated_layers.rs",
         build: &Commands.generated_layers/0

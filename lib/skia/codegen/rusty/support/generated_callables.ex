@@ -1,33 +1,25 @@
 defmodule Skia.Codegen.Rusty.Support.GeneratedCallables do
   @moduledoc """
-  Callable metadata for generated Rust helpers that are available in generated modules.
-
-  These callables are implemented in generated Rust support files, not as Rusty
-  Elixir functions in this module. Keeping their signatures here gives RustQ
-  inference structural metadata without adding fake runtime helper definitions to
-  command/support modules.
+  Source-derived callable metadata for helpers implemented in generated Rust.
   """
 
   alias RustQ.Binding.Callable
-  alias RustQ.Type, as: R
+
+  @sources [
+    "native/skia_native/src/generated_opts_helpers.rs",
+    "native/skia_native/src/generated_path.rs"
+  ]
+  @names ~w(opt_f32_option build_path)
 
   @spec __rustq_callables__() :: [Callable.t()]
   def __rustq_callables__ do
-    [
-      callable(
-        :opt_f32_option,
-        [quote(do: R.slice({atom(), term()})), quote(do: atom())],
-        quote(do: R.nif_result(R.option(R.f32())))
-      ),
-      callable(
-        :build_path,
-        [quote(do: term())],
-        quote(do: R.nif_result(R.path({:skia_safe, :Path})))
-      )
-    ]
-  end
+    callables =
+      @sources
+      |> Enum.flat_map(fn source ->
+        source |> RustQ.Syn.parse_file!() |> RustQ.Syn.functions()
+      end)
+      |> Map.new(&{&1.name, Callable.from_syn_function(&1)})
 
-  defp callable(name, args, return) do
-    Callable.from_spec(name, Enum.map(args, &RustQ.Spec.type/1), RustQ.Spec.type(return))
+    Enum.map(@names, &Map.fetch!(callables, &1))
   end
 end

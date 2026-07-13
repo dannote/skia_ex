@@ -35,74 +35,10 @@ require_file("lib/skia/codegen/rust/nifs.ex")
 require_file("lib/skia/codegen/rust/opts.ex")
 require_file("lib/skia/codegen/rust/targets.ex")
 
-generate :native_stubs, "lib/skia/native/generated_stubs.ex" do
-  build(&Skia.Codegen.Rust.Nifs.generated_native_stubs/0)
-end
-
-generate :generated_nifs, "native/skia_native/src/generated_nifs.rs" do
-  build(&Skia.Codegen.Rust.Nifs.generated_native_nifs/0)
-end
-
-generate :generated_atoms, "native/skia_native/src/generated_atoms.rs" do
-  build(&Skia.Codegen.Rust.Core.generated_atoms/0)
-end
-
-generate :generated_enums, "native/skia_native/src/generated_enums.rs" do
-  build(&Skia.Codegen.Rust.Core.generated_enums/0)
-end
-
-generate :generated_opts, "native/skia_native/src/generated_opts.rs" do
-  build(&Skia.Codegen.Rust.Opts.generated_opts/0)
-end
-
-generate :generated_opts_helpers, "native/skia_native/src/generated_opts_helpers.rs" do
-  build(&Skia.Codegen.Rust.Core.generated_opts_helpers/0)
-end
-
-generate :generated_resources, "native/skia_native/src/generated_resources.rs" do
-  build(&Skia.Codegen.Rust.Core.generated_resources/0)
-end
-
-generate :generated_dispatch, "native/skia_native/src/generated_dispatch.rs" do
-  build(&Skia.Codegen.Rust.Core.generated_dispatch/0)
-end
-
-generate :generated_style_helpers, "native/skia_native/src/generated_style_helpers.rs" do
-  build(&Skia.Codegen.Rust.Core.generated_style_helpers/0)
-end
-
-generate :generated_layers, "native/skia_native/src/generated_layers.rs" do
-  build(&Skia.Codegen.Rust.Commands.generated_layers/0)
-end
-
-generate :generated_transforms, "native/skia_native/src/generated_transforms.rs" do
-  build(&Skia.Codegen.Rust.Commands.generated_transforms/0)
-end
-
-generate :generated_shapes, "native/skia_native/src/generated_shapes.rs" do
-  build(&Skia.Codegen.Rust.Commands.generated_shapes/0)
-end
-
-generate :generated_text, "native/skia_native/src/generated_text.rs" do
-  build(&Skia.Codegen.Rust.Commands.generated_text/0)
-end
-
-generate :generated_images, "native/skia_native/src/generated_images.rs" do
-  build(&Skia.Codegen.Rust.Commands.generated_images/0)
-end
-
-generate :generated_draw_paths, "native/skia_native/src/generated_draw_paths.rs" do
-  build(&Skia.Codegen.Rust.Commands.generated_draw_paths/0)
-end
-
-generate :generated_clips, "native/skia_native/src/generated_clips.rs" do
-  build(&Skia.Codegen.Rust.Commands.generated_clips/0)
-end
-
-generate :generated_paint, "native/skia_native/src/generated_paint.rs" do
-  build(&Skia.Codegen.Rust.Commands.generated_paint/0)
-end
-
-generate :generated_path, "native/skia_native/src/generated_path.rs" do
-  build(&Skia.Codegen.Rust.Commands.generated_path/0)
-end
+Skia.Codegen.Rust.Targets.all()
+|> Enum.map(fn {name, target} ->
+  generate name, Keyword.fetch!(target, :path) do
+    build(Keyword.fetch!(target, :build))
+  end
+end)
+|> List.last()
