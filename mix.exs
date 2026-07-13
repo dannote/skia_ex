@@ -44,11 +44,7 @@ defmodule Skia.MixProject do
       {:ex_doc, ">= 0.0.0", only: [:dev, :test], runtime: false},
       {:rustler_precompiled, "~> 0.8"},
       {:rustler, "~> 0.38.0", optional: true, runtime: false},
-      {:rustq,
-       git: "https://github.com/dannote/rustq.git",
-       ref: "b668720",
-       only: [:dev, :test],
-       runtime: false},
+      {:rustq, "~> 0.9.10", only: [:dev, :test], runtime: false},
       {:vibe_kit, "~> 0.1"},
       {:igniter, "~> 0.6", only: [:dev, :test]}
     ]
