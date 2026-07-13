@@ -6,8 +6,8 @@ defmodule Skia.Codegen.Rusty.Command.Shapes do
   valid Elixir `@spec + defrust` bodies to Rust.
   """
 
-  alias Skia.Codegen.Command.Domain.Shapes
   alias RustQ.Type, as: R
+  alias Skia.Codegen.Command.Domain.Shapes
 
   use Skia.Codegen.Rusty.CommandDomain,
     from: Shapes,

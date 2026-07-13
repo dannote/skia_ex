@@ -4,8 +4,8 @@ defmodule Skia.Codegen.Command.Registry do
   alias RustQ.Native.Ref, as: NativeRef
   alias RustQ.Syn
   alias RustQ.Syn.Doc
-  alias Skia.Codegen.Command.Overlay, as: CommandOverlay
   alias Skia.Codegen.Command.Domain.{Clips, Images, Layers, Paths, Shapes, Text, Transforms}
+  alias Skia.Codegen.Command.Overlay, as: CommandOverlay
   alias Skia.Codegen.Native.Schema, as: NativeSchema
 
   @domains [Shapes, Text, Images, Layers, Transforms, Paths, Clips]

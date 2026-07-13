@@ -35,8 +35,8 @@ require_file("lib/skia/codegen/rust/nifs.ex")
 require_file("lib/skia/codegen/rust/opts.ex")
 require_file("lib/skia/codegen/rust/targets.ex")
 
-generate :native, "lib/skia/native.ex" do
-  build(&Skia.Codegen.Rust.Nifs.generated_native/0)
+generate :native_stubs, "lib/skia/native/generated_stubs.ex" do
+  build(&Skia.Codegen.Rust.Nifs.generated_native_stubs/0)
 end
 
 generate :generated_nifs, "native/skia_native/src/generated_nifs.rs" do

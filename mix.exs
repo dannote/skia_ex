@@ -37,14 +37,18 @@ defmodule Skia.MixProject do
   defp deps do
     [
       {:ex_slop, "~> 0.4", only: [:dev, :test], runtime: false},
-      {:reach, "~> 2.0", only: [:dev, :test], runtime: false},
+      {:reach, "~> 2.0", runtime: false},
       {:ex_dna, "~> 1.0", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.0", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.0", only: [:dev, :test], runtime: false},
       {:ex_doc, ">= 0.0.0", only: [:dev, :test], runtime: false},
       {:rustler_precompiled, "~> 0.8"},
       {:rustler, "~> 0.38.0", optional: true, runtime: false},
-      {:rustq, "~> 0.9.3", only: [:dev, :test], runtime: false},
+      {:rustq,
+       git: "https://github.com/dannote/rustq.git",
+       ref: "b668720",
+       only: [:dev, :test],
+       runtime: false},
       {:vibe_kit, "~> 0.1"},
       {:igniter, "~> 0.6", only: [:dev, :test]}
     ]

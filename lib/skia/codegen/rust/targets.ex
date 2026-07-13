@@ -69,9 +69,9 @@ defmodule Skia.Codegen.Rust.Targets do
         path: "native/skia_native/src/generated_nifs.rs",
         build: &Nifs.generated_native_nifs/0
       ],
-      native: [
-        path: "lib/skia/native.ex",
-        build: &Nifs.generated_native/0
+      native_stubs: [
+        path: "lib/skia/native/generated_stubs.ex",
+        build: &Nifs.generated_native_stubs/0
       ]
     ]
   end

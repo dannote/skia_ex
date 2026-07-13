@@ -1,8 +1,10 @@
 defmodule Skia.Codegen.Rust.CoreTest do
   use ExUnit.Case, async: true
 
+  alias Skia.Codegen.Rust.Core
+
   test "style helpers infer propagation from narrow skia-safe source metadata" do
-    source = Skia.Codegen.Rust.Core.generated_style_helpers()
+    source = Core.generated_style_helpers()
 
     assert source =~ "paint.set_blend_mode(generated_enums::decode_blend_mode(atom)?);"
     assert source =~ "paint.set_stroke_cap(generated_enums::decode_stroke_cap(atom)?);"

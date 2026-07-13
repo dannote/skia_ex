@@ -1,10 +1,11 @@
 defmodule Skia.Codegen.Rust.Core do
   @moduledoc false
 
+  alias RustQ.Meta.AST, as: MetaAST
   alias RustQ.Rust
   alias Skia.Codegen.Command.Registry, as: Commands
   alias Skia.Codegen.Native.Enums, as: Enums
-  alias Skia.Codegen.Rusty.Support
+  alias Skia.Codegen.Rusty.{Dispatch, Support}
 
   @spec generated_atoms() :: String.t()
   def generated_atoms do
@@ -54,7 +55,7 @@ defmodule Skia.Codegen.Rust.Core do
         unknown: "Err(rustler::Error::BadArg)"
       )
 
-    items = [dispatch, RustQ.Meta.AST.item(Skia.Codegen.Rusty.Dispatch, :compact_op_atom)]
+    items = [dispatch, MetaAST.item(Dispatch, :compact_op_atom)]
 
     render_items(items, "generated_dispatch.rs")
   end
