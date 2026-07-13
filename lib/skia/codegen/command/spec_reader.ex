@@ -14,7 +14,7 @@ defmodule Skia.Codegen.Command.SpecReader do
   """
 
   alias RustQ.Meta.Type
-  alias RustQ.Rust.AST.Render
+  alias RustQ.Rust
   alias RustQ.Rust.AST.TypeBuilder
   alias RustQ.Rust.Identifier
   alias Skia.Codegen.Native.Enums, as: Enums
@@ -131,5 +131,5 @@ defmodule Skia.Codegen.Command.SpecReader do
   defp rust_type_ast(rust_type), do: TypeBuilder.path(rust_type)
 
   defp rust_type_string(rust_type),
-    do: rust_type |> rust_type_ast() |> Render.render_type() |> IO.iodata_to_binary()
+    do: rust_type |> rust_type_ast() |> Rust.render_type()
 end
