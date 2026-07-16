@@ -14,6 +14,7 @@ jobs:
     uses: elixir-vibe/actions/.github/workflows/elixir-rustler-ci.yml@v1
     with:
       apt-packages: libfontconfig1-dev libfreetype6-dev
+      extra-env: SKIA_EX_BUILD=1
       restore-deps-cache: false
       rust-cache-workspaces: |
         native/skia_native -> target
