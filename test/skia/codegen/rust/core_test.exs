@@ -1,7 +1,18 @@
 defmodule Skia.Codegen.Rust.CoreTest do
-  use ExUnit.Case, async: true
+  use RustQ.Test, async: true
 
   alias Skia.Codegen.Rust.Core
+
+  test "resource state and implementations derive from native ABI types" do
+    source = Core.generated_resources()
+
+    assert source =~ "pub struct EncodedImage"
+    assert source =~ "pub struct EncodedFont"
+    assert source =~ "impl rustler::Resource for EncodedPicture"
+    assert source =~ "decode_encoded_runtime_effect_ref"
+    refute source =~ "rustler::NifMap"
+    assert_rust_valid(Skia.Codegen.Native.Resources.Generated)
+  end
 
   test "style helpers infer propagation from narrow skia-safe source metadata" do
     source = Core.generated_style_helpers()

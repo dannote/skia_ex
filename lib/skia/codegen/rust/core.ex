@@ -2,9 +2,10 @@ defmodule Skia.Codegen.Rust.Core do
   @moduledoc false
 
   alias RustQ.Meta.AST, as: MetaAST
-  alias RustQ.Rustler.{Atom, Opts, Resource}
+  alias RustQ.Rustler.{Atom, Opts}
   alias Skia.Codegen.Command.Registry, as: Commands
   alias Skia.Codegen.Native.Enums, as: Enums
+  alias Skia.Codegen.Native.Resources
   alias Skia.Codegen.Rusty.{Dispatch, Support}
 
   @spec generated_atoms() :: String.t()
@@ -73,31 +74,10 @@ defmodule Skia.Codegen.Rust.Core do
     |> render_items("generated_opts_helpers.rs")
   end
 
-  @doc false
-  @spec resource_specs() :: [{atom(), keyword()}]
-  def resource_specs do
-    [
-      EncodedImage: [fields: [image: "Image"], decoder: :decode_encoded_image_ref],
-      EncodedFont: [fields: [typeface: "skia_safe::Typeface"], decoder: :decode_encoded_font_ref],
-      EncodedPicture: [
-        fields: [bytes: "Vec<u8>", picture: "Picture"],
-        decoder: :decode_encoded_picture_ref
-      ],
-      EncodedTextBlob: [fields: [blob: "TextBlob"], decoder: :decode_encoded_text_blob_ref],
-      EncodedRuntimeEffect: [
-        fields: [source: "String"],
-        decoder: :decode_encoded_runtime_effect_ref
-      ]
-    ]
-  end
-
   @spec generated_resources() :: String.t()
   def generated_resources do
-    resources =
-      resource_specs()
-      |> Enum.flat_map(fn {name, opts} -> Resource.handle_items(name, opts) end)
-
-    render_items(resources, "generated_resources.rs")
+    Resources.generated_items()
+    |> render_items("generated_resources.rs")
   end
 
   def rust_atom_references do
