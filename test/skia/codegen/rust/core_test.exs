@@ -11,7 +11,7 @@ defmodule Skia.Codegen.Rust.CoreTest do
     assert source =~ "impl rustler::Resource for EncodedPicture"
     assert source =~ "decode_encoded_runtime_effect_ref"
     refute source =~ "rustler::NifMap"
-    assert_rust_valid(Skia.Codegen.Native.Resources.Generated)
+    assert RustQ.valid?(source, "generated_resources.rs")
   end
 
   test "style helpers infer propagation from narrow skia-safe source metadata" do
