@@ -538,20 +538,22 @@ defmodule Skia.Codegen.Rusty.Support.PaintDecoders do
 
   @spec decode_compose_color_filter(term()) :: R.nif_result(R.path(:ColorFilter))
   defrust decode_compose_color_filter(term) do
-    case decode_as(term, {atom(), term(), term()}) do
-      {:ok, {tag, outer, inner}} ->
-        if tag == Atoms.compose_color_filter() do
-          {:ok,
-           ok_or!(
-             ColorFilters.compose(decode_color_filter(outer), decode_color_filter(inner)),
-             badarg()
-           )}
-        else
-          {:error, badarg()}
-        end
+    case decode_as(term, atom()) do
+      {:ok, tag} when tag == Atoms.luma_color_filter() ->
+        {:ok, ColorFilter.luma()}
 
-      {:error, _reason} ->
-        {:error, badarg()}
+      _ ->
+        case decode_as(term, {atom(), term(), term()}) do
+          {:ok, {tag, outer, inner}} when tag == Atoms.compose_color_filter() ->
+            {:ok,
+             ok_or!(
+               ColorFilters.compose(decode_color_filter(outer), decode_color_filter(inner)),
+               badarg()
+             )}
+
+          _ ->
+            {:error, badarg()}
+        end
     end
   end
 

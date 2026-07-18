@@ -447,21 +447,22 @@ fn decode_matrix_color_filter<'a>(term: Term<'a>) -> NifResult<ColorFilter> {
     }
 }
 fn decode_compose_color_filter<'a>(term: Term<'a>) -> NifResult<ColorFilter> {
-    match term.decode::<(Atom, Term<'a>, Term<'a>)>() {
-        Ok((tag, outer, inner)) => {
-            if tag == atoms::compose_color_filter() {
-                Ok(
-                    color_filters::compose(
-                            decode_color_filter(outer)?,
-                            decode_color_filter(inner)?,
-                        )
-                        .ok_or(rustler::Error::BadArg)?,
-                )
-            } else {
-                Err(rustler::Error::BadArg)
+    match term.decode::<Atom>() {
+        Ok(tag) if tag == atoms::luma_color_filter() => Ok(ColorFilter::luma()),
+        _ => {
+            match term.decode::<(Atom, Term<'a>, Term<'a>)>() {
+                Ok((tag, outer, inner)) if tag == atoms::compose_color_filter() => {
+                    Ok(
+                        color_filters::compose(
+                                decode_color_filter(outer)?,
+                                decode_color_filter(inner)?,
+                            )
+                            .ok_or(rustler::Error::BadArg)?,
+                    )
+                }
+                _ => Err(rustler::Error::BadArg),
             }
         }
-        Err(_reason) => Err(rustler::Error::BadArg),
     }
 }
 fn decode_image_filter<'a>(term: Term<'a>) -> NifResult<skia_safe::ImageFilter> {

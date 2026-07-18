@@ -525,6 +525,8 @@ defmodule Skia.Command do
     {:compose_color_filter, normalize_color_filter!(outer), normalize_color_filter!(inner)}
   end
 
+  defp normalize_color_filter!(%Skia.ColorFilter.Luma{}), do: :luma_color_filter
+
   defp normalize_color_filter!(value),
     do: raise(ArgumentError, "invalid color filter #{inspect(value)}")
 

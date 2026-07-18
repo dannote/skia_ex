@@ -618,6 +618,22 @@ defmodule SkiaTest do
     assert byte_size(raw.data) == 64
   end
 
+  test "luma color filters preserve source alpha" do
+    filter = Skia.ColorFilter.luma()
+
+    document =
+      Skia.canvas(2, 1)
+      |> Skia.rect(x: 0, y: 0, width: 1, height: 1, fill: {255, 255, 255, 128})
+      |> Skia.rect(x: 1, y: 0, width: 1, height: 1, fill: {255, 255, 255, 0})
+      |> Skia.layer([image_filter: Skia.ImageFilter.color_filter(filter)], & &1)
+
+    assert {:ok, %{data: <<_r1, _g1, _b1, alpha, _r2, _g2, _b2, transparent_alpha>>}} =
+             Skia.to_raw(document)
+
+    assert alpha in 127..128
+    assert transparent_alpha == 0
+  end
+
   test "supports rich sampling options" do
     source =
       Skia.canvas(2, 2)

@@ -19,7 +19,13 @@ defmodule Skia.ColorFilter do
     defstruct [:outer, :inner]
   end
 
-  @type t :: Blend.t() | Matrix.t() | Compose.t()
+  defmodule Luma do
+    @moduledoc "Convert source luminance to alpha while preserving source alpha."
+    @type t :: %__MODULE__{}
+    defstruct []
+  end
+
+  @type t :: Blend.t() | Matrix.t() | Compose.t() | Luma.t()
 
   @spec blend(term(), atom()) :: Blend.t()
   def blend(color, blend_mode \\ :src_in), do: %Blend{color: color, blend_mode: blend_mode}
@@ -39,4 +45,8 @@ defmodule Skia.ColorFilter do
 
   @spec compose(t(), t()) :: Compose.t()
   def compose(outer, inner), do: %Compose{outer: outer, inner: inner}
+
+  @doc "Builds a luminance-to-alpha filter that retains source alpha."
+  @spec luma() :: Luma.t()
+  def luma, do: %Luma{}
 end
