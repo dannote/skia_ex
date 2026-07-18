@@ -5,6 +5,7 @@ defmodule Skia.PackageTest do
     files = Mix.Project.config() |> Keyword.fetch!(:package) |> Keyword.fetch!(:files)
 
     assert "lib/skia/command/registry.ex" in files
+    assert "priv/command_registry.etf" in files
     refute Enum.any?(files, &String.starts_with?(&1, "lib/skia/codegen/"))
     refute Enum.any?(files, &String.starts_with?(&1, "lib/mix/"))
   end

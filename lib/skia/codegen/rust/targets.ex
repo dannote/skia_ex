@@ -11,7 +11,7 @@ defmodule Skia.Codegen.Rust.Targets do
   def all do
     [
       command_registry: [
-        path: "lib/skia/command/registry.ex",
+        path: "priv/command_registry.etf",
         build: &Runtime.generated_registry/0
       ],
       generated_atoms: [

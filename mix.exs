@@ -37,7 +37,7 @@ defmodule Skia.MixProject do
   defp deps do
     [
       {:ex_slop, "~> 0.4", only: [:dev, :test], runtime: false},
-      {:reach, "~> 2.0", runtime: false},
+      {:reach, "~> 2.0", only: [:dev, :test], runtime: false},
       {:ex_dna, "~> 1.0", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.0", only: [:dev, :test], runtime: false},
       {:credo, "~> 1.0", only: [:dev, :test], runtime: false},
@@ -45,7 +45,7 @@ defmodule Skia.MixProject do
       {:rustler_precompiled, "~> 0.8"},
       {:rustler, "~> 0.38.0", optional: true, runtime: false},
       {:rustq, "~> 1.0.0-rc.3", only: [:dev, :test], runtime: false},
-      {:vibe_kit, "~> 0.1"},
+      {:vibe_kit, "~> 0.1", only: [:dev, :test], runtime: false},
       {:igniter, "~> 0.6", only: [:dev, :test]}
     ]
   end
@@ -60,6 +60,7 @@ defmodule Skia.MixProject do
             "native/skia_native/src",
             "native/skia_native/Cargo.toml",
             "native/skia_native/Cargo.lock",
+            "priv/command_registry.etf",
             "examples",
             "mix.exs",
             "README.md",
