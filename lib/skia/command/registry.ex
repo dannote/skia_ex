@@ -21,5 +21,15 @@ defmodule Skia.Command.Registry do
   def fetch!(name), do: Keyword.fetch!(@commands, name)
 
   @spec doc(atom(), keyword()) :: String.t()
-  def doc(_name, spec), do: Keyword.fetch!(spec, :doc)
+  def doc(name, spec) do
+    codegen_registry = Skia.Codegen.Command.Registry
+
+    case Code.ensure_compiled(codegen_registry) do
+      {:module, ^codegen_registry} ->
+        codegen_registry.doc(name, codegen_registry.fetch!(name))
+
+      {:error, _reason} ->
+        Keyword.fetch!(spec, :doc)
+    end
+  end
 end
