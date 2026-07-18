@@ -56,6 +56,10 @@ defmodule Skia.Codegen.Rust.CommandsTest do
     assert source =~ "&text"
     assert source =~ "&paint"
     assert source =~ "&opts"
+
+    assert source =~ "fn register_span_typefaces<'a>("
+    assert source =~ "register_span_typefaces(&mut provider, values, size)?;"
+    assert source =~ "provider.register_typeface(font.typeface(), None);"
   end
 
   test "transform impls are generated from Rusty Elixir" do

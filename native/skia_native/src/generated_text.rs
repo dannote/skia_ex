@@ -97,18 +97,26 @@ fn draw_paragraph_text<'a>(
         paragraph_style.set_text_direction(decode_text_direction(direction)?);
     }
     let mut font_collection = FontCollection::new();
+    let mut provider = TypefaceFontProvider::new();
     if let Some(term) = opts.font {
         let font = font_from_term(term, size)?;
-        let mut provider = TypefaceFontProvider::new();
         provider.register_typeface(font.typeface(), None);
-        font_collection.set_asset_font_manager(Some(FontMgr::from(provider)));
     }
+    let spans = match opts.spans {
+        Some(spans_term) => {
+            Some(spans_term.decode::<Vec<(String, Vec<(Atom, Term<'a>)>)>>()?)
+        }
+        None => None,
+    };
+    if let Some(values) = &spans {
+        register_span_typefaces(&mut provider, values, size)?;
+    }
+    font_collection.set_asset_font_manager(Some(FontMgr::from(provider)));
     font_collection.set_default_font_manager(FontMgr::default(), None);
     let mut paragraph_builder = ParagraphBuilder::new(&paragraph_style, font_collection);
-    match opts.spans {
-        Some(spans_term) => {
-            let spans = spans_term.decode::<Vec<(String, Vec<(Atom, Term<'a>)>)>>()?;
-            for (span_text, style_opts) in spans {
+    match spans {
+        Some(values) => {
+            for (span_text, style_opts) in values {
                 let span_style = text_style_from_opts(&text_style, &style_opts)?;
                 paragraph_builder.push_style(&span_style);
                 paragraph_builder.add_text(span_text);
@@ -124,6 +132,19 @@ fn draw_paragraph_text<'a>(
     let mut paragraph = paragraph_builder.build();
     paragraph.layout(width);
     paragraph.paint(canvas, Point::new(x, y));
+    Ok(())
+}
+fn register_span_typefaces<'a>(
+    provider: &mut TypefaceFontProvider,
+    spans: &[(String, Vec<(Atom, Term<'a>)>)],
+    size: f32,
+) -> NifResult<()> {
+    for (_span_text, style_opts) in spans {
+        if let Some(term) = opt_term(style_opts, atoms::font()) {
+            let font = font_from_term(term, size)?;
+            provider.register_typeface(font.typeface(), None);
+        }
+    }
     Ok(())
 }
 fn text_style_from_opts<'a>(

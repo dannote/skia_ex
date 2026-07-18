@@ -10,6 +10,7 @@ defmodule Skia.Codegen.Rusty.Command.Text do
     commands: [:text_blob, :text],
     helpers: [
       :draw_paragraph_text,
+      :register_span_typefaces,
       :text_style_from_opts,
       :decode_text_align,
       :decode_text_direction
@@ -132,27 +133,39 @@ defmodule Skia.Codegen.Rusty.Command.Text do
     end
 
     font_collection = FontCollection.new()
+    provider = TypefaceFontProvider.new()
 
     case opts.font do
       {:some, term} ->
         font = font_from_term(term, size)
-        provider = TypefaceFontProvider.new()
         provider.register_typeface(font.typeface(), none())
-        font_collection.set_asset_font_manager(some(FontMgr.from(provider)))
 
       :none ->
         :ok
     end
 
+    spans =
+      case opts.spans do
+        {:some, spans_term} ->
+          some(decode_as!(spans_term, R.vec({R.path(:String), R.vec({atom(), term()})})))
+
+        :none ->
+          none()
+      end
+
+    case ref(spans) do
+      {:some, values} -> register_span_typefaces(mut_ref(provider), values, size)
+      :none -> :ok
+    end
+
+    font_collection.set_asset_font_manager(some(FontMgr.from(provider)))
     font_collection.set_default_font_manager(FontMgr.default(), none())
     paragraph_builder = ParagraphBuilder.new(paragraph_style, font_collection)
 
-    case opts.spans do
-      {:some, spans_term} ->
-        spans = decode_as!(spans_term, R.vec({R.path(:String), R.vec({atom(), term()})}))
-
-        for {span_text, style_opts} <- spans do
-          span_style = text_style_from_opts(text_style, style_opts)
+    case spans do
+      {:some, values} ->
+        for {span_text, style_opts} <- values do
+          span_style = text_style_from_opts(text_style, ref(style_opts))
           paragraph_builder.push_style(span_style)
           paragraph_builder.add_text(span_text)
           paragraph_builder.pop()
@@ -167,6 +180,26 @@ defmodule Skia.Codegen.Rusty.Command.Text do
     paragraph = paragraph_builder.build()
     paragraph.layout(width)
     paragraph.paint(canvas, Point.new(x, y))
+    :ok
+  end
+
+  @spec register_span_typefaces(
+          R.mut_ref(R.path(:TypefaceFontProvider)),
+          R.slice({R.path(:String), R.vec({atom(), term()})}),
+          R.f32()
+        ) :: R.nif_result(R.unit())
+  defrust register_span_typefaces(provider, spans, size) do
+    for {_span_text, style_opts} <- spans do
+      case opt_term(style_opts, Atoms.font()) do
+        {:some, term} ->
+          font = font_from_term(term, size)
+          provider.register_typeface(font.typeface(), none())
+
+        :none ->
+          :ok
+      end
+    end
+
     :ok
   end
 

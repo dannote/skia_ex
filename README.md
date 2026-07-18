@@ -165,9 +165,10 @@ font = Skia.Font.new(typeface, size: 24)
 ```
 
 Loaded images, fonts, and pictures keep decoded Skia handles in their native
-resources for repeated drawing. Explicit fonts are registered with paragraph
-font collections for width-constrained text as well as direct text drawing,
-while pictures still retain serialized bytes for `Skia.Picture.encode/1`.
+resources for repeated drawing. Explicit fonts—including every font attached to
+a `Skia.TextSpan`—are registered with paragraph font collections for
+width-constrained text as well as direct text drawing, while pictures still
+retain serialized bytes for `Skia.Picture.encode/1`.
 
 ## Text
 
