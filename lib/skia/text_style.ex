@@ -7,15 +7,44 @@ defmodule Skia.TextStyle do
           font: Skia.Font.t() | nil,
           weight: integer() | nil,
           font_family: String.t() | nil,
-          line_height: number() | nil
+          line_height: number() | nil,
+          letter_spacing: number() | nil,
+          decoration: :none | :underline | :line_through | nil,
+          decoration_style: :solid | :double | :dotted | :dashed | :wavy | nil,
+          decoration_mode: :gaps | :through | nil,
+          decoration_color: Skia.Command.color() | nil
         }
-  defstruct [:size, :fill, :font, :weight, :font_family, :line_height]
+  defstruct [
+    :size,
+    :fill,
+    :font,
+    :weight,
+    :font_family,
+    :line_height,
+    :letter_spacing,
+    :decoration,
+    :decoration_style,
+    :decoration_mode,
+    :decoration_color
+  ]
 
   @spec new(keyword()) :: t()
   def new(opts \\ []) do
     struct(
       __MODULE__,
-      Keyword.take(opts, [:size, :fill, :font, :weight, :font_family, :line_height])
+      Keyword.take(opts, [
+        :size,
+        :fill,
+        :font,
+        :weight,
+        :font_family,
+        :line_height,
+        :letter_spacing,
+        :decoration,
+        :decoration_style,
+        :decoration_mode,
+        :decoration_color
+      ])
     )
   end
 

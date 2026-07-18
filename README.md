@@ -175,8 +175,29 @@ retain serialized bytes for `Skia.Picture.encode/1`.
 Use direct options for convenience or reusable style structs for paragraph text:
 
 ```elixir
-style = Skia.TextStyle.new(size: 16, fill: :black, font_family: "Arial", line_height: 20)
-paragraph = Skia.ParagraphStyle.new(width: 320, align: :center, direction: :ltr)
+style =
+  Skia.TextStyle.new(
+    size: 16,
+    fill: :black,
+    font_family: "Arial",
+    line_height: 20,
+    letter_spacing: 0.5,
+    decoration: :underline,
+    decoration_style: :dotted,
+    decoration_mode: :gaps,
+    decoration_color: {0, 255, 255}
+  )
+
+paragraph =
+  Skia.ParagraphStyle.new(
+    width: 320,
+    height: 80,
+    align: :center,
+    vertical_align: :center,
+    direction: :ltr,
+    max_lines: 2,
+    ellipsis: "…"
+  )
 
 spans = [
   Skia.TextSpan.new("Hello ", fill: :red, size: 18),

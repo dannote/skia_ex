@@ -12,7 +12,11 @@ defmodule Skia.Codegen.Rusty.Command.Text do
       :draw_paragraph_text,
       :register_span_typefaces,
       :text_style_from_opts,
+      :paragraph_paint_y,
       :decode_text_align,
+      :decode_text_decoration,
+      :decode_text_decoration_style,
+      :decode_text_decoration_mode,
       :decode_text_direction
     ],
     rust_packages: [{"skia-safe", [manifest_path: "native/skia_native/Cargo.toml"]}]
@@ -116,6 +120,31 @@ defmodule Skia.Codegen.Rusty.Command.Text do
         :ok
     end
 
+    case opts.letter_spacing do
+      {:some, letter_spacing} -> text_style.set_letter_spacing(letter_spacing)
+      :none -> :ok
+    end
+
+    case opts.decoration do
+      {:some, decoration} -> text_style.set_decoration_type(decode_text_decoration(decoration))
+      :none -> :ok
+    end
+
+    case opts.decoration_style do
+      {:some, style} -> text_style.set_decoration_style(decode_text_decoration_style(style))
+      :none -> :ok
+    end
+
+    case opts.decoration_mode do
+      {:some, mode} -> text_style.set_decoration_mode(unwrap!(decode_text_decoration_mode(mode)))
+      :none -> :ok
+    end
+
+    case opts.decoration_color do
+      {:some, color} -> text_style.set_decoration_color(decode_color(color))
+      :none -> :ok
+    end
+
     paragraph_style = ParagraphStyle.new()
     paragraph_style.set_text_style(text_style)
 
@@ -130,6 +159,16 @@ defmodule Skia.Codegen.Rusty.Command.Text do
 
       :none ->
         :ok
+    end
+
+    case opts.max_lines do
+      {:some, max_lines} -> paragraph_style.set_max_lines(max_lines)
+      :none -> :ok
+    end
+
+    case ref(opts.ellipsis) do
+      {:some, ellipsis} -> paragraph_style.set_ellipsis(ellipsis)
+      :none -> :ok
     end
 
     font_collection = FontCollection.new()
@@ -179,7 +218,30 @@ defmodule Skia.Codegen.Rusty.Command.Text do
 
     paragraph = paragraph_builder.build()
     paragraph.layout(width)
-    paragraph.paint(canvas, Point.new(x, y))
+
+    paint_y =
+      case opts.height do
+        {:some, height} ->
+          case opts.vertical_align do
+            {:some, align} -> unwrap!(paragraph_paint_y(y, height, paragraph.height(), align))
+            :none -> y
+          end
+
+        :none ->
+          y
+      end
+
+    case opts.height do
+      {:some, height} ->
+        canvas.save()
+        canvas.clip_rect(Rect.from_xywh(x, y, width, height), ClipOp.Intersect, true)
+        paragraph.paint(canvas, Point.new(x, paint_y))
+        canvas.restore()
+
+      :none ->
+        paragraph.paint(canvas, Point.new(x, paint_y))
+    end
+
     :ok
   end
 
@@ -247,7 +309,56 @@ defmodule Skia.Codegen.Rusty.Command.Text do
         :ok
     end
 
+    case opt_f32_option(opts, Atoms.letter_spacing()) do
+      {:some, letter_spacing} -> style.set_letter_spacing(letter_spacing)
+      :none -> :ok
+    end
+
+    case opt_term(opts, Atoms.decoration()) do
+      {:some, term} ->
+        decoration = decode_as!(term, atom())
+        style.set_decoration_type(decode_text_decoration(decoration))
+
+      :none ->
+        :ok
+    end
+
+    case opt_term(opts, Atoms.decoration_style()) do
+      {:some, term} ->
+        decoration_style = decode_as!(term, atom())
+        style.set_decoration_style(decode_text_decoration_style(decoration_style))
+
+      :none ->
+        :ok
+    end
+
+    case opt_term(opts, Atoms.decoration_mode()) do
+      {:some, term} ->
+        decoration_mode = decode_as!(term, atom())
+        style.set_decoration_mode(unwrap!(decode_text_decoration_mode(decoration_mode)))
+
+      :none ->
+        :ok
+    end
+
+    case opt_term(opts, Atoms.decoration_color()) do
+      {:some, color} -> style.set_decoration_color(decode_color(color))
+      :none -> :ok
+    end
+
     {:ok, style}
+  end
+
+  @spec paragraph_paint_y(R.f32(), R.f32(), R.f32(), atom()) :: R.nif_result(R.f32())
+  defrust paragraph_paint_y(y, height, content_height, align) do
+    remaining = (height - content_height).max(0.0)
+
+    case align do
+      :top -> {:ok, y}
+      :center -> {:ok, y + remaining / 2.0}
+      :bottom -> {:ok, y + remaining}
+      _ -> {:error, badarg()}
+    end
   end
 
   @spec decode_text_align(atom()) :: R.nif_result(R.path(:TextAlign))
@@ -257,6 +368,37 @@ defmodule Skia.Codegen.Rusty.Command.Text do
       :right -> {:ok, TextAlign.Right}
       :justify -> {:ok, TextAlign.Justify}
       :left -> {:ok, TextAlign.Left}
+      _ -> {:error, badarg()}
+    end
+  end
+
+  @spec decode_text_decoration(atom()) :: R.nif_result(R.path(:TextDecoration))
+  defrust decode_text_decoration(value) do
+    case value do
+      atom when atom == Atoms.none() -> {:ok, TextDecoration.NO_DECORATION}
+      atom when atom == Atoms.underline() -> {:ok, TextDecoration.UNDERLINE}
+      atom when atom == Atoms.line_through() -> {:ok, TextDecoration.LINE_THROUGH}
+      _ -> {:error, badarg()}
+    end
+  end
+
+  @spec decode_text_decoration_style(atom()) :: R.nif_result(R.path(:TextDecorationStyle))
+  defrust decode_text_decoration_style(value) do
+    case value do
+      :solid -> {:ok, TextDecorationStyle.Solid}
+      :double -> {:ok, TextDecorationStyle.Double}
+      :dotted -> {:ok, TextDecorationStyle.Dotted}
+      :dashed -> {:ok, TextDecorationStyle.Dashed}
+      :wavy -> {:ok, TextDecorationStyle.Wavy}
+      _ -> {:error, badarg()}
+    end
+  end
+
+  @spec decode_text_decoration_mode(atom()) :: R.nif_result(R.path(:DecorationMode))
+  defrust decode_text_decoration_mode(value) do
+    case value do
+      :gaps -> {:ok, DecorationMode.default()}
+      :through -> {:ok, DecorationMode.Through}
       _ -> {:error, badarg()}
     end
   end

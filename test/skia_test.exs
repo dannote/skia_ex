@@ -1027,6 +1027,98 @@ defmodule SkiaTest do
     assert <<137, 80, 78, 71, 13, 10, 26, 10, _rest::binary>> = png
   end
 
+  test "supports span typography and vertical paragraph alignment" do
+    span =
+      Skia.TextSpan.new("Typography",
+        size: 14,
+        fill: :black,
+        letter_spacing: 2,
+        decoration: :underline,
+        decoration_style: :dotted,
+        decoration_mode: :gaps,
+        decoration_color: {0, 255, 255}
+      )
+
+    top =
+      Skia.canvas(120, 48)
+      |> Skia.text("",
+        x: 0,
+        y: 0,
+        paragraph_style: Skia.ParagraphStyle.new(width: 120, height: 48, vertical_align: :top),
+        spans: [span]
+      )
+
+    bottom =
+      Skia.canvas(120, 48)
+      |> Skia.text("",
+        x: 0,
+        y: 0,
+        paragraph_style:
+          Skia.ParagraphStyle.new(
+            width: 120,
+            height: 48,
+            vertical_align: :bottom,
+            max_lines: 1,
+            ellipsis: "…"
+          ),
+        spans: [span]
+      )
+
+    [command] = Skia.commands(bottom)
+    assert command.opts[:height] == 48.0
+    assert command.opts[:vertical_align] == :bottom
+    assert command.opts[:max_lines] == 1
+    assert command.opts[:ellipsis] == "…"
+    assert [{"Typography", span_opts}] = command.opts[:spans]
+    assert span_opts[:letter_spacing] == 2.0
+    assert span_opts[:decoration] == :underline
+    assert span_opts[:decoration_style] == :dotted
+    assert span_opts[:decoration_mode] == :gaps
+    assert span_opts[:decoration_color] == {:rgba, 0, 255, 255, 255}
+
+    assert {:ok, top_raw} = Skia.to_raw(top)
+    assert {:ok, bottom_raw} = Skia.to_raw(bottom)
+    refute top_raw.data == bottom_raw.data
+
+    assert_raise ArgumentError, ~r/invalid text decoration/, fn ->
+      Skia.TextSpan.new("bad", decoration: :wavy)
+      |> then(&Skia.text(Skia.canvas(20, 20), "", x: 0, y: 0, width: 20, spans: [&1]))
+    end
+  end
+
+  test "clips height-bounded paragraphs and renders ending ellipsis" do
+    text = "one two three four five six"
+
+    unclipped =
+      Skia.canvas(80, 80)
+      |> Skia.text(text, x: 4, y: 4, width: 44, size: 14, fill: :black)
+
+    clipped =
+      Skia.canvas(80, 80)
+      |> Skia.text(text, x: 4, y: 4, width: 44, height: 18, size: 14, fill: :black)
+
+    truncated =
+      Skia.canvas(80, 80)
+      |> Skia.text(text,
+        x: 4,
+        y: 4,
+        width: 44,
+        height: 18,
+        size: 14,
+        fill: :black,
+        max_lines: 1,
+        ellipsis: "…"
+      )
+
+    assert {:ok, unclipped_raw} = Skia.to_raw(unclipped)
+    assert {:ok, clipped_raw} = Skia.to_raw(clipped)
+    assert {:ok, truncated_raw} = Skia.to_raw(truncated)
+
+    assert opaque_pixels_below(clipped_raw, 22) == 0
+    assert opaque_pixels_below(unclipped_raw, 22) > 0
+    refute clipped_raw.data == truncated_raw.data
+  end
+
   test "supports reusable text and paragraph styles" do
     style = Skia.TextStyle.new(size: 12, fill: :black, font_family: "Arial", line_height: 14)
     paragraph = Skia.ParagraphStyle.new(width: 48, align: :center, direction: :ltr)
@@ -1152,6 +1244,15 @@ defmodule SkiaTest do
 
     assert {:ok, png} = Skia.to_png(document)
     assert <<137, 80, 78, 71, 13, 10, 26, 10, _rest::binary>> = png
+  end
+
+  defp opaque_pixels_below(%{width: width, data: data}, row) do
+    data
+    |> :binary.bin_to_list()
+    |> Enum.drop(3)
+    |> Enum.take_every(4)
+    |> Enum.with_index()
+    |> Enum.count(fn {alpha, index} -> div(index, width) >= row and alpha > 0 end)
   end
 
   test "supports path blocks in the DSL" do

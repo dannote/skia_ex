@@ -88,6 +88,21 @@ fn draw_paragraph_text<'a>(
         text_style.set_height(line_height / size);
         text_style.set_height_override(true);
     }
+    if let Some(letter_spacing) = opts.letter_spacing {
+        text_style.set_letter_spacing(letter_spacing);
+    }
+    if let Some(decoration) = opts.decoration {
+        text_style.set_decoration_type(decode_text_decoration(decoration)?);
+    }
+    if let Some(style) = opts.decoration_style {
+        text_style.set_decoration_style(decode_text_decoration_style(style)?);
+    }
+    if let Some(mode) = opts.decoration_mode {
+        text_style.set_decoration_mode(decode_text_decoration_mode(mode)?);
+    }
+    if let Some(color) = opts.decoration_color {
+        text_style.set_decoration_color(decode_color(color)?);
+    }
     let mut paragraph_style = ParagraphStyle::new();
     paragraph_style.set_text_style(&text_style);
     if let Some(align) = opts.align {
@@ -95,6 +110,12 @@ fn draw_paragraph_text<'a>(
     }
     if let Some(direction) = opts.direction {
         paragraph_style.set_text_direction(decode_text_direction(direction)?);
+    }
+    if let Some(max_lines) = opts.max_lines {
+        paragraph_style.set_max_lines(max_lines);
+    }
+    if let Some(ellipsis) = &opts.ellipsis {
+        paragraph_style.set_ellipsis(ellipsis);
     }
     let mut font_collection = FontCollection::new();
     let mut provider = TypefaceFontProvider::new();
@@ -131,7 +152,31 @@ fn draw_paragraph_text<'a>(
     };
     let mut paragraph = paragraph_builder.build();
     paragraph.layout(width);
-    paragraph.paint(canvas, Point::new(x, y));
+    let paint_y = match opts.height {
+        Some(height) => {
+            match opts.vertical_align {
+                Some(align) => paragraph_paint_y(y, height, paragraph.height(), align)?,
+                None => y,
+            }
+        }
+        None => y,
+    };
+    match opts.height {
+        Some(height) => {
+            canvas.save();
+            canvas
+                .clip_rect(
+                    Rect::from_xywh(x, y, width, height),
+                    ClipOp::Intersect,
+                    true,
+                );
+            paragraph.paint(canvas, Point::new(x, paint_y));
+            canvas.restore();
+        }
+        None => {
+            paragraph.paint(canvas, Point::new(x, paint_y));
+        }
+    };
     Ok(())
 }
 fn register_span_typefaces<'a>(
@@ -172,7 +217,39 @@ fn text_style_from_opts<'a>(
         style.set_height(line_height / font_size);
         style.set_height_override(true);
     }
+    if let Some(letter_spacing) = opt_f32_option(opts, atoms::letter_spacing())? {
+        style.set_letter_spacing(letter_spacing);
+    }
+    if let Some(term) = opt_term(opts, atoms::decoration()) {
+        let decoration = term.decode::<Atom>()?;
+        style.set_decoration_type(decode_text_decoration(decoration)?);
+    }
+    if let Some(term) = opt_term(opts, atoms::decoration_style()) {
+        let decoration_style = term.decode::<Atom>()?;
+        style.set_decoration_style(decode_text_decoration_style(decoration_style)?);
+    }
+    if let Some(term) = opt_term(opts, atoms::decoration_mode()) {
+        let decoration_mode = term.decode::<Atom>()?;
+        style.set_decoration_mode(decode_text_decoration_mode(decoration_mode)?);
+    }
+    if let Some(color) = opt_term(opts, atoms::decoration_color()) {
+        style.set_decoration_color(decode_color(color)?);
+    }
     Ok(style)
+}
+fn paragraph_paint_y(
+    y: f32,
+    height: f32,
+    content_height: f32,
+    align: Atom,
+) -> NifResult<f32> {
+    let remaining = (height - content_height).max(0.0);
+    match align {
+        value if value == atoms::top() => Ok(y),
+        value if value == atoms::center() => Ok(y + remaining / 2.0),
+        value if value == atoms::bottom() => Ok(y + remaining),
+        _ => Err(rustler::Error::BadArg),
+    }
 }
 fn decode_text_align(value: Atom) -> NifResult<TextAlign> {
     match value {
@@ -180,6 +257,31 @@ fn decode_text_align(value: Atom) -> NifResult<TextAlign> {
         value if value == atoms::right() => Ok(TextAlign::Right),
         value if value == atoms::justify() => Ok(TextAlign::Justify),
         value if value == atoms::left() => Ok(TextAlign::Left),
+        _ => Err(rustler::Error::BadArg),
+    }
+}
+fn decode_text_decoration(value: Atom) -> NifResult<TextDecoration> {
+    match value {
+        atom if atom == atoms::none() => Ok(TextDecoration::NO_DECORATION),
+        atom if atom == atoms::underline() => Ok(TextDecoration::UNDERLINE),
+        atom if atom == atoms::line_through() => Ok(TextDecoration::LINE_THROUGH),
+        _ => Err(rustler::Error::BadArg),
+    }
+}
+fn decode_text_decoration_style(value: Atom) -> NifResult<TextDecorationStyle> {
+    match value {
+        value if value == atoms::solid() => Ok(TextDecorationStyle::Solid),
+        value if value == atoms::double() => Ok(TextDecorationStyle::Double),
+        value if value == atoms::dotted() => Ok(TextDecorationStyle::Dotted),
+        value if value == atoms::dashed() => Ok(TextDecorationStyle::Dashed),
+        value if value == atoms::wavy() => Ok(TextDecorationStyle::Wavy),
+        _ => Err(rustler::Error::BadArg),
+    }
+}
+fn decode_text_decoration_mode(value: Atom) -> NifResult<DecorationMode> {
+    match value {
+        value if value == atoms::gaps() => Ok(DecorationMode::default()),
+        value if value == atoms::through() => Ok(DecorationMode::Through),
         _ => Err(rustler::Error::BadArg),
     }
 }

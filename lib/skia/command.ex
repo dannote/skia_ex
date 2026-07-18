@@ -657,9 +657,32 @@ defmodule Skia.Command do
       {:size, value} -> {:size, normalize_number!(value)}
       {:fill, value} -> {:fill, normalize_color!(value)}
       {:line_height, value} -> {:line_height, normalize_number!(value)}
+      {:letter_spacing, value} -> {:letter_spacing, normalize_number!(value)}
+      {:decoration, value} -> {:decoration, normalize_text_decoration!(value)}
+      {:decoration_style, value} -> {:decoration_style, normalize_decoration_style!(value)}
+      {:decoration_mode, value} -> {:decoration_mode, normalize_decoration_mode!(value)}
+      {:decoration_color, value} -> {:decoration_color, normalize_color!(value)}
       other -> other
     end)
   end
+
+  defp normalize_text_decoration!(value) when value in [:none, :underline, :line_through],
+    do: value
+
+  defp normalize_text_decoration!(value),
+    do: raise(ArgumentError, "invalid text decoration #{inspect(value)}")
+
+  defp normalize_decoration_style!(value)
+       when value in [:solid, :double, :dotted, :dashed, :wavy],
+       do: value
+
+  defp normalize_decoration_style!(value),
+    do: raise(ArgumentError, "invalid text decoration style #{inspect(value)}")
+
+  defp normalize_decoration_mode!(value) when value in [:gaps, :through], do: value
+
+  defp normalize_decoration_mode!(value),
+    do: raise(ArgumentError, "invalid text decoration mode #{inspect(value)}")
 
   defp normalize_rect!({x, y, width, height}) do
     {normalize_number!(x), normalize_number!(y), normalize_number!(width),

@@ -50,14 +50,23 @@ defmodule Skia.Codegen.Command.Domain.Text do
           required(:x) => RustQ.Type.f32(),
           required(:y) => RustQ.Type.f32(),
           optional(:width) => RustQ.Type.f32(),
+          optional(:height) => RustQ.Type.f32(),
           optional(:size) => RustQ.Type.f32(),
           optional(:fill) => color(),
           optional(:font) => font(),
           optional(:weight) => integer(),
           optional(:align) => atom(),
+          optional(:vertical_align) => atom(),
           optional(:direction) => atom(),
+          optional(:max_lines) => RustQ.Type.usize(),
+          optional(:ellipsis) => String.t(),
           optional(:font_family) => String.t(),
           optional(:line_height) => RustQ.Type.f32(),
+          optional(:letter_spacing) => RustQ.Type.f32(),
+          optional(:decoration) => atom(),
+          optional(:decoration_style) => atom(),
+          optional(:decoration_mode) => atom(),
+          optional(:decoration_color) => color(),
           optional(:spans) => term()
         }
 
