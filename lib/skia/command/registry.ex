@@ -26,7 +26,8 @@ defmodule Skia.Command.Registry do
 
     case Code.ensure_compiled(codegen_registry) do
       {:module, ^codegen_registry} ->
-        codegen_registry.doc(name, codegen_registry.fetch!(name))
+        codegen_spec = apply(codegen_registry, :fetch!, [name])
+        apply(codegen_registry, :doc, [name, codegen_spec])
 
       {:error, _reason} ->
         Keyword.fetch!(spec, :doc)
