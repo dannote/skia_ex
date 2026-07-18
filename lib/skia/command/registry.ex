@@ -1,5 +1,10 @@
 defmodule Skia.Command.Registry do
   @moduledoc false
+  @compile {:no_warn_undefined,
+            [
+              {Skia.Codegen.Command.Registry, :doc, 2},
+              {Skia.Codegen.Command.Registry, :fetch!, 1}
+            ]}
 
   @registry_path Application.app_dir(:skia, "priv/command_registry.etf")
   @external_resource @registry_path
@@ -26,8 +31,7 @@ defmodule Skia.Command.Registry do
 
     case Code.ensure_compiled(codegen_registry) do
       {:module, ^codegen_registry} ->
-        codegen_spec = apply(codegen_registry, :fetch!, [name])
-        apply(codegen_registry, :doc, [name, codegen_spec])
+        codegen_registry.doc(name, codegen_registry.fetch!(name))
 
       {:error, _reason} ->
         Keyword.fetch!(spec, :doc)

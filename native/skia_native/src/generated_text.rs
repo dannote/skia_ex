@@ -97,6 +97,12 @@ fn draw_paragraph_text<'a>(
         paragraph_style.set_text_direction(decode_text_direction(direction)?);
     }
     let mut font_collection = FontCollection::new();
+    if let Some(term) = opts.font {
+        let font = font_from_term(term, size)?;
+        let mut provider = TypefaceFontProvider::new();
+        provider.register_typeface(font.typeface(), None);
+        font_collection.set_asset_font_manager(Some(FontMgr::from(provider)));
+    }
     font_collection.set_default_font_manager(FontMgr::default(), None);
     let mut paragraph_builder = ParagraphBuilder::new(&paragraph_style, font_collection);
     match opts.spans {

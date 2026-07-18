@@ -7,7 +7,7 @@ use skia_safe::{
     font_style::{Slant, Weight, Width},
     vertices::VertexMode,
     image_filters, path_utils, surfaces,
-    textlayout::{FontCollection, ParagraphBuilder, ParagraphStyle, TextAlign, TextDirection, TextStyle},
+    textlayout::{FontCollection, ParagraphBuilder, ParagraphStyle, TextAlign, TextDirection, TextStyle, TypefaceFontProvider},
     color_filters, AlphaType, Color, ColorFilter, ColorType, CubicResampler, Data,
     runtime_effect::ChildPtr,
     ClipOp, EncodedImageFormat, FilterMode, Font, FontMgr, FontStyle, IPoint, Image, ImageInfo, MaskFilter, Matrix,

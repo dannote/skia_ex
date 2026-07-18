@@ -132,6 +132,18 @@ defmodule Skia.Codegen.Rusty.Command.Text do
     end
 
     font_collection = FontCollection.new()
+
+    case opts.font do
+      {:some, term} ->
+        font = font_from_term(term, size)
+        provider = TypefaceFontProvider.new()
+        provider.register_typeface(font.typeface(), none())
+        font_collection.set_asset_font_manager(some(FontMgr.from(provider)))
+
+      :none ->
+        :ok
+    end
+
     font_collection.set_default_font_manager(FontMgr.default(), none())
     paragraph_builder = ParagraphBuilder.new(paragraph_style, font_collection)
 
