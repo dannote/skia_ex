@@ -58,6 +58,10 @@ defmodule Skia.Native.GeneratedStubs do
         :erlang.nif_error(:nif_not_loaded)
       end
 
+      def match_font_character(_family, _weight, _slant, _languages, _character) do
+        :erlang.nif_error(:nif_not_loaded)
+      end
+
       def typeface_info(_typeface_term) do
         :erlang.nif_error(:nif_not_loaded)
       end

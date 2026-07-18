@@ -894,7 +894,54 @@ defmodule SkiaTest do
         assert {:ok, measurement} = Skia.measure_text("A", font: font)
         assert measurement.width >= 0
 
+        assert {:ok, fallback} =
+                 Skia.Typeface.match_character("A",
+                   family: "__missing_font_family__",
+                   weight: 400,
+                   languages: ["en"]
+                 )
+
+        assert fallback.family in families
+        assert {:ok, [glyph_id]} = Skia.Font.glyph_ids(Skia.Font.new(fallback), "A")
+        assert glyph_id > 0
+        assert {:error, :invalid_character} = Skia.Typeface.match_character("")
+
       [] ->
+        assert true
+    end
+  end
+
+  test "uses explicit typefaces for width-constrained paragraph text" do
+    assert {:ok, families} = Skia.Typeface.families()
+
+    fonts =
+      families
+      |> Enum.flat_map(fn family ->
+        with {:ok, typeface} <- Skia.Typeface.match_family(family),
+             font = Skia.Font.new(typeface, size: 20),
+             {:ok, [glyph_id]} when glyph_id > 0 <- Skia.Font.glyph_ids(font, "A") do
+          [font]
+        else
+          _missing -> []
+        end
+      end)
+      |> Enum.take(2)
+
+    case fonts do
+      [first, second] ->
+        assert {:ok, first_raw} =
+                 Skia.canvas(80, 30)
+                 |> Skia.text("Ag", x: 0, y: 0, width: 80, size: 20, font: first)
+                 |> Skia.to_raw()
+
+        assert {:ok, second_raw} =
+                 Skia.canvas(80, 30)
+                 |> Skia.text("Ag", x: 0, y: 0, width: 80, size: 20, font: second)
+                 |> Skia.to_raw()
+
+        refute first_raw.data == second_raw.data
+
+      _fewer_than_two_fonts ->
         assert true
     end
   end

@@ -147,6 +147,16 @@ Skia.rect(doc, x: 0, y: 0, width: 128, height: 128, fill: Skia.Shader.picture(pi
 ```elixir
 {:ok, families} = Skia.Typeface.families()
 {:ok, typeface} = Skia.Typeface.match_family("Inter", weight: 700, slant: :upright)
+
+# Direct binding to SkFontMgr::matchFamilyStyleCharacter. Skia may select a
+# different installed family when the requested family cannot draw "主".
+{:ok, fallback} =
+  Skia.Typeface.match_character("主",
+    family: "Inter",
+    weight: 700,
+    languages: ["zh-Hans"]
+  )
+
 font = Skia.Font.new(typeface, size: 24)
 {:ok, info} = Skia.Typeface.info(typeface)
 {:ok, metrics} = Skia.Font.metrics(font)

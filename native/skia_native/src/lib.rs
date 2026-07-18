@@ -196,10 +196,12 @@ fn load_font_impl<'a>(env: Env<'a>, bytes: Binary<'a>) -> NifResult<Term<'a>> {
     let Some(typeface) = FontMgr::new().new_from_data(bytes.as_slice(), None) else {
         return Ok((atoms::error(), atoms::invalid_font()).encode(env));
     };
+    let family = typeface.family_name();
 
     Ok((
         atoms::ok(),
         ResourceArc::new(EncodedFont { typeface }),
+        family,
     )
         .encode(env))
 }
@@ -210,14 +212,7 @@ fn font_families_impl<'a>(env: Env<'a>) -> NifResult<Term<'a>> {
 }
 
 fn match_font_impl<'a>(env: Env<'a>, family: String, weight: i32, slant: Atom) -> NifResult<Term<'a>> {
-    let slant = if slant == atoms::italic() {
-        Slant::Italic
-    } else if slant == atoms::oblique() {
-        Slant::Oblique
-    } else {
-        Slant::Upright
-    };
-    let style = FontStyle::new(Weight::from(weight), Width::NORMAL, slant);
+    let style = font_style(weight, slant);
     let Some(typeface) = FontMgr::new().match_family_style(family, style) else {
         return Ok((atoms::error(), atoms::invalid_font()).encode(env));
     };
@@ -227,6 +222,50 @@ fn match_font_impl<'a>(env: Env<'a>, family: String, weight: i32, slant: Atom) -
         ResourceArc::new(EncodedFont { typeface }),
     )
         .encode(env))
+}
+
+fn match_font_character_impl<'a>(
+    env: Env<'a>,
+    family: String,
+    weight: i32,
+    slant: Atom,
+    languages: Vec<String>,
+    character: u32,
+) -> NifResult<Term<'a>> {
+    if character > 0x10FFFF || (0xD800..=0xDFFF).contains(&character) {
+        return Ok((atoms::error(), atoms::invalid_font()).encode(env));
+    }
+
+    let style = font_style(weight, slant);
+    let language_refs: Vec<&str> = languages.iter().map(String::as_str).collect();
+    let Some(typeface) = FontMgr::new().match_family_style_character(
+        family,
+        style,
+        &language_refs,
+        character as i32,
+    ) else {
+        return Ok((atoms::error(), atoms::invalid_font()).encode(env));
+    };
+    let matched_family = typeface.family_name();
+
+    Ok((
+        atoms::ok(),
+        ResourceArc::new(EncodedFont { typeface }),
+        matched_family,
+    )
+        .encode(env))
+}
+
+fn font_style(weight: i32, slant: Atom) -> FontStyle {
+    let slant = if slant == atoms::italic() {
+        Slant::Italic
+    } else if slant == atoms::oblique() {
+        Slant::Oblique
+    } else {
+        Slant::Upright
+    };
+
+    FontStyle::new(Weight::from(weight), Width::NORMAL, slant)
 }
 
 fn typeface_info_impl<'a>(env: Env<'a>, typeface_term: Term<'a>) -> NifResult<Term<'a>> {

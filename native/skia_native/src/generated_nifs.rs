@@ -76,6 +76,17 @@ fn match_font<'a>(
     match_font_impl(env, family, weight, slant)
 }
 #[rustler::nif(schedule = "DirtyCpu")]
+fn match_font_character<'a>(
+    env: Env<'a>,
+    family: String,
+    weight: i32,
+    slant: Atom,
+    languages: Vec<String>,
+    character: u32,
+) -> NifResult<Term<'a>> {
+    match_font_character_impl(env, family, weight, slant, languages, character)
+}
+#[rustler::nif(schedule = "DirtyCpu")]
 fn typeface_info<'a>(env: Env<'a>, typeface_term: Term<'a>) -> NifResult<Term<'a>> {
     typeface_info_impl(env, typeface_term)
 }

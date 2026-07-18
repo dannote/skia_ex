@@ -19,6 +19,7 @@ defmodule Skia.Codegen.Rust.Nifs do
     :load_font,
     :font_families,
     :match_font,
+    :match_font_character,
     :typeface_info,
     :font_metrics,
     :font_glyph_ids,

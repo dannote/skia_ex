@@ -76,6 +76,11 @@ fn draw_paragraph_text<'a>(
     let mut text_style = TextStyle::new();
     text_style.set_font_size(size);
     text_style.set_color(paint.color());
+    if let Some(term) = opts.font {
+        let font = font_from_term(term, size)?;
+        text_style.set_font_families(&vec![font.typeface().family_name()]);
+        text_style.set_typeface(font.typeface());
+    }
     if let Some(family) = &opts.font_family {
         text_style.set_font_families(&vec![family]);
     }
@@ -125,6 +130,11 @@ fn text_style_from_opts<'a>(
     }
     if let Some(fill) = opt_term(opts, atoms::fill()) {
         style.set_color(decode_color(fill)?);
+    }
+    if let Some(term) = opt_term(opts, atoms::font()) {
+        let font = font_from_term(term, base.font_size())?;
+        style.set_font_families(&vec![font.typeface().family_name()]);
+        style.set_typeface(font.typeface());
     }
     if let Some(term) = opt_term(opts, atoms::font_family()) {
         let family = term.decode::<String>()?;

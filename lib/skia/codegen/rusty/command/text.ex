@@ -91,6 +91,16 @@ defmodule Skia.Codegen.Rusty.Command.Text do
     text_style.set_font_size(size)
     text_style.set_color(paint.color())
 
+    case opts.font do
+      {:some, term} ->
+        font = font_from_term(term, size)
+        text_style.set_font_families([font.typeface().family_name()])
+        text_style.set_typeface(font.typeface())
+
+      :none ->
+        :ok
+    end
+
     case ref(opts.font_family) do
       {:some, family} -> text_style.set_font_families([family])
       :none -> :ok
@@ -161,6 +171,16 @@ defmodule Skia.Codegen.Rusty.Command.Text do
     case opt_term(opts, Atoms.fill()) do
       {:some, fill} -> style.set_color(decode_color(fill))
       :none -> :ok
+    end
+
+    case opt_term(opts, Atoms.font()) do
+      {:some, term} ->
+        font = font_from_term(term, base.font_size())
+        style.set_font_families([font.typeface().family_name()])
+        style.set_typeface(font.typeface())
+
+      :none ->
+        :ok
     end
 
     case opt_term(opts, Atoms.font_family()) do
