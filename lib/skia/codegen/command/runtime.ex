@@ -16,7 +16,7 @@ defmodule Skia.Codegen.Command.Runtime do
       args: Enum.map(Keyword.get(spec, :args, []), &runtime_arg/1),
       opts: Enum.map(Keyword.get(spec, :opts, []), &runtime_option/1),
       defaults: Keyword.get(spec, :defaults, []),
-      doc: Registry.doc(name, spec)
+      doc: "Adds a `#{name}` command to the document."
     ]
 
     {name, runtime_spec}
