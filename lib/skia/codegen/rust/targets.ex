@@ -1,6 +1,7 @@
 defmodule Skia.Codegen.Rust.Targets do
   @moduledoc false
 
+  alias Skia.Codegen.Command.Runtime
   alias Skia.Codegen.Rust.Commands
   alias Skia.Codegen.Rust.Core
   alias Skia.Codegen.Rust.Nifs
@@ -9,6 +10,10 @@ defmodule Skia.Codegen.Rust.Targets do
   @spec all() :: [{atom(), keyword()}]
   def all do
     [
+      command_registry: [
+        path: "lib/skia/command/registry.ex",
+        build: &Runtime.generated_registry/0
+      ],
       generated_atoms: [
         path: "native/skia_native/src/generated_atoms.rs",
         build: &Core.generated_atoms/0

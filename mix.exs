@@ -55,17 +55,24 @@ defmodule Skia.MixProject do
       licenses: ["MIT"],
       links: %{"GitHub" => @source_url},
       files:
-        [
-          "lib",
-          "native/skia_native/src",
-          "native/skia_native/Cargo.toml",
-          "native/skia_native/Cargo.lock",
-          "examples",
-          "mix.exs",
-          "README.md",
-          "LICENSE"
-        ] ++ Path.wildcard("checksum-*.exs")
+        runtime_files() ++
+          [
+            "native/skia_native/src",
+            "native/skia_native/Cargo.toml",
+            "native/skia_native/Cargo.lock",
+            "examples",
+            "mix.exs",
+            "README.md",
+            "LICENSE"
+          ] ++ Path.wildcard("checksum-*.exs")
     ]
+  end
+
+  defp runtime_files do
+    "lib/**/*.ex"
+    |> Path.wildcard()
+    |> Enum.reject(&String.starts_with?(&1, "lib/skia/codegen/"))
+    |> Enum.reject(&String.starts_with?(&1, "lib/mix/"))
   end
 
   defp docs do

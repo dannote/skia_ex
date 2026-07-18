@@ -6,7 +6,7 @@ defmodule Skia.DSL do
   both APIs share validation and command normalization.
   """
 
-  alias Skia.Codegen.Command.Registry, as: Commands
+  alias Skia.Command.Registry, as: Commands
 
   defmacro __using__(_opts) do
     quote do

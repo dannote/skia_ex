@@ -9,9 +9,8 @@ defmodule Skia.Command do
   Rustler NIF.
   """
 
-  alias RustQ.Meta.Type
-  alias Skia.Codegen.Command.Registry, as: Commands
   alias Skia.{ColorFilter, Command, Font, Image, ImageFilter, MaskFilter, Paint, Path, PathEffect}
+  alias Skia.Command.Registry, as: Commands
   alias Skia.{Picture, SamplingOptions, TextBlob, Vertices}
 
   @type color ::
@@ -69,9 +68,7 @@ defmodule Skia.Command do
   end
 
   defp normalize_meta_value!(name, key, type, value) do
-    type
-    |> Type.category()
-    |> normalize_category_value(name, key, type, value)
+    normalize_category_value(type, name, key, type, value)
   end
 
   defp normalize_category_value(:number, _name, _key, _type, value)
@@ -123,28 +120,33 @@ defmodule Skia.Command do
 
   defp normalize_external_filter(type, value) do
     cond do
-      Type.external?(type, ImageFilter, :t) -> normalize_image_filter!(value)
-      Type.external?(type, ColorFilter, :t) -> normalize_color_filter!(value)
-      Type.external?(type, MaskFilter, :t) -> normalize_mask_filter!(value)
-      Type.external?(type, PathEffect, :t) -> normalize_path_effect!(value)
-      Type.external?(type, SamplingOptions, :t) -> normalize_sampling_options!(value)
+      external?(type, ImageFilter) -> normalize_image_filter!(value)
+      external?(type, ColorFilter) -> normalize_color_filter!(value)
+      external?(type, MaskFilter) -> normalize_mask_filter!(value)
+      external?(type, PathEffect) -> normalize_path_effect!(value)
+      external?(type, SamplingOptions) -> normalize_sampling_options!(value)
       true -> :error
     end
   end
 
   defp normalize_external_special(type, value) do
     cond do
-      Type.external?(type, Command, :color) -> normalize_color!(value)
+      external?(type, Command, :color) -> normalize_color!(value)
       external_struct?(type, value, Vertices) -> normalize_vertices!(value)
       true -> :error
     end
   end
 
   defp external_struct?(type, value, module) do
-    Type.external?(type, module, :t) and is_struct(value, module)
+    external?(type, module) and is_struct(value, module)
   end
 
-  defp normalize_value!(name, key, %Type{} = type, value) do
+  defp external?({:external, module, name}, module, name), do: true
+  defp external?(_type, _module, _name), do: false
+  defp external?(type, module), do: external?(type, module, :t)
+
+  defp normalize_value!(name, key, type, value)
+       when is_atom(type) or elem(type, 0) in [:external, :tuple] do
     normalize_meta_value!(name, key, type, value)
   end
 

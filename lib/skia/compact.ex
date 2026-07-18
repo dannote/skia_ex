@@ -12,8 +12,8 @@ defmodule Skia.Compact do
       {:ok, raw} = Skia.Compact.to_raw(document)
   """
 
-  alias Skia.Codegen.Command.Registry, as: Commands
   alias Skia.{Command, Document}
+  alias Skia.Command.Registry, as: Commands
 
   @op_ids Commands.all()
           |> Enum.flat_map(fn {name, spec} -> [name, Keyword.get(spec, :op, name)] end)

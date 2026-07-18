@@ -12,8 +12,8 @@ defmodule Skia do
         |> Skia.to_png()
   """
 
-  alias Skia.Codegen.Command.Registry, as: Commands
   alias Skia.{Command, Document}
+  alias Skia.Command.Registry, as: Commands
 
   @type document :: Document.t()
 
