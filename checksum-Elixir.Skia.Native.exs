@@ -1,5 +1,5 @@
 %{
-  "libskia_native-v0.3.1-nif-2.15-aarch64-apple-darwin.so.tar.gz" => "sha256:ca4b67c4899c622dea5f557555dc3ad85fdf0268169a68eed8d818d98b59a6cd",
-  "libskia_native-v0.3.1-nif-2.15-x86_64-apple-darwin.so.tar.gz" => "sha256:f185ff0784e2214c70d691dbacb11eb08ccf0802fd438bc9ec7c8155d028096f",
-  "libskia_native-v0.3.1-nif-2.15-x86_64-unknown-linux-gnu.so.tar.gz" => "sha256:776bfab22a736dae9ce5ca51dcd5a90537a7ea0ba30d989660ff95b621a774a2",
+  "libskia_native-v0.3.2-nif-2.15-aarch64-apple-darwin.so.tar.gz" => "sha256:fc97daaf69de7e6cd092970839592f377c48ba59e412cb5289c5413e0f20e106",
+  "libskia_native-v0.3.2-nif-2.15-x86_64-apple-darwin.so.tar.gz" => "sha256:ed8055dfc1279fb0e63b1ea1f79e105d360f298a92fe0fdc8ac7bd9ca859ec94",
+  "libskia_native-v0.3.2-nif-2.15-x86_64-unknown-linux-gnu.so.tar.gz" => "sha256:53342b967da7888c6f9fc5a05456a01355d022fe85fdabeacfa28b21c9f62714",
 }
