@@ -98,6 +98,13 @@ advanced = Skia.ImageFilter.merge([
 Skia.layer(doc, [image_filter: filter], fn layer ->
   Skia.rect(layer, x: 0, y: 0, width: 80, height: 80, fill: :red)
 end)
+
+Skia.layer(doc, [
+  bounds: {0, 0, 100, 100},
+  backdrop_filter: Skia.ImageFilter.blur(4)
+], fn layer ->
+  Skia.rect(layer, x: 0, y: 0, width: 100, height: 100, fill: {255, 255, 255, 32})
+end)
 ```
 
 ## Paths
