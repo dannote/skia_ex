@@ -79,11 +79,23 @@ defmodule Skia.Codegen.Rusty.Command.Layers do
         :ok
     end
 
+    backdrop =
+      case opts.backdrop_filter do
+        {:some, term} -> some(decode_image_filter(term))
+        :none -> none()
+      end
+
     rec = SaveLayerRec.default().paint(paint)
 
     rec =
       case bounds.as_ref() do
         {:some, bounds} -> rec.bounds(bounds)
+        :none -> rec
+      end
+
+    rec =
+      case backdrop.as_ref() do
+        {:some, filter} -> rec.backdrop(filter)
         :none -> rec
       end
 

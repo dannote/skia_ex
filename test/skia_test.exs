@@ -257,6 +257,24 @@ defmodule SkiaTest do
     assert byte_size(raw.data) == 64
   end
 
+  test "renders bounded backdrop-filtered layers" do
+    document =
+      Skia.canvas(9, 1)
+      |> Skia.clear(:white)
+      |> Skia.rect(x: 0, y: 0, width: 4, height: 1, fill: :black)
+      |> Skia.layer(
+        [bounds: {0, 0, 9, 1}, backdrop_filter: Skia.ImageFilter.blur(1.0)],
+        &Function.identity/1
+      )
+
+    [save_layer] = Enum.filter(Skia.commands(document), &(&1.op == :save_layer))
+
+    assert save_layer.opts[:backdrop_filter] == {:blur_filter, 1.0, 1.0, :decal}
+    assert {:ok, raw} = Skia.to_raw(document)
+    <<_::binary-size(3 * 4), edge, edge, edge, 255, _::binary>> = raw.data
+    assert edge in 1..254
+  end
+
   test "renders layers through the native batch boundary" do
     document =
       Skia.canvas(2, 1)

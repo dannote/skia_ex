@@ -20,7 +20,8 @@ defmodule Skia.Codegen.Command.Domain.Layers do
           optional(:bounds) => bounds(),
           optional(:blend_mode) => blend_mode(),
           optional(:blur) => RustQ.Type.f32(),
-          optional(:image_filter) => Skia.ImageFilter.t()
+          optional(:image_filter) => Skia.ImageFilter.t(),
+          optional(:backdrop_filter) => Skia.ImageFilter.t()
         }
   @type push_style_opts :: %{required(:style) => term()}
 

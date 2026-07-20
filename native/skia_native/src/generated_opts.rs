@@ -373,6 +373,7 @@ pub struct SaveLayerOpts<'a> {
     pub blend_mode: Option<Atom>,
     pub blur: Option<f32>,
     pub image_filter: Option<Term<'a>>,
+    pub backdrop_filter: Option<Term<'a>>,
     _phantom: std::marker::PhantomData<&'a ()>,
 }
 pub fn decode_save_layer_opts<'a>(
@@ -384,6 +385,7 @@ pub fn decode_save_layer_opts<'a>(
         blend_mode: opt_atom_option(opts, atoms::blend_mode())?,
         blur: opt_f32_option(opts, atoms::blur())?,
         image_filter: opt_term(opts, atoms::image_filter()),
+        backdrop_filter: opt_term(opts, atoms::backdrop_filter()),
         _phantom: std::marker::PhantomData,
     })
 }

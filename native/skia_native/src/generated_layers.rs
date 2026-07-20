@@ -40,9 +40,17 @@ fn draw_save_layer_impl<'a>(
         let filter = decode_image_filter(term)?;
         paint.set_image_filter(filter);
     }
+    let backdrop = match opts.backdrop_filter {
+        Some(term) => Some(decode_image_filter(term)?),
+        None => None,
+    };
     let rec = SaveLayerRec::default().paint(&paint);
     let rec = match bounds.as_ref() {
         Some(bounds) => rec.bounds(bounds),
+        None => rec,
+    };
+    let rec = match backdrop.as_ref() {
+        Some(filter) => rec.backdrop(filter),
         None => rec,
     };
     canvas.save_layer(&rec);
