@@ -1,7 +1,7 @@
 defmodule Skia.MixProject do
   use Mix.Project
 
-  @version "0.3.7"
+  @version "0.3.8"
   @source_url "https://github.com/dannote/skia_ex"
 
   def project do
@@ -64,6 +64,7 @@ defmodule Skia.MixProject do
             "examples",
             "mix.exs",
             "README.md",
+            "CHANGELOG.md",
             "LICENSE"
           ] ++ Path.wildcard("checksum-*.exs")
     ]
@@ -79,7 +80,7 @@ defmodule Skia.MixProject do
   defp docs do
     [
       main: "readme",
-      extras: ["README.md"],
+      extras: ["README.md", "CHANGELOG.md"],
       source_ref: "v#{@version}",
       source_url: @source_url,
       filter_modules: &public_doc_module?/2
