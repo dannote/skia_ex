@@ -903,6 +903,15 @@ defmodule SkiaTest do
     assert {:ok, png} = Skia.Compact.render(document, format: :png)
     assert <<137, 80, 78, 71, 13, 10, 26, 10, _::binary>> = png
 
+    styled_document =
+      Skia.canvas(1, 1)
+      |> Skia.style([fill: :blue], fn doc ->
+        Skia.rect(doc, x: 0, y: 0, width: 1, height: 1)
+      end)
+
+    assert {:ok, styled_raw} = Skia.Compact.to_raw(styled_document)
+    assert styled_raw.data == <<0, 0, 255, 255>>
+
     path =
       Skia.Path.new()
       |> Skia.Path.move_to(0, 0)

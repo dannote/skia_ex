@@ -113,7 +113,12 @@ defmodule Skia do
     |> append_command(:restore, [], [])
   end
 
-  @doc "Adds a style scope for following commands in the group."
+  @doc """
+  Adds a style scope for commands in the callback.
+
+  Style scopes can be nested. Inner styles override outer styles, and options
+  passed directly to a command override inherited style options.
+  """
   @spec style(Document.t(), keyword(), (Document.t() -> Document.t())) :: Document.t()
   def style(%Document{} = document, opts, fun) when is_list(opts) and is_function(fun, 1) do
     document

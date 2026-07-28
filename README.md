@@ -23,6 +23,21 @@ document =
 {:ok, %{width: width, height: height, stride: stride, data: rgba}} = Skia.render(document, Skia.RenderOptions.new(format: :raw))
 ```
 
+## Scoped styles
+
+`Skia.style/3` applies shared options to commands in its scope. Styles can be
+nested, and options passed directly to a command take precedence.
+
+```elixir
+document =
+  Skia.canvas(200, 100)
+  |> Skia.style([fill: :red], fn doc ->
+    doc
+    |> Skia.rect(x: 0, y: 0, width: 80, height: 80)
+    |> Skia.text("Alert", x: 12, y: 48, fill: :white)
+  end)
+```
+
 ## Paint sources and shaders
 
 ```elixir
