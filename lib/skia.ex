@@ -118,7 +118,9 @@ defmodule Skia do
   def style(%Document{} = document, opts, fun) when is_list(opts) and is_function(fun, 1) do
     document
     |> append_command(:push_style, [], style: opts)
+    |> Document.push_style(opts)
     |> fun.()
+    |> Document.pop_style()
     |> append_command(:pop_style, [], [])
   end
 
@@ -252,6 +254,13 @@ defmodule Skia do
   end
 
   defp append_command(%Document{} = document, name, args, opts) do
+    opts =
+      if name in Commands.drawable_names() do
+        Keyword.merge(Document.current_style(document), opts)
+      else
+        opts
+      end
+
     Document.append(document, Command.build!(name, args, opts))
   end
 

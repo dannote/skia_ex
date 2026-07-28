@@ -14,10 +14,11 @@ defmodule Skia.Document do
   @type t :: %__MODULE__{
           width: pos_integer(),
           height: pos_integer(),
-          commands: [Command.t()]
+          commands: [Command.t()],
+          style_stack: [keyword()]
         }
 
-  defstruct [:width, :height, commands: []]
+  defstruct [:width, :height, commands: [], style_stack: []]
 
   @spec new(pos_integer(), pos_integer()) :: t()
   def new(width, height)
@@ -33,6 +34,26 @@ defmodule Skia.Document do
   @spec commands(t()) :: [Command.t()]
   def commands(%__MODULE__{} = document) do
     Enum.reverse(document.commands)
+  end
+
+  @doc false
+  @spec push_style(t(), keyword()) :: t()
+  def push_style(%__MODULE__{} = document, style) when is_list(style) do
+    %{document | style_stack: [style | document.style_stack]}
+  end
+
+  @doc false
+  @spec pop_style(t()) :: t()
+  def pop_style(%__MODULE__{style_stack: [_style | rest]} = document) do
+    %{document | style_stack: rest}
+  end
+
+  @doc false
+  @spec current_style(t()) :: keyword()
+  def current_style(%__MODULE__{} = document) do
+    document.style_stack
+    |> Enum.reverse()
+    |> Enum.reduce([], fn style, inherited -> Keyword.merge(inherited, style) end)
   end
 
   defimpl Inspect do

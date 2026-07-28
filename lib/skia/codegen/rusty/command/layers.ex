@@ -7,7 +7,7 @@ defmodule Skia.Codegen.Rusty.Command.Layers do
 
   alias Skia.Codegen.Command.Domain.Layers
 
-  @simple_commands [:save, :restore]
+  @simple_commands [:save, :restore, :push_style, :pop_style]
 
   @spec generated_command_asts() :: [RustQ.Rust.AST.Function.t()]
   def generated_command_asts do
@@ -34,6 +34,12 @@ defmodule Skia.Codegen.Rusty.Command.Layers do
     canvas.restore()
     :ok
   end
+
+  @spec draw_push_style(R.ref(SkiaSafe.Canvas.t()), term()) :: R.nif_result(R.unit())
+  defrust(draw_push_style(_canvas, _command), do: :ok)
+
+  @spec draw_pop_style(R.ref(SkiaSafe.Canvas.t()), term()) :: R.nif_result(R.unit())
+  defrust(draw_pop_style(_canvas, _command), do: :ok)
 
   @spec draw_save_layer_impl(
           R.ref(SkiaSafe.Canvas.t()),

@@ -57,7 +57,8 @@ defmodule SkiaTest do
       end
     end
 
-    ops = Poster.document() |> Skia.commands() |> Enum.map(& &1.op)
+    commands = Poster.document() |> Skia.commands()
+    ops = Enum.map(commands, & &1.op)
 
     assert ops == [
              :clear,
@@ -70,6 +71,32 @@ defmodule SkiaTest do
              :pop_style,
              :restore
            ]
+
+    text = Enum.find(commands, &(&1.op == :text))
+    rect = Enum.find(commands, &(&1.op == :rect))
+    assert text.opts[:fill] == {:rgba, 255, 255, 255, 255}
+    assert text.opts[:font] == "Inter"
+    assert rect.opts[:fill] == {:rgba, 59, 130, 246, 255}
+  end
+
+  test "renders nested styles and lets command options override them" do
+    document =
+      Skia.canvas(4, 1)
+      |> Skia.style([fill: :red], fn document ->
+        document
+        |> Skia.rect(x: 0, y: 0, width: 1, height: 1)
+        |> Skia.style([fill: :green], fn document ->
+          document
+          |> Skia.rect(x: 1, y: 0, width: 1, height: 1)
+          |> Skia.rect(x: 2, y: 0, width: 1, height: 1, fill: :blue)
+        end)
+        |> Skia.rect(x: 3, y: 0, width: 1, height: 1)
+      end)
+
+    assert {:ok, raw} = Skia.to_raw(document)
+
+    assert raw.data ==
+             <<255, 0, 0, 255, 0, 128, 0, 255, 0, 0, 255, 255, 255, 0, 0, 255>>
   end
 
   test "renders a raw RGBA buffer through the native batch boundary" do

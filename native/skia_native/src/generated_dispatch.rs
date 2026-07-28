@@ -17,6 +17,8 @@ fn draw_command(canvas: &skia_safe::Canvas, command: Term) -> NifResult<()> {
         value if value == atoms::path_op() => draw_path_op(canvas, command),
         value if value == atoms::path_outline() => draw_path_outline(canvas, command),
         value if value == atoms::picture() => draw_picture(canvas, command),
+        value if value == atoms::pop_style() => draw_pop_style(canvas, command),
+        value if value == atoms::push_style() => draw_push_style(canvas, command),
         value if value == atoms::rect() => draw_rect(canvas, command),
         value if value == atoms::restore() => draw_restore(canvas, command),
         value if value == atoms::rotate() => draw_rotate(canvas, command),

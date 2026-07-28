@@ -8,6 +8,15 @@ fn draw_restore<'a>(canvas: &skia_safe::Canvas, _command: Term<'a>) -> NifResult
     canvas.restore();
     Ok(())
 }
+fn draw_push_style<'a>(
+    _canvas: &skia_safe::Canvas,
+    _command: Term<'a>,
+) -> NifResult<()> {
+    Ok(())
+}
+fn draw_pop_style<'a>(_canvas: &skia_safe::Canvas, _command: Term<'a>) -> NifResult<()> {
+    Ok(())
+}
 fn draw_save_layer<'a>(canvas: &skia_safe::Canvas, command: Term<'a>) -> NifResult<()> {
     let opts = decode_opts(command)?;
     let decoded_opts = generated_opts::decode_save_layer_opts(&opts)?;

@@ -10,8 +10,8 @@ defmodule Skia.Codegen.Command.Domain.Layers do
     save: [handler: :draw_save],
     save_layer: [handler: :draw_save_layer, defaults: [opacity: 1.0]],
     restore: [handler: :draw_restore],
-    push_style: [],
-    pop_style: []
+    push_style: [handler: :draw_push_style],
+    pop_style: [handler: :draw_pop_style]
   }
 
   @type empty_opts :: %{}
